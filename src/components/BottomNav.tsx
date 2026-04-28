@@ -23,7 +23,7 @@ export const BottomNav = () => {
       <div className="mx-auto flex w-full max-w-2xl items-stretch justify-between px-2 sm:px-6">
         {tabs.map((t) => {
           const Icon = t.icon;
-          const showBadge = t.badgeKey === "cart" && cartCount > 0;
+          const showBadge = false;
           return (
             <NavLink
               key={t.to}
