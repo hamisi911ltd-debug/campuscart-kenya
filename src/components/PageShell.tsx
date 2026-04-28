@@ -7,7 +7,7 @@ import { useNavigate } from "react-router-dom";
 export const PageShell = ({ title, children, back = true }: { title: string; children: ReactNode; back?: boolean }) => {
   const navigate = useNavigate();
   return (
-    <div className="min-h-screen bg-background pb-24 md:pb-8">
+    <div className="min-h-screen bg-background pb-24">
       <TopBar />
       <main className="mx-auto max-w-7xl px-4 py-5">
         <div className="mb-4 flex items-center gap-3">
