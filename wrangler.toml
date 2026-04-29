@@ -1,0 +1,2 @@
+# This file tells Cloudflare to use Pages, not Workers
+# Leave this empty - Cloudflare Pages will handle deployment
