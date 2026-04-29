@@ -55,13 +55,25 @@ git push origin main
    ```
    Project name: campusmart-kenya
    Production branch: main
-   Build command: npm run build
+   Framework preset: Vite
+   Build command: npm install && npm run build
    Build output directory: dist
+   Root directory: /
    ```
+   
+   **Important**: Make sure to select "Vite" as the framework preset, or Cloudflare will auto-detect it.
 
-5. **Environment Variables** (if needed)
-   - Add any API keys (Google Maps, etc.)
-   - Click "Save and Deploy"
+5. **Environment Variables** (REQUIRED!)
+   
+   **⚠️ You MUST add these before deploying:**
+   
+   Click "Environment variables" and add:
+   ```
+   VITE_ADMIN_EMAIL = campusmart.care@gmail.com
+   VITE_ADMIN_PASSWORD = [Your NEW secure password - NOT the exposed one!]
+   ```
+   
+   **Without these, admin login will NOT work!**
 
 6. **Deploy**
    - Click "Save and Deploy"
