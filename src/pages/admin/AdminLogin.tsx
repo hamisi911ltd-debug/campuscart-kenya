@@ -4,9 +4,9 @@ import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 
-// Admin credentials - In production, this should be in a secure backend
-const ADMIN_EMAIL = "campusmart.care@gmail.com";
-const ADMIN_PASSWORD = "LUCIAHOKOREISMAMA1";
+// Admin credentials - loaded from environment variables
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "campusmart.care@gmail.com";
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "";
 
 const AdminLogin = () => {
   const navigate = useNavigate();

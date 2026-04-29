@@ -252,7 +252,7 @@ npm run build
 
 **Email**: campusmart.care@gmail.com  
 **WhatsApp**: 0108254465  
-**Admin Login**: campusmart.care@gmail.com / LUCIAHOKOREISMAMA1
+**Admin Login**: Configure via environment variables (see .env.example)
 
 ---
 

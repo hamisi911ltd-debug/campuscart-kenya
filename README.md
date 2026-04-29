@@ -108,8 +108,8 @@ See [CLOUDFLARE_DEPLOYMENT.md](./CLOUDFLARE_DEPLOYMENT.md) for detailed instruct
 ## 🔑 Admin Access
 
 - **URL**: `/admin/login`
-- **Email**: campusmart.care@gmail.com
-- **Password**: LUCIAHOKOREISMAMA1
+- **Credentials**: Set via environment variables (see `.env.example`)
+- **Setup**: Copy `.env.example` to `.env.local` and set `VITE_ADMIN_EMAIL` and `VITE_ADMIN_PASSWORD`
 
 ## 📱 PWA Installation
 
