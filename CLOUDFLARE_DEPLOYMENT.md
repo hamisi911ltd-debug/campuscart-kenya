@@ -56,12 +56,12 @@ git push origin main
    Project name: campusmart-kenya
    Production branch: main
    Framework preset: Vite
-   Build command: npm install --legacy-peer-deps && npm run build
+   Build command: npm run build
    Build output directory: dist
    Root directory: /
    ```
    
-   **Important**: The `--legacy-peer-deps` flag resolves dependency conflicts.
+   **Note**: The `.npmrc` file handles dependency resolution automatically.
 
 5. **Environment Variables** (REQUIRED!)
    
