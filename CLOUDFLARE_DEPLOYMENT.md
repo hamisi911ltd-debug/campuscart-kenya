@@ -56,12 +56,12 @@ git push origin main
    Project name: campusmart-kenya
    Production branch: main
    Framework preset: Vite
-   Build command: npm install && npm run build
+   Build command: npm install --legacy-peer-deps && npm run build
    Build output directory: dist
    Root directory: /
    ```
    
-   **Important**: Make sure to select "Vite" as the framework preset, or Cloudflare will auto-detect it.
+   **Important**: The `--legacy-peer-deps` flag resolves dependency conflicts.
 
 5. **Environment Variables** (REQUIRED!)
    
