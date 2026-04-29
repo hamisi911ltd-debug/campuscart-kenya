@@ -71,9 +71,6 @@ export const TopBar = () => {
             </span>
           )}
         </Link>
-        <Link to={user ? "/profile" : "/auth"} className="rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground hover:bg-primary-glow">
-          {user ? user.name.split(" ")[0] : "Sign In"}
-        </Link>
       </div>
       {/* Mobile search */}
       <form onSubmit={submit} className="px-4 pb-3 md:hidden">

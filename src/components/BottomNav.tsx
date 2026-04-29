@@ -1,13 +1,13 @@
-import { Home, Store, UtensilsCrossed, Building2, User } from "lucide-react";
+import { Home, ShoppingBag, UtensilsCrossed, Building2, UserCircle2 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useShop } from "@/store/shop";
 
 const tabs = [
   { to: "/", label: "Home", icon: Home, end: true },
-  { to: "/category/electronics", label: "Market", icon: Store },
+  { to: "/category/electronics", label: "Market", icon: ShoppingBag },
   { to: "/category/food", label: "Food", icon: UtensilsCrossed },
   { to: "/category/hostels", label: "Houses", icon: Building2 },
-  { to: "/profile", label: "Profile", icon: User },
+  { to: "/profile", label: "Profile", icon: UserCircle2 },
 ];
 
 export const BottomNav = () => {

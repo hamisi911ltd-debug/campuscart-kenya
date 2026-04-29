@@ -1,16 +1,53 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, MapPin, Loader2 } from "lucide-react";
+import { LocationPicker } from "@/components/LocationPicker";
+
+interface Order {
+  id: string;
+  orderNumber: string;
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  items: Array<{
+    productId: string;
+    productTitle: string;
+    price: number;
+    quantity: number;
+    seller?: {
+      name: string;
+      email: string;
+      phone: string;
+      campus: string;
+    };
+  }>;
+  total: number;
+  deliveryAddress: string;
+  location?: { lat: number; lng: number };
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
+}
 
 const CheckoutPage = () => {
-  const { cart, cartTotal, clearCart } = useShop();
+  const { cart, cartTotal, clearCart, user } = useShop();
   const navigate = useNavigate();
-  const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [done, setDone] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [locationError, setLocationError] = useState<string>("");
+
+  const ADMIN_WHATSAPP = "254108254465";
+
+  // No longer needed: getCurrentLocation and openLocationSettings are handled by LocationPicker
 
   if (cart.length === 0 && !done) {
     return (
@@ -26,10 +63,26 @@ const CheckoutPage = () => {
         <div className="rounded-2xl bg-card p-8 text-center shadow-elevated">
           <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
           <h2 className="mt-3 text-xl font-extrabold">Asante sana!</h2>
-          <p className="mt-1 text-sm text-muted-foreground">M-PESA prompt sent to {phone}. Your boda will arrive within 1 hour.</p>
-          <button onClick={() => navigate("/")} className="mt-5 rounded-full gradient-accent px-6 py-2.5 text-sm font-bold text-accent-foreground shadow-accent">
-            Continue shopping
-          </button>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Order #{orderNumber} has been placed successfully!
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your order details and location have been sent to the admin via WhatsApp.
+          </p>
+          <div className="mt-5 flex gap-3 justify-center">
+            <button 
+              onClick={() => navigate("/orders")} 
+              className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary-glow"
+            >
+              Track Order
+            </button>
+            <button 
+              onClick={() => navigate("/")} 
+              className="rounded-full gradient-accent px-6 py-2.5 text-sm font-bold text-accent-foreground shadow-accent"
+            >
+              Continue shopping
+            </button>
+          </div>
         </div>
       </PageShell>
     );
@@ -37,26 +90,158 @@ const CheckoutPage = () => {
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
-    if (!/^(\+?254|0)7\d{8}$/.test(phone.replace(/\s/g, ""))) {
-      toast.error("Enter a valid Safaricom number e.g. 07XXXXXXXX");
+    
+    if (!user) {
+      toast.error("Please sign in to continue");
+      navigate('/auth');
       return;
     }
-    toast.success("STK Push sent to your phone");
-    setTimeout(() => { clearCart(); setDone(true); }, 800);
+
+    if (!location) {
+      toast.error("Please share your location to continue");
+      return;
+    }
+
+    // Generate order number
+    const newOrderNumber = `CM${Date.now().toString().slice(-8)}`;
+    setOrderNumber(newOrderNumber);
+
+    // Create order object with location
+    const order: Order = {
+      id: Date.now().toString(),
+      orderNumber: newOrderNumber,
+      customer: {
+        name: user.name,
+        email: user.email,
+        phone: user.phone || 'Not provided',
+      },
+      items: cart.map(({ product, qty }) => ({
+        productId: product.id,
+        productTitle: product.title,
+        price: product.price,
+        quantity: qty,
+        seller: product.seller,
+      })),
+      total: cartTotal + 100,
+      deliveryAddress: address,
+      location: location, // Save the captured location
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Save order to localStorage
+    const existingOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
+    existingOrders.push(order);
+    localStorage.setItem('campusmart_orders', JSON.stringify(existingOrders));
+
+    // Prepare WhatsApp message with location
+    const googleMapsLink = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+    
+    let message = `🛒 *New Order - #${newOrderNumber}*\n\n`;
+    message += `👤 *Customer Details:*\n`;
+    message += `Name: ${user.name}\n`;
+    message += `Email: ${user.email}\n`;
+    message += `Phone: ${user.phone || 'Not provided'}\n`;
+    message += `Delivery: ${address}\n\n`;
+    message += `📍 *Live Location:*\n`;
+    message += `${googleMapsLink}\n`;
+    message += `Coordinates: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n`;
+    message += `📦 *Order Items:*\n`;
+    
+    cart.forEach(({ product, qty }, index) => {
+      message += `\n${index + 1}. ${product.title}\n`;
+      message += `   Price: KES ${product.price.toLocaleString()} × ${qty} = KES ${(product.price * qty).toLocaleString()}\n`;
+      message += `   Category: ${product.category}\n`;
+      message += `   Campus: ${product.campus}\n`;
+      if (product.seller) {
+        message += `   Seller: ${product.seller.name}\n`;
+        message += `   Seller Phone: ${product.seller.phone}\n`;
+        message += `   Seller Email: ${product.seller.email}\n`;
+      }
+    });
+
+    message += `\n💰 *Order Summary:*\n`;
+    message += `Subtotal: KES ${cartTotal.toLocaleString()}\n`;
+    message += `Delivery: KES 100\n`;
+    message += `*Total: KES ${(cartTotal + 100).toLocaleString()}*\n\n`;
+    message += `Please process this order. Thank you!`;
+
+    // Encode and send WhatsApp message
+    const encodedMessage = encodeURIComponent(message);
+    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodedMessage}`;
+    
+    // Open WhatsApp in new tab
+    window.open(whatsappUrl, '_blank');
+
+    toast.success("Order placed successfully!");
+    setTimeout(() => { 
+      clearCart(); 
+      setDone(true); 
+    }, 800);
   };
 
   return (
     <PageShell title="Checkout">
       <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
-        <div className="space-y-4 rounded-2xl bg-card p-5 shadow-card">
-          <h2 className="text-lg font-extrabold">Delivery details</h2>
-          <input value={address} onChange={(e) => setAddress(e.target.value)} required placeholder="Hostel block / room number / nearest landmark" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40" />
-          <h2 className="pt-3 text-lg font-extrabold">M-PESA payment</h2>
-          <input value={phone} onChange={(e) => setPhone(e.target.value)} required placeholder="07XX XXX XXX" className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40" />
-          <p className="text-xs text-muted-foreground">You'll receive an STK push to confirm payment.</p>
+        <div className="space-y-4">
+          {/* Delivery Address */}
+          <div className="rounded-2xl bg-card p-5 shadow-card">
+            <h2 className="text-lg font-extrabold mb-4">Delivery Address</h2>
+            <input 
+              value={address} 
+              onChange={(e) => setAddress(e.target.value)} 
+              required 
+              placeholder="Hostel block / room number / nearest landmark" 
+              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40" 
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Provide detailed delivery instructions for the rider
+            </p>
+          </div>
+
+          {/* Location Section */}
+          <LocationPicker 
+            onLocationCapture={(loc) => {
+              setLocation(loc);
+              setShowMap(true);
+            }} 
+            initialLocation={location}
+          />
+
+          {/* Order Confirmation */}
+          <div className="rounded-2xl bg-card p-5 shadow-card">
+            <h2 className="text-lg font-extrabold mb-4">Confirm Order Details</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Customer:</span>
+                <span className="font-semibold">{user?.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="font-semibold">{user?.email}</span>
+              </div>
+              {user?.phone && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Phone:</span>
+                  <span className="font-semibold">{user.phone}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Items:</span>
+                <span className="font-semibold">{cart.length} item{cart.length > 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Location:</span>
+                <span className="font-semibold">{location ? '✓ Shared' : '✗ Not shared'}</span>
+              </div>
+            </div>
+          </div>
         </div>
+
+        {/* Order Summary Sidebar */}
         <aside className="h-fit rounded-2xl bg-card p-5 shadow-elevated">
-          <h2 className="text-lg font-extrabold">Summary</h2>
+          <h2 className="text-lg font-extrabold">Order Summary</h2>
           <ul className="mt-3 space-y-2 text-sm">
             {cart.map(({ product, qty }) => (
               <li key={product.id} className="flex justify-between gap-2">
@@ -65,13 +250,32 @@ const CheckoutPage = () => {
               </li>
             ))}
           </ul>
+          <div className="mt-4 space-y-2 text-sm border-t border-border pt-3">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="font-semibold">KES {cartTotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Delivery</span>
+              <span className="font-semibold">KES 100</span>
+            </div>
+          </div>
           <div className="mt-3 flex justify-between border-t border-border pt-3 text-base font-extrabold">
             <span>Total</span>
             <span className="text-accent">KES {(cartTotal + 100).toLocaleString()}</span>
           </div>
-          <button className="mt-4 w-full rounded-full gradient-accent py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition">
-            Pay with M-PESA
+          <button 
+            type="submit"
+            disabled={!location}
+            className="mt-4 w-full rounded-full gradient-accent py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {location ? 'Complete Order Placement' : 'Share Location to Continue'}
           </button>
+          {!location && (
+            <p className="mt-2 text-xs text-center text-muted-foreground">
+              Location required for delivery
+            </p>
+          )}
         </aside>
       </form>
     </PageShell>

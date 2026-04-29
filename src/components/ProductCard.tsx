@@ -12,13 +12,14 @@ export interface Product {
   badge?: "SALE" | "NEW" | "HOT" | "FREE";
   rating?: number;
   sold?: number;
+  location?: { lat: number; lng: number };
 }
 
 const badgeStyles: Record<string, string> = {
-  SALE: "gradient-accent",
-  NEW: "bg-success",
-  HOT: "gradient-flash",
-  FREE: "bg-warning text-warning-foreground",
+  SALE: "bg-destructive",
+  NEW: "bg-destructive",
+  HOT: "bg-destructive",
+  FREE: "bg-destructive",
 };
 
 export const ProductCard = ({ p }: { p: Product }) => {
@@ -28,7 +29,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
   return (
     <Link
       to={`/product/${p.id}`}
-      className="group flex w-full flex-col overflow-hidden rounded-xl bg-card shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated"
+      className="group flex w-full flex-col overflow-hidden rounded-lg bg-card shadow-card transition-all hover:-translate-y-0.5 hover:shadow-elevated"
     >
       <div className="relative aspect-square overflow-hidden bg-muted">
         <img
@@ -41,48 +42,42 @@ export const ProductCard = ({ p }: { p: Product }) => {
         />
         {p.badge && (
           <span
-            className={`absolute left-2 top-2 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground ${badgeStyles[p.badge]}`}
+            className={`absolute left-1.5 top-1.5 rounded px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-primary-foreground ${badgeStyles[p.badge]}`}
           >
             {p.badge}
           </span>
         )}
         {discount > 0 && (
-          <span className="absolute right-2 top-2 rounded-md bg-accent px-1.5 py-0.5 text-[10px] font-bold text-accent-foreground">
+          <span className="absolute right-1.5 top-1.5 rounded bg-destructive px-1 py-0.5 text-[9px] font-bold text-destructive-foreground">
             -{discount}%
           </span>
         )}
         <button
           onClick={(e) => { e.preventDefault(); toggleFavorite(p.id); }}
           aria-label="favorite"
-          className="absolute bottom-2 right-2 flex h-8 w-8 items-center justify-center rounded-full bg-background/90 backdrop-blur transition hover:scale-110"
+          className="absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-background/90 backdrop-blur transition hover:scale-110"
         >
-          <Heart className={`h-4 w-4 transition ${liked ? "fill-accent text-accent" : "text-muted-foreground"}`} />
+          <Heart className={`h-3 w-3 transition ${liked ? "fill-accent text-accent" : "text-muted-foreground"}`} />
         </button>
       </div>
-      <div className="flex flex-1 flex-col gap-1.5 p-3">
-        <h3 className="line-clamp-2 text-sm font-medium text-foreground">{p.title}</h3>
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-base font-extrabold text-accent">KES {p.price.toLocaleString()}</span>
-          {p.oldPrice && (
-            <span className="text-xs text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
-          )}
+      <div className="flex flex-1 flex-col gap-1 p-2">
+        <h3 className="line-clamp-2 text-xs font-medium text-foreground leading-tight">{p.title}</h3>
+        <div className="flex items-baseline gap-1">
+          <span className="text-sm font-extrabold text-primary">KES {p.price.toLocaleString()}</span>
         </div>
-        <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-          <span className="flex items-center gap-0.5">
-            <Star className="h-3 w-3 fill-warning text-warning" />
-            {p.rating ?? 4.7}
-            {p.sold !== undefined && <span className="ml-1">· {p.sold} sold</span>}
-          </span>
-          <span className="flex items-center gap-0.5 truncate">
-            <MapPin className="h-3 w-3" />
-            {p.campus}
-          </span>
+        {p.oldPrice && (
+          <span className="text-[10px] text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
+        )}
+        <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+          <Star className="h-2.5 w-2.5 fill-warning text-warning" />
+          {p.rating ?? 4.7}
+          {p.sold !== undefined && <span className="ml-0.5">· {p.sold}</span>}
         </div>
         <button
           onClick={(e) => { e.preventDefault(); addToCart(p); }}
-          className="mt-1 flex items-center justify-center gap-1 rounded-full gradient-accent px-3 py-1.5 text-[11px] font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition"
+          className="mt-1 flex items-center justify-center gap-1 rounded-full bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground hover:bg-primary-glow transition"
         >
-          <ShoppingCart className="h-3 w-3" /> Add to cart
+          <ShoppingCart className="h-2.5 w-2.5" /> Add
         </button>
       </div>
     </Link>

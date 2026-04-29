@@ -1,95 +1,262 @@
 import { ArrowRight, Flame, Sparkles, Truck, Shield, Wallet, Zap } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
+import { SignInModal } from "@/components/SignInModal";
+import { useShop } from "@/store/shop";
 import { categories, products } from "@/data/products";
 
 const trending = products.slice(0, 4);
 const justListed = products.slice(4, 8);
 
-const heroCards = [
-  { tag: "MARKET", title: "Cheap Textbooks", sub: "From KES 200", grad: "gradient-card-1", img: categories[0].img, to: "/category/books" },
-  { tag: "HOSTELS", title: "Find a Room", sub: "Verified listings", grad: "gradient-card-2", img: categories[4].img, to: "/category/hostels" },
-  { tag: "FOOD", title: "Late Night Bites", sub: "30 min delivery", grad: "gradient-card-3", img: categories[3].img, to: "/category/food" },
+// Default ad slides (fallback if no admin ads)
+const defaultAdSlides = [
+  {
+    bg: "transparent",
+    badge: "STUDENT SPECIAL",
+    title: "MacBook Pro 13\"",
+    subtitle: "Perfect for Coding • KES 45K",
+    product: products[0], // MacBook
+  },
+  {
+    bg: "transparent",
+    badge: "TECH DEAL",
+    title: "Mini Fridge",
+    subtitle: "Perfect for Your Room • New",
+    product: products[5], // Mini Fridge with new image
+  },
+  {
+    bg: "transparent",
+    badge: "HOSTEL READY",
+    title: "Bedsitter Near Campus",
+    subtitle: "WiFi Included • KES 7,500/mo",
+    product: products[7], // Bedsitter
+  },
+  {
+    bg: "transparent",
+    badge: "FASHION DEAL",
+    title: "Nike Air Force 1",
+    subtitle: "Size 42 • Save KES 3,500",
+    product: products[3], // Sneakers
+  },
+  {
+    bg: "transparent",
+    badge: "QUICK BITE",
+    title: "Chips & Chicken",
+    subtitle: "Hot & Fresh • 30 Min Delivery",
+    product: products[6], // Chips & Chicken with new image
+  },
+  {
+    bg: "transparent",
+    badge: "PARTY READY",
+    title: "Bluetooth Woofer",
+    subtitle: "Powerful Bass • KES 6,500",
+    product: products[8], // Woofer
+  },
+  {
+    bg: "transparent",
+    badge: "EXAM READY",
+    title: "Casio Calculator",
+    subtitle: "KUCCPS Approved • Brand New",
+    product: products[2], // Calculator
+  },
+  {
+    bg: "transparent",
+    badge: "WINTER READY",
+    title: "Warm Winter Jacket",
+    subtitle: "Grade 1 • Size M-L",
+    product: products[4], // Jacket
+  },
+  {
+    bg: "transparent",
+    badge: "HOSTEL ESSENTIAL",
+    title: "Mini Fridge for Hostel",
+    subtitle: "Low Power • 1 Year Warranty",
+    product: products[5], // Mini Fridge
+  },
+  {
+    bg: "transparent",
+    badge: "SOUND SYSTEM",
+    title: "Bluetooth Woofer",
+    subtitle: "Perfect for Parties & Events",
+    product: products[8], // Woofer
+  },
 ];
+
+interface Advertisement {
+  id: string;
+  title: string;
+  description: string;
+  imageUrl: string;
+  link?: string;
+  active: boolean;
+  order: number;
+  createdAt: string;
+}
 
 const Index = () => {
   const navigate = useNavigate();
+  const { user } = useShop();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [adSlides, setAdSlides] = useState(defaultAdSlides);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+
+  // Show sign-in modal on first visit if not logged in
+  useEffect(() => {
+    if (!user) {
+      const hasSeenModal = sessionStorage.getItem('hasSeenSignInModal');
+      if (!hasSeenModal) {
+        // Show modal after a short delay
+        const timer = setTimeout(() => {
+          setShowSignInModal(true);
+          sessionStorage.setItem('hasSeenSignInModal', 'true');
+        }, 2000); // 2 seconds delay
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [user]);
+
+  // Load advertisements from localStorage
+  useEffect(() => {
+    const savedAds = localStorage.getItem('campusmart_ads');
+    if (savedAds) {
+      try {
+        const ads: Advertisement[] = JSON.parse(savedAds);
+        const activeAds = ads.filter(ad => ad.active).sort((a, b) => a.order - b.order);
+        
+        if (activeAds.length > 0) {
+          // Convert admin ads to slide format
+          const adminSlides = activeAds.map(ad => ({
+            bg: "transparent",
+            badge: "FEATURED",
+            title: ad.title,
+            subtitle: ad.description,
+            imageUrl: ad.imageUrl,
+            link: ad.link,
+            isAdminAd: true,
+          }));
+          setAdSlides(adminSlides);
+        }
+      } catch (error) {
+        console.error('Error loading advertisements:', error);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % adSlides.length);
+    }, 4000); // Change slide every 4 seconds
+    return () => clearInterval(interval);
+  }, []);
+
   return (
     <div className="min-h-screen bg-background pb-24">
-      <TopBar />
+      {/* Sign In Modal */}
+      <SignInModal 
+        isOpen={showSignInModal} 
+        onClose={() => setShowSignInModal(false)}
+        message="Welcome to CampusMart! Sign in to start shopping and selling."
+      />
 
-      {/* Promo strip */}
-      <div className="gradient-hero">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs text-primary-foreground">
-          <FlashCountdown />
-          <div className="hidden items-center gap-4 sm:flex">
-            <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Free campus delivery</span>
-            <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Buyer protection</span>
-            <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> M-PESA</span>
+      <div className="sticky top-0 z-30">
+        <TopBar />
+        {/* Promo strip */}
+        <div className="bg-destructive">
+          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs text-primary-foreground">
+            <FlashCountdown />
+            <div className="hidden items-center gap-4 sm:flex">
+              <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Free campus delivery</span>
+              <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Buyer protection</span>
+              <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> M-PESA</span>
+            </div>
           </div>
         </div>
       </div>
 
       <main className="mx-auto max-w-7xl px-4 py-5">
-        {/* Hero cards */}
-        <section className="grid grid-cols-3 gap-3 md:gap-4">
-          {heroCards.map((c) => (
-            <button
-              key={c.title}
-              onClick={() => navigate(c.to)}
-              className={`${c.grad} group relative overflow-hidden rounded-2xl p-4 text-left text-primary-foreground shadow-card transition hover:shadow-elevated md:p-6`}
-            >
-              <span className="inline-block rounded-full bg-background/15 px-2.5 py-0.5 text-[10px] font-bold tracking-wider backdrop-blur md:text-xs">
-                {c.tag}
-              </span>
-              <h2 className="mt-2 text-lg font-extrabold leading-tight md:mt-4 md:text-2xl">{c.title}</h2>
-              <p className="mt-0.5 hidden text-xs opacity-90 md:block">{c.sub}</p>
-              <div className="mt-3 inline-flex items-center gap-1 text-xs font-semibold opacity-90 group-hover:gap-2 transition-all md:text-sm">
-                Explore <ArrowRight className="h-3.5 w-3.5" />
-              </div>
-              <img
-                src={c.img}
-                alt=""
-                aria-hidden
-                loading="lazy"
-                className="pointer-events-none absolute -bottom-2 -right-2 h-20 w-20 rounded-xl object-cover opacity-60 mix-blend-luminosity md:h-28 md:w-28"
-              />
-            </button>
-          ))}
-        </section>
+        {/* Advertisement Carousel */}
+        <section className="relative overflow-hidden rounded-xl shadow-card h-[160px] md:h-[180px]">
+          {adSlides.map((slide, idx) => {
+            // Check if this is an admin ad or default ad
+            const isAdminAd = 'isAdminAd' in slide && slide.isAdminAd;
+            const imageUrl = isAdminAd ? slide.imageUrl : slide.product.image;
+            const slideTitle = slide.title;
+            const slideSubtitle = slide.subtitle;
+            
+            // Special handling for winter jacket and woofer in default ads
+            const isSpecialItem = !isAdminAd && slide.product && (
+              slide.product.title.includes("Winter Jacket") || slide.product.title.includes("Woofer")
+            );
+            const imageClass = isSpecialItem 
+              ? "absolute inset-0 h-full w-full object-contain p-4"
+              : "absolute inset-0 h-full w-full object-cover";
+            
+            const handleClick = () => {
+              if (isAdminAd && slide.link) {
+                navigate(slide.link);
+              } else {
+                navigate("/search");
+              }
+            };
+            
+            return (
+              <div
+                key={idx}
+                className={`absolute inset-0 transition-all duration-700 ease-in-out ${
+                  idx === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
+                }`}
+              >
+                <button
+                  onClick={handleClick}
+                  className="relative h-full w-full cursor-pointer hover:scale-[1.01] transition-transform overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
+                >
+                  {/* Product/Ad image - Dynamic sizing based on type */}
+                  <img
+                    src={imageUrl}
+                    alt={slideTitle}
+                    loading="lazy"
+                    className={imageClass}
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = '/src/assets/placeholder.svg';
+                    }}
+                  />
 
-        {/* Categories */}
-        <section className="mt-6">
-          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
-            <div className="flex gap-4 md:justify-between">
-              {categories.map((c) => (
-                <Link key={c.slug} to={`/category/${c.slug}`} className="group flex shrink-0 flex-col items-center gap-1.5">
-                  <div className="h-16 w-16 overflow-hidden rounded-2xl bg-card shadow-card ring-2 ring-transparent transition group-hover:ring-accent md:h-20 md:w-20">
-                    <img src={c.img} alt={c.name} loading="lazy" className="h-full w-full object-cover" />
+                  {/* Gradient overlay for text readability */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
+
+                  {/* Content - Overlaid on image */}
+                  <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-8">
+                    <span className="inline-block self-start rounded-full bg-white/95 backdrop-blur-sm px-3 py-1 text-[9px] font-bold tracking-wider text-gray-900 md:text-[10px] shadow-lg">
+                      {slide.badge}
+                    </span>
+                    <h2 className="mt-3 text-2xl md:text-4xl font-extrabold text-white leading-tight drop-shadow-2xl">
+                      {slideTitle}
+                    </h2>
+                    <p className="mt-1 text-sm md:text-base text-white font-semibold drop-shadow-lg">
+                      {slideSubtitle}
+                    </p>
                   </div>
-                  <span className="text-xs font-medium text-foreground">{c.name}</span>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Flash deals banner */}
-        <section className="mt-6 overflow-hidden rounded-2xl gradient-flash p-4 text-primary-foreground shadow-accent">
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <Zap className="h-5 w-5 fill-warning text-warning" />
-              <div>
-                <h2 className="text-base font-extrabold md:text-lg">Student Flash Deals</h2>
-                <p className="text-xs opacity-90">Mega discounts — only on CampusMart</p>
+                </button>
               </div>
-            </div>
-            <Link to="/search?q=sale" className="rounded-full bg-background/20 px-3 py-1.5 text-xs font-bold backdrop-blur hover:bg-background/30">
-              Shop now <ArrowRight className="ml-1 inline h-3 w-3" />
-            </Link>
+            );
+          })}
+          
+          {/* Slide indicators */}
+          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-20 pointer-events-none">
+            {adSlides.map((_, idx) => (
+              <div
+                key={idx}
+                className={`h-1.5 rounded-full transition-all ${
+                  idx === currentSlide 
+                    ? 'w-6 bg-white' 
+                    : 'w-1.5 bg-white/50'
+                }`}
+              />
+            ))}
           </div>
         </section>
 
@@ -101,42 +268,7 @@ const Index = () => {
           <ProductGrid items={justListed} />
         </Section>
 
-        {/* Sell CTA */}
-        <section className="mt-6 overflow-hidden rounded-2xl gradient-hero p-5 text-primary-foreground shadow-elevated md:p-8">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div className="max-w-md">
-              <span className="text-[10px] font-bold uppercase tracking-[0.2em] text-accent-glow">Sell on CampusMart</span>
-              <h2 className="mt-1 text-xl font-extrabold md:text-3xl">Turn clutter into cash</h2>
-              <p className="mt-1 text-sm opacity-90">List your books, electronics, mitumba or empty bedsitter — free, in 60 seconds. M-PESA payouts.</p>
-            </div>
-            <Link to="/sell" className="rounded-full gradient-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent transition hover:scale-105">
-              Start Selling
-            </Link>
-          </div>
-        </section>
 
-        <section className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-          {[
-            { icon: Shield, t: "Verified Students", s: "School ID required" },
-            { icon: Wallet, t: "M-PESA Escrow", s: "Pay after delivery" },
-            { icon: Truck, t: "Boda Delivery", s: "Within 1 hour" },
-            { icon: Sparkles, t: "Campus Reviews", s: "Real student ratings" },
-          ].map((x) => (
-            <div key={x.t} className="flex items-center gap-3 rounded-xl bg-card p-3 shadow-card">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-primary">
-                <x.icon className="h-5 w-5" />
-              </div>
-              <div>
-                <div className="text-sm font-bold text-foreground">{x.t}</div>
-                <div className="text-xs text-muted-foreground">{x.s}</div>
-              </div>
-            </div>
-          ))}
-        </section>
-
-        <footer className="mt-10 border-t border-border pt-6 pb-4 text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} CampusMart Kenya · Built by students, for students 🇰🇪
-        </footer>
       </main>
 
       <BottomNav />
@@ -163,10 +295,14 @@ const Section = ({ icon, title, subtitle, link, linkTo, children }: { icon: Reac
 );
 
 const ProductGrid = ({ items }: { items: typeof products }) => (
-  <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-    {items.map((p) => (
-      <ProductCard key={p.id} p={p} />
-    ))}
+  <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
+    <div className="flex gap-3">
+      {items.map((p) => (
+        <div key={p.id} className="w-[140px] shrink-0 md:w-[160px]">
+          <ProductCard p={p} />
+        </div>
+      ))}
+    </div>
   </div>
 );
 

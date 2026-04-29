@@ -2,19 +2,29 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useState, t
 import { toast } from "sonner";
 import type { Product } from "@/components/ProductCard";
 
-type CartItem = { product: Product; qty: number };
+type CartItem = { 
+  product: Product & { 
+    seller?: {
+      name: string;
+      email: string;
+      phone: string;
+      campus: string;
+    };
+  }; 
+  qty: number 
+};
 
 interface ShopState {
   cart: CartItem[];
   favorites: string[];
-  user: { name: string; email: string } | null;
+  user: { name: string; email: string; phone?: string; picture?: string; campus?: string } | null;
   addToCart: (p: Product, qty?: number) => void;
   removeFromCart: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clearCart: () => void;
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
-  signIn: (name: string, email: string) => void;
+  signIn: (name: string, email: string, phone?: string, picture?: string, campus?: string) => void;
   signOut: () => void;
   cartCount: number;
   cartTotal: number;
@@ -69,8 +79,8 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
 
   const isFavorite = useCallback((id: string) => favorites.includes(id), [favorites]);
 
-  const signIn = useCallback((name: string, email: string) => {
-    setUser({ name, email });
+  const signIn = useCallback((name: string, email: string, phone?: string, picture?: string, campus?: string) => {
+    setUser({ name, email, phone, picture, campus });
     toast.success(`Karibu, ${name}!`);
   }, []);
 

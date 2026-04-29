@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* CampusMart palette — navy primary from logo + red accent */
+    /* CampusMart palette — navy primary from logo + green accent */
     --background: 210 40% 98%;
     --foreground: 222 60% 12%;
 
@@ -25,9 +25,10 @@
     --muted: 215 25% 95%;
     --muted-foreground: 222 15% 42%;
 
-    --accent: 0 78% 52%;
+    /* Green from logo */
+    --accent: 88 50% 53%;
     --accent-foreground: 0 0% 100%;
-    --accent-glow: 12 90% 58%;
+    --accent-glow: 88 60% 63%;
 
     --success: 142 65% 38%;
     --success-foreground: 0 0% 100%;
@@ -46,16 +47,16 @@
 
     /* Gradients */
     --gradient-hero: linear-gradient(135deg, hsl(222 70% 14%), hsl(222 70% 26%));
-    --gradient-accent: linear-gradient(135deg, hsl(0 78% 52%), hsl(12 90% 58%));
-    --gradient-flash: linear-gradient(90deg, hsl(0 78% 52%), hsl(38 95% 52%));
+    --gradient-accent: linear-gradient(135deg, hsl(88 50% 53%), hsl(88 60% 63%));
+    --gradient-flash: linear-gradient(90deg, hsl(88 50% 53%), hsl(45 95% 52%));
     --gradient-card-1: linear-gradient(135deg, hsl(222 70% 22%), hsl(222 70% 32%));
-    --gradient-card-2: linear-gradient(135deg, hsl(150 55% 28%), hsl(150 55% 38%));
-    --gradient-card-3: linear-gradient(135deg, hsl(0 70% 45%), hsl(12 80% 55%));
+    --gradient-card-2: linear-gradient(135deg, hsl(88 45% 38%), hsl(88 55% 48%));
+    --gradient-card-3: linear-gradient(135deg, hsl(45 80% 55%), hsl(45 90% 65%));
 
     /* Shadows */
     --shadow-card: 0 2px 8px -2px hsl(222 60% 12% / 0.08);
     --shadow-elevated: 0 8px 24px -8px hsl(222 60% 12% / 0.18);
-    --shadow-accent: 0 8px 24px -8px hsl(0 78% 52% / 0.4);
+    --shadow-accent: 0 8px 24px -8px hsl(88 50% 53% / 0.4);
 
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
@@ -80,7 +81,7 @@
     --secondary-foreground: 210 40% 98%;
     --muted: 222 40% 14%;
     --muted-foreground: 215 20% 70%;
-    --accent: 0 78% 55%;
+    --accent: 88 50% 55%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 78% 55%;
     --destructive-foreground: 0 0% 100%;

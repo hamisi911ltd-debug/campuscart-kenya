@@ -1,11 +1,22 @@
 import { Link, useNavigate } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
+import { SignInModal } from "@/components/SignInModal";
 import { Minus, Plus, ShoppingBag, Trash2 } from "lucide-react";
+import { useState } from "react";
 
 const CartPage = () => {
-  const { cart, setQty, removeFromCart, cartTotal, clearCart } = useShop();
+  const { cart, setQty, removeFromCart, cartTotal, clearCart, user } = useShop();
   const navigate = useNavigate();
+  const [showSignInModal, setShowSignInModal] = useState(false);
+
+  const handleCheckout = () => {
+    if (!user) {
+      setShowSignInModal(true);
+    } else {
+      navigate("/checkout");
+    }
+  };
 
   if (cart.length === 0) {
     return (
@@ -23,6 +34,13 @@ const CartPage = () => {
 
   return (
     <PageShell title="Your Cart">
+      {/* Sign In Modal */}
+      <SignInModal 
+        isOpen={showSignInModal} 
+        onClose={() => setShowSignInModal(false)}
+        message="Sign in to proceed with checkout and place your order."
+      />
+      
       <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
         <ul className="space-y-3">
           {cart.map(({ product, qty }) => (
@@ -57,11 +75,11 @@ const CartPage = () => {
           <h2 className="text-lg font-extrabold">Order Summary</h2>
           <div className="mt-3 space-y-2 text-sm">
             <div className="flex justify-between"><span>Subtotal</span><span className="font-bold">KES {cartTotal.toLocaleString()}</span></div>
-            <div className="flex justify-between text-muted-foreground"><span>Boda delivery</span><span>KES 100</span></div>
+            <div className="flex justify-between text-muted-foreground"><span>Delivery</span><span>KES 100</span></div>
             <div className="mt-2 flex justify-between border-t border-border pt-2 text-base font-extrabold"><span>Total</span><span className="text-accent">KES {(cartTotal + 100).toLocaleString()}</span></div>
           </div>
-          <button onClick={() => navigate("/checkout")} className="mt-4 w-full rounded-full gradient-accent py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition">
-            Checkout with M-PESA
+          <button onClick={handleCheckout} className="mt-4 w-full rounded-full gradient-accent py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition">
+            Checkout
           </button>
           <button onClick={clearCart} className="mt-2 w-full rounded-full bg-muted py-2 text-xs font-medium text-muted-foreground hover:bg-secondary">
             Clear cart
