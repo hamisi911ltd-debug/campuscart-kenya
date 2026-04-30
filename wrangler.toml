@@ -3,6 +3,7 @@
 name = "campusmart-upload"
 main = "workers/upload.ts"
 compatibility_date = "2026-04-29"
+pages_build_output_dir = "dist"
 
 # R2 Bucket binding
 [[r2_buckets]]

@@ -9,35 +9,6 @@ import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
 import { categories, getProducts } from "@/data/products";
 
-const Index = () => {
-  const navigate = useNavigate();
-  const { user } = useShop();
-  const [currentSlide, setCurrentSlide] = useState(0);
-  const [products, setProducts] = useState(getProducts());
-  const [adSlides, setAdSlides] = useState<any[]>([]);
-  const [showSignInModal, setShowSignInModal] = useState(false);
-
-  // Refresh products on mount and when returning to page
-  useEffect(() => {
-    const refreshProductList = () => {
-      setProducts(getProducts());
-    };
-    
-    refreshProductList();
-    
-    // Listen for storage changes (when products are added)
-    window.addEventListener('storage', refreshProductList);
-    window.addEventListener('focus', refreshProductList);
-    
-    return () => {
-      window.removeEventListener('storage', refreshProductList);
-      window.removeEventListener('focus', refreshProductList);
-    };
-  }, []);
-
-  const trending = products.slice(0, 4);
-  const justListed = products.slice(4, 8);
-
 // Default ad slides - Match images with descriptions
 const getDefaultAdSlides = (products: any[]) => [
   {
@@ -120,13 +91,32 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useShop();
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [products, setProducts] = useState(getProducts());
   const [adSlides, setAdSlides] = useState(getDefaultAdSlides(products));
   const [showSignInModal, setShowSignInModal] = useState(false);
 
-  // Update ad slides when products change
+  const trending = products.slice(0, 4);
+  const justListed = products.slice(4, 8);
+
+  // Refresh products on mount and when returning to page
   useEffect(() => {
-    setAdSlides(getDefaultAdSlides(products));
-  }, [products]);
+    const refreshProductList = () => {
+      const refreshedProducts = getProducts();
+      setProducts(refreshedProducts);
+      setAdSlides(getDefaultAdSlides(refreshedProducts));
+    };
+    
+    refreshProductList();
+    
+    // Listen for storage changes (when products are added)
+    window.addEventListener('storage', refreshProductList);
+    window.addEventListener('focus', refreshProductList);
+    
+    return () => {
+      window.removeEventListener('storage', refreshProductList);
+      window.removeEventListener('focus', refreshProductList);
+    };
+  }, []);
 
   // Show sign-in modal on first visit if not logged in
   useEffect(() => {
@@ -175,7 +165,7 @@ const Index = () => {
       setCurrentSlide((prev) => (prev + 1) % adSlides.length);
     }, 4000); // Change slide every 4 seconds
     return () => clearInterval(interval);
-  }, []);
+  }, [adSlides.length]);
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -207,7 +197,7 @@ const Index = () => {
           {adSlides.map((slide, idx) => {
             // Check if this is an admin ad or default ad
             const isAdminAd = 'isAdminAd' in slide && slide.isAdminAd;
-            const imageUrl = isAdminAd ? slide.imageUrl : slide.product.image;
+            const imageUrl = isAdminAd ? slide.imageUrl : slide.product?.image;
             const slideTitle = slide.title;
             const slideSubtitle = slide.subtitle;
             
@@ -239,15 +229,17 @@ const Index = () => {
                   className="relative h-full w-full cursor-pointer hover:scale-[1.01] transition-transform overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
                 >
                   {/* Product/Ad image - Dynamic sizing based on type */}
-                  <img
-                    src={imageUrl}
-                    alt={slideTitle}
-                    loading="lazy"
-                    className={imageClass}
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = '/src/assets/placeholder.svg';
-                    }}
-                  />
+                  {imageUrl && (
+                    <img
+                      src={imageUrl}
+                      alt={slideTitle}
+                      loading="lazy"
+                      className={imageClass}
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/src/assets/placeholder.svg';
+                      }}
+                    />
+                  )}
 
                   {/* Gradient overlay for text readability */}
                   <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
@@ -291,8 +283,6 @@ const Index = () => {
         <Section icon={<Sparkles className="h-5 w-5 text-accent" />} title="Just Listed" subtitle="Fresh from your fellow students" link="See More" linkTo="/search">
           <ProductGrid items={justListed} />
         </Section>
-
-
       </main>
 
       <BottomNav />
@@ -318,7 +308,7 @@ const Section = ({ icon, title, subtitle, link, linkTo, children }: { icon: Reac
   </section>
 );
 
-const ProductGrid = ({ items }: { items: typeof products }) => (
+const ProductGrid = ({ items }: { items: any[] }) => (
   <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
     <div className="flex gap-3">
       {items.map((p) => (
