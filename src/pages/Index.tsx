@@ -12,7 +12,7 @@ import { categories, products } from "@/data/products";
 const trending = products.slice(0, 4);
 const justListed = products.slice(4, 8);
 
-// Default ad slides (fallback if no admin ads)
+// Default ad slides - Match images with descriptions
 const defaultAdSlides = [
   {
     bg: "transparent",
@@ -23,17 +23,17 @@ const defaultAdSlides = [
   },
   {
     bg: "transparent",
-    badge: "TECH DEAL",
-    title: "Mini Fridge",
-    subtitle: "Perfect for Your Room • New",
-    product: products[5], // Mini Fridge with new image
+    badge: "EXAM READY",
+    title: "Introduction to Algorithms",
+    subtitle: "CLRS 4th Ed • Save 50%",
+    product: products[1], // Algorithms book
   },
   {
     bg: "transparent",
-    badge: "HOSTEL READY",
-    title: "Bedsitter Near Campus",
-    subtitle: "WiFi Included • KES 7,500/mo",
-    product: products[7], // Bedsitter
+    badge: "TECH ESSENTIAL",
+    title: "Casio Calculator",
+    subtitle: "KUCCPS Approved • Brand New",
+    product: products[2], // Calculator
   },
   {
     bg: "transparent",
@@ -41,27 +41,6 @@ const defaultAdSlides = [
     title: "Nike Air Force 1",
     subtitle: "Size 42 • Save KES 3,500",
     product: products[3], // Sneakers
-  },
-  {
-    bg: "transparent",
-    badge: "QUICK BITE",
-    title: "Chips & Chicken",
-    subtitle: "Hot & Fresh • 30 Min Delivery",
-    product: products[6], // Chips & Chicken with new image
-  },
-  {
-    bg: "transparent",
-    badge: "PARTY READY",
-    title: "Bluetooth Woofer",
-    subtitle: "Powerful Bass • KES 6,500",
-    product: products[8], // Woofer
-  },
-  {
-    bg: "transparent",
-    badge: "EXAM READY",
-    title: "Casio Calculator",
-    subtitle: "KUCCPS Approved • Brand New",
-    product: products[2], // Calculator
   },
   {
     bg: "transparent",
@@ -73,15 +52,29 @@ const defaultAdSlides = [
   {
     bg: "transparent",
     badge: "HOSTEL ESSENTIAL",
-    title: "Mini Fridge for Hostel",
+    title: "Mini Fridge",
     subtitle: "Low Power • 1 Year Warranty",
     product: products[5], // Mini Fridge
   },
   {
     bg: "transparent",
-    badge: "SOUND SYSTEM",
+    badge: "QUICK BITE",
+    title: "Chips & Chicken",
+    subtitle: "Hot & Fresh • 30 Min Delivery",
+    product: products[6], // Chips & Chicken
+  },
+  {
+    bg: "transparent",
+    badge: "HOSTEL READY",
+    title: "Bedsitter Near Campus",
+    subtitle: "WiFi Included • KES 7,500/mo",
+    product: products[7], // Bedsitter
+  },
+  {
+    bg: "transparent",
+    badge: "PARTY READY",
     title: "Bluetooth Woofer",
-    subtitle: "Perfect for Parties & Events",
+    subtitle: "Powerful Bass • KES 6,500",
     product: products[8], // Woofer
   },
 ];
