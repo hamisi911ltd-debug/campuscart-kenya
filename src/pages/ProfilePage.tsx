@@ -119,22 +119,6 @@ const ProfilePage = () => {
             </div>
           </Link>
         ))}
-        
-        {/* Install App Option */}
-        {installItem && (
-          <button
-            onClick={installItem.action}
-            className="flex items-center gap-3 rounded-xl bg-gradient-to-r from-accent to-green-600 p-4 shadow-card hover:shadow-elevated transition text-white"
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
-              <installItem.i className="h-5 w-5" />
-            </div>
-            <div className="text-left">
-              <div className="text-sm font-bold">{installItem.t}</div>
-              <div className="text-xs opacity-90">{installItem.s}</div>
-            </div>
-          </button>
-        )}
       </div>
 
       {/* Settings Button */}
@@ -150,6 +134,20 @@ const ProfilePage = () => {
           <div className="text-xs text-muted-foreground">Preferences & notifications</div>
         </div>
       </Link>
+
+      {/* Install App Button - Below Settings, Blue Color */}
+      <button
+        onClick={handleInstallApp}
+        className="mt-4 flex items-center gap-3 rounded-xl bg-gradient-to-r from-blue-600 to-blue-700 p-4 shadow-card hover:shadow-elevated transition text-white w-full"
+      >
+        <div className="flex h-10 w-10 items-center justify-center rounded-full bg-white/20">
+          <Download className="h-5 w-5" />
+        </div>
+        <div className="text-left">
+          <div className="text-sm font-bold">Install App</div>
+          <div className="text-xs opacity-90">Quick access from home screen</div>
+        </div>
+      </button>
 
       <button
         onClick={() => { signOut(); navigate("/"); }}

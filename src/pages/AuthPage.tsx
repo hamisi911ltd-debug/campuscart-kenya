@@ -67,6 +67,9 @@ const AuthPage = () => {
       const finalName = name || email.split("@")[0] || "Student";
       signIn(finalName, email, phone);
       
+      // Set flag to trigger notifications
+      sessionStorage.setItem('campusmart_just_logged_in', 'true');
+      
       toast.success(`Account ${mode === 'signup' ? 'created' : 'signed in'} successfully!`);
       navigate("/profile");
     } catch (error) {

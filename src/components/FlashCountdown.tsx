@@ -2,8 +2,20 @@ import { useEffect, useState } from "react";
 import { Zap } from "lucide-react";
 
 const target = () => {
+  const now = new Date();
+  const hours = now.getHours();
   const t = new Date();
-  t.setHours(23, 59, 59, 0);
+  
+  // Reset every 2 hours (0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22)
+  const nextResetHour = Math.ceil(hours / 2) * 2;
+  t.setHours(nextResetHour, 0, 0, 0);
+  
+  // If we're past 22:00, reset to midnight
+  if (nextResetHour >= 24) {
+    t.setDate(t.getDate() + 1);
+    t.setHours(0, 0, 0, 0);
+  }
+  
   return t;
 };
 

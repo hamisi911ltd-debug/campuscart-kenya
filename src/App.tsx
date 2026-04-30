@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ShopProvider } from "@/store/shop";
 import InstallPrompt from "@/components/InstallPrompt";
+import { OfferNotifications } from "@/components/OfferNotifications";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import CategoryPage from "./pages/CategoryPage";
@@ -37,6 +38,7 @@ const App = () => (
       <InstallPrompt />
       <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
         <ShopProvider>
+          <OfferNotifications />
           <Routes>
             <Route path="/" element={<Index />} />
             <Route path="/category/:slug" element={<CategoryPage />} />
