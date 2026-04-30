@@ -5,6 +5,7 @@ import { Camera, X, MapPin, Loader2 } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
+import { uploadImages, validateImage } from "@/lib/uploadImage";
 
 const categories = [
   { slug: "electronics", name: "Market (Electronics, Books, etc.)" },
@@ -28,6 +29,7 @@ const SellPage = () => {
   
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoUrls, setPhotoUrls] = useState<string[]>([]);
+  const [uploading, setUploading] = useState(false);
   const [locationLoading, setLocationLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [locationError, setLocationError] = useState<string>("");
@@ -37,19 +39,38 @@ const SellPage = () => {
     ? Math.round((1 - parseFloat(form.currentPrice) / parseFloat(form.originalPrice)) * 100)
     : 0;
 
-  const handlePhotoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
     if (photos.length + files.length > 3) {
       toast.error("Maximum 3 photos allowed");
       return;
     }
 
-    const newPhotos = [...photos, ...files];
-    setPhotos(newPhotos);
+    // Validate each file
+    for (const file of files) {
+      const validation = validateImage(file);
+      if (!validation.valid) {
+        toast.error(validation.error || "Invalid image");
+        return;
+      }
+    }
 
-    // Create preview URLs
-    const newUrls = files.map(file => URL.createObjectURL(file));
-    setPhotoUrls([...photoUrls, ...newUrls]);
+    setUploading(true);
+
+    try {
+      // Upload to R2 (or base64 in dev)
+      const uploadedUrls = await uploadImages(files);
+      
+      setPhotos([...photos, ...files]);
+      setPhotoUrls([...photoUrls, ...uploadedUrls]);
+      
+      toast.success(`${files.length} photo(s) uploaded successfully!`);
+    } catch (error) {
+      console.error('Upload error:', error);
+      toast.error("Failed to upload photos. Please try again.");
+    } finally {
+      setUploading(false);
+    }
   };
 
   const removePhoto = (index: number) => {
@@ -161,10 +182,20 @@ const SellPage = () => {
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
-                className="aspect-square flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted hover:bg-secondary transition"
+                disabled={uploading}
+                className="aspect-square flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-border bg-muted hover:bg-secondary transition disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                <Camera className="h-6 w-6 text-muted-foreground mb-1" />
-                <span className="text-xs text-muted-foreground">Add Photo</span>
+                {uploading ? (
+                  <>
+                    <Loader2 className="h-6 w-6 text-muted-foreground mb-1 animate-spin" />
+                    <span className="text-xs text-muted-foreground">Uploading...</span>
+                  </>
+                ) : (
+                  <>
+                    <Camera className="h-6 w-6 text-muted-foreground mb-1" />
+                    <span className="text-xs text-muted-foreground">Add Photo</span>
+                  </>
+                )}
               </button>
             )}
           </div>

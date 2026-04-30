@@ -1,48 +1,47 @@
 // Image upload utility for Cloudflare R2
 export const uploadImage = async (file: File): Promise<string> => {
-  // For now, convert to base64 for localStorage
-  // Replace this with actual R2 upload in production
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    
-    reader.onloadend = () => {
-      resolve(reader.result as string);
-    };
-    
-    reader.onerror = () => {
-      reject(new Error('Failed to read file'));
-    };
-    
-    reader.readAsDataURL(file);
-  });
-};
-
-// Production version - uncomment when R2 is set up
-/*
-export const uploadImage = async (file: File): Promise<string> => {
-  const API_URL = import.meta.env.VITE_API_URL || '/api';
+  // Check if we're in production (has API endpoint)
+  const isProduction = window.location.hostname !== 'localhost';
   
-  const formData = new FormData();
-  formData.append('file', file);
+  if (isProduction) {
+    // Production: Upload to R2
+    const formData = new FormData();
+    formData.append('image', file);
 
-  try {
-    const response = await fetch(`${API_URL}/upload`, {
-      method: 'POST',
-      body: formData,
-    });
+    try {
+      const response = await fetch('/api/upload-image', {
+        method: 'POST',
+        body: formData,
+      });
 
-    if (!response.ok) {
-      throw new Error(`Upload failed: ${response.statusText}`);
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
+
+      const data = await response.json();
+      return data.url; // Returns "/api/images/products/1234-photo.jpg"
+    } catch (error) {
+      console.error('R2 upload error:', error);
+      throw error;
     }
-
-    const data = await response.json();
-    return data.url; // R2 public URL
-  } catch (error) {
-    console.error('Upload error:', error);
-    throw error;
+  } else {
+    // Development: Use base64 for localStorage
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onloadend = () => {
+        resolve(reader.result as string);
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'));
+      };
+      
+      reader.readAsDataURL(file);
+    });
   }
 };
-*/
 
 // Upload multiple images
 export const uploadImages = async (files: File[]): Promise<string[]> => {
