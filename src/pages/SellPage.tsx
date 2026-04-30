@@ -152,7 +152,6 @@ const SellPage = () => {
       }
 
       const result = await response.json();
-      console.log('Product saved to database:', result);
       
       toast.success("Listing submitted!", { 
         description: "Your item is now live on the marketplace." 
