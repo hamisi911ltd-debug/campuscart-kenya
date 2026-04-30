@@ -273,38 +273,24 @@ const staticProducts: ProductWithCategory[] = [
   },
 ];
 
-// Function to get all products including custom ones from localStorage or API
+// Function to get all products including custom ones from database API
 export const getProducts = async (): Promise<ProductWithCategory[]> => {
   if (typeof window === "undefined") return staticProducts;
   
-  const isProduction = window.location.hostname !== 'localhost';
-  
-  if (isProduction) {
-    // Production: Fetch from D1 database via API
-    try {
-      const response = await fetch('/api/products');
-      if (response.ok) {
-        const dbProducts = await response.json();
-        // Combine database products with static products
-        return [...dbProducts, ...staticProducts];
-      }
-    } catch (error) {
-      console.error('Error fetching products from API:', error);
-    }
-  }
-  
-  // Development: Use localStorage
+  // ALWAYS fetch from D1 database via API (both production and development)
   try {
-    const custom = localStorage.getItem("campusmart_products");
-    if (!custom) return staticProducts;
-    
-    const parsedCustom = JSON.parse(custom) as ProductWithCategory[];
-    // Custom products first (newest), then static products
-    return [...parsedCustom, ...staticProducts];
-  } catch (e) {
-    console.error("Error loading custom products:", e);
-    return staticProducts;
+    const response = await fetch('/api/products');
+    if (response.ok) {
+      const dbProducts = await response.json();
+      // Combine database products with static products
+      return [...dbProducts, ...staticProducts];
+    }
+  } catch (error) {
+    console.error('Error fetching products from API:', error);
   }
+  
+  // Fallback to static products if API fails
+  return staticProducts;
 };
 
 // Synchronous version for initial load (returns static products immediately)

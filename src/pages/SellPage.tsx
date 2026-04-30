@@ -106,64 +106,53 @@ const SellPage = () => {
       navigate('/auth');
       return;
     }
+    
+    // Check if user is logged in with database account (has ID)
+    if (!user.id) {
+      toast.error("Please sign in again", {
+        description: "Your session expired. Please log in to continue."
+      });
+      navigate('/auth');
+      return;
+    }
 
-    // Create new product object
-    const newProduct = {
-      id: `custom-${Date.now()}`,
-      seller_id: user.id || user.email, // Use database user ID or email as fallback
-      title: form.title,
-      price: parseFloat(form.currentPrice),
-      oldPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,
-      image_url: photoUrls[0], // Main image from R2
-      image: photoUrls[0], // Fallback
-      images: photoUrls, // All images from R2
-      campus: user.campus || "Main Campus",
-      badge: "NEW" as const,
-      rating: 5.0,
-      sold: 0,
-      category: form.category,
-      description: form.description,
-      location: form.location ? `${form.location.lat},${form.location.lng}` : '',
-      latitude: form.location?.lat,
-      longitude: form.location?.lng,
-      quantity_available: 1,
-      seller: {
-        name: user.name,
-        email: user.email,
-        phone: user.phone || 'Not provided',
-        campus: user.campus || "Main Campus"
-      },
-      createdAt: new Date().toISOString()
-    };
-
-    // Save to database (production) or localStorage (development)
+    // Save to database (ALWAYS - both production and development)
     try {
-      const isProduction = window.location.hostname !== 'localhost';
-      
-      if (isProduction) {
-        // Production: Save to D1 database via API
-        const response = await fetch('/api/products', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(newProduct),
-        });
-
-        if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.message || 'Failed to save product');
-        }
-
-        const result = await response.json();
-        console.log('Product saved to database:', result);
-      } else {
-        // Development: Save to localStorage
-        const existing = JSON.parse(localStorage.getItem("campusmart_products") || "[]");
-        existing.unshift(newProduct);
-        localStorage.setItem("campusmart_products", JSON.stringify(existing));
-        
-        // Trigger storage event for other tabs/windows
-        window.dispatchEvent(new Event('storage'));
+      // Check if user has a database ID (from login/register)
+      if (!user.id) {
+        toast.error("Please sign in again to post products");
+        navigate('/auth');
+        return;
       }
+      
+      // Prepare product data for API (matches database schema)
+      const productData = {
+        seller_id: user.id, // Must be a valid user ID from database
+        title: form.title,
+        description: form.description || '',
+        category: form.category,
+        price: parseFloat(form.currentPrice),
+        image_url: photoUrls[0] || null, // Main image from R2
+        images: photoUrls.length > 0 ? JSON.stringify(photoUrls) : null, // All images as JSON string
+        quantity_available: 1,
+        location: form.location ? `${form.location.lat},${form.location.lng}` : null,
+        latitude: form.location?.lat || null,
+        longitude: form.location?.lng || null,
+      };
+      
+      const response = await fetch('/api/products', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(productData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to save product');
+      }
+
+      const result = await response.json();
+      console.log('Product saved to database:', result);
       
       toast.success("Listing submitted!", { 
         description: "Your item is now live on the marketplace." 
