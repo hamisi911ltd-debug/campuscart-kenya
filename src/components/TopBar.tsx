@@ -12,6 +12,9 @@ export const TopBar = () => {
   const [q, setQ] = useState("");
   const [campus, setCampus] = useState(campuses[0]);
   const [openCampus, setOpenCampus] = useState(false);
+  
+  // Mock notification count - in real app, fetch from API
+  const notificationCount = 3; // You can replace this with actual notification count from your store/API
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -60,13 +63,18 @@ export const TopBar = () => {
             Search
           </button>
         </form>
-        <Link to="/notifications" className="ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Notifications">
+        <Link to="/notifications" className="relative ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Notifications">
           <Bell className="h-4 w-4" />
+          {notificationCount > 0 && (
+            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
+              {notificationCount}
+            </span>
+          )}
         </Link>
         <Link to="/cart" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Cart">
           <ShoppingCart className="h-4 w-4" />
           {cartCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full gradient-accent px-1 text-[9px] font-bold text-accent-foreground">
+            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
               {cartCount}
             </span>
           )}
