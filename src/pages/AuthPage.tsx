@@ -61,19 +61,50 @@ const AuthPage = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call - replace with real authentication API
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      const isProduction = window.location.hostname !== 'localhost';
       
-      const finalName = name || email.split("@")[0] || "Student";
-      signIn(finalName, email, phone);
+      if (isProduction) {
+        // Production: Use D1 database API
+        const endpoint = mode === 'signup' ? '/api/auth/register' : '/api/auth/login';
+        const payload = mode === 'signup' 
+          ? { email, password, full_name: name, phone_number: phone }
+          : { email, password };
+        
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Authentication failed');
+        }
+
+        // Sign in with user data from database
+        signIn(
+          data.user.full_name, 
+          data.user.email, 
+          data.user.phone_number,
+          data.user.profile_image_url,
+          data.user.location,
+          data.user.id  // Pass user ID
+        );
+      } else {
+        // Development: Use localStorage (no API)
+        const finalName = name || email.split("@")[0] || "Student";
+        signIn(finalName, email, phone);
+      }
       
       // Set flag to trigger notifications
       sessionStorage.setItem('campusmart_just_logged_in', 'true');
       
       toast.success(`Account ${mode === 'signup' ? 'created' : 'signed in'} successfully!`);
       navigate("/profile");
-    } catch (error) {
-      toast.error('Authentication failed. Please try again.');
+    } catch (error: any) {
+      console.error('Authentication error:', error);
+      toast.error(error.message || 'Authentication failed. Please try again.');
     } finally {
       setIsLoading(false);
     }

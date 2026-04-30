@@ -17,14 +17,14 @@ type CartItem = {
 interface ShopState {
   cart: CartItem[];
   favorites: string[];
-  user: { name: string; email: string; phone?: string; picture?: string; campus?: string } | null;
+  user: { id?: string; name: string; email: string; phone?: string; picture?: string; campus?: string } | null;
   addToCart: (p: Product, qty?: number) => void;
   removeFromCart: (id: string) => void;
   setQty: (id: string, qty: number) => void;
   clearCart: () => void;
   toggleFavorite: (id: string) => void;
   isFavorite: (id: string) => boolean;
-  signIn: (name: string, email: string, phone?: string, picture?: string, campus?: string) => void;
+  signIn: (name: string, email: string, phone?: string, picture?: string, campus?: string, id?: string) => void;
   signOut: () => void;
   cartCount: number;
   cartTotal: number;
@@ -79,8 +79,8 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
 
   const isFavorite = useCallback((id: string) => favorites.includes(id), [favorites]);
 
-  const signIn = useCallback((name: string, email: string, phone?: string, picture?: string, campus?: string) => {
-    setUser({ name, email, phone, picture, campus });
+  const signIn = useCallback((name: string, email: string, phone?: string, picture?: string, campus?: string, id?: string) => {
+    setUser({ id, name, email, phone, picture, campus });
     toast.success(`Karibu, ${name}!`);
   }, []);
 

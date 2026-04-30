@@ -110,7 +110,7 @@ const SellPage = () => {
     // Create new product object
     const newProduct = {
       id: `custom-${Date.now()}`,
-      seller_id: user.email, // Use email as seller_id for now
+      seller_id: user.id || user.email, // Use database user ID or email as fallback
       title: form.title,
       price: parseFloat(form.currentPrice),
       oldPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,

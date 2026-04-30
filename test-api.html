@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusMart API Tester</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1e3a8a;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    button {
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #1e3a8a;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    .error {
+      border-left-color: #dc2626;
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    .success {
+      border-left-color: #16a34a;
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    .section {
+      margin: 30px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+    }
+    .section h2 {
+      margin-top: 0;
+      color: #1e3a8a;
+      font-size: 18px;
+    }
+    input[type="file"] {
+      margin: 10px 0;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 600;
+      color: #333;
+    }
+    input[type="text"], input[type="number"], textarea {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+    textarea {
+      min-height: 80px;
+      font-family: inherit;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 CampusMart API Tester</h1>
+    <p class="subtitle">Test your production API endpoints to verify everything is working</p>
+
+    <!-- Test 1: Get Products -->
+    <div class="section">
+      <h2>1. Get All Products</h2>
+      <p>Fetches all products from the D1 database</p>
+      <button onclick="testGetProducts()">Test GET /api/products</button>
+      <div id="result-get" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Test 2: Create Product -->
+    <div class="section">
+      <h2>2. Create New Product</h2>
+      <p>Posts a test product to the database</p>
+      
+      <label>Title:</label>
+      <input type="text" id="product-title" value="Test Product - MacBook Pro" />
+      
+      <label>Description:</label>
+      <textarea id="product-description">This is a test product to verify the API is working correctly.</textarea>
+      
+      <label>Category:</label>
+      <input type="text" id="product-category" value="electronics" />
+      
+      <label>Price (KES):</label>
+      <input type="number" id="product-price" value="45000" />
+      
+      <label>Seller ID (email):</label>
+      <input type="text" id="product-seller" value="test@student.uon.ac.ke" />
+      
+      <button onclick="testCreateProduct()">Test POST /api/products</button>
+      <div id="result-post" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Test 3: Upload Image -->
+    <div class="section">
+      <h2>3. Upload Image to R2</h2>
+      <p>Uploads an image to Cloudflare R2 storage</p>
+      
+      <label>Select Image:</label>
+      <input type="file" id="image-file" accept="image/*" />
+      
+      <button onclick="testUploadImage()">Test POST /api/upload-image</button>
+      <div id="result-upload" class="result" style="display:none;"></div>
+    </div>
+
+    <!-- Test 4: Database Schema Check -->
+    <div class="section">
+      <h2>4. Check Database Schema</h2>
+      <p>Verifies that the products table exists by attempting to fetch products</p>
+      <button onclick="testDatabaseSchema()">Test Database Connection</button>
+      <div id="result-schema" class="result" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const API_BASE = window.location.hostname === 'localhost' 
+      ? 'http://localhost:8080' 
+      : window.location.origin;
+
+    function showResult(elementId, content, isError = false) {
+      const el = document.getElementById(elementId);
+      el.style.display = 'block';
+      el.className = 'result ' + (isError ? 'error' : 'success');
+      el.textContent = content;
+    }
+
+    async function testGetProducts() {
+      const resultId = 'result-get';
+      showResult(resultId, 'Loading...', false);
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/products`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ SUCCESS!\n\n` +
+            `Status: ${response.status}\n` +
+            `Products found: ${data.length}\n\n` +
+            `Response:\n${JSON.stringify(data, null, 2)}`,
+            false
+          );
+        } else {
+          showResult(resultId, 
+            `❌ ERROR!\n\n` +
+            `Status: ${response.status}\n` +
+            `Error: ${JSON.stringify(data, null, 2)}`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ NETWORK ERROR!\n\n` +
+          `${error.message}\n\n` +
+          `This usually means:\n` +
+          `1. The API endpoint doesn't exist\n` +
+          `2. CORS is blocking the request\n` +
+          `3. The server is not responding`,
+          true
+        );
+      }
+    }
+
+    async function testCreateProduct() {
+      const resultId = 'result-post';
+      showResult(resultId, 'Creating product...', false);
+      
+      const product = {
+        seller_id: document.getElementById('product-seller').value,
+        title: document.getElementById('product-title').value,
+        description: document.getElementById('product-description').value,
+        category: document.getElementById('product-category').value,
+        price: parseFloat(document.getElementById('product-price').value),
+        quantity_available: 1,
+        location: 'Test Location',
+      };
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/products`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(product),
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ SUCCESS!\n\n` +
+            `Status: ${response.status}\n` +
+            `Product ID: ${data.id}\n\n` +
+            `Response:\n${JSON.stringify(data, null, 2)}\n\n` +
+            `Product created successfully! Try fetching all products to see it.`,
+            false
+          );
+        } else {
+          showResult(resultId, 
+            `❌ ERROR!\n\n` +
+            `Status: ${response.status}\n` +
+            `Error: ${JSON.stringify(data, null, 2)}\n\n` +
+            `Common issues:\n` +
+            `- Database schema not run (no products table)\n` +
+            `- D1 binding not configured\n` +
+            `- Missing required fields`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ NETWORK ERROR!\n\n${error.message}`,
+          true
+        );
+      }
+    }
+
+    async function testUploadImage() {
+      const resultId = 'result-upload';
+      const fileInput = document.getElementById('image-file');
+      
+      if (!fileInput.files || !fileInput.files[0]) {
+        showResult(resultId, '❌ Please select an image file first!', true);
+        return;
+      }
+      
+      showResult(resultId, 'Uploading image...', false);
+      
+      const formData = new FormData();
+      formData.append('image', fileInput.files[0]);
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/upload-image`, {
+          method: 'POST',
+          body: formData,
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ SUCCESS!\n\n` +
+            `Status: ${response.status}\n` +
+            `Image Key: ${data.key}\n` +
+            `Image URL: ${data.url}\n\n` +
+            `Response:\n${JSON.stringify(data, null, 2)}\n\n` +
+            `Image uploaded to R2! You can access it at:\n${API_BASE}${data.url}`,
+            false
+          );
+        } else {
+          showResult(resultId, 
+            `❌ ERROR!\n\n` +
+            `Status: ${response.status}\n` +
+            `Error: ${JSON.stringify(data, null, 2)}\n\n` +
+            `Common issues:\n` +
+            `- R2 bucket not created\n` +
+            `- STORAGE binding not configured\n` +
+            `- File too large (max 5MB)`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ NETWORK ERROR!\n\n${error.message}`,
+          true
+        );
+      }
+    }
+
+    async function testDatabaseSchema() {
+      const resultId = 'result-schema';
+      showResult(resultId, 'Checking database schema...', false);
+      
+      try {
+        const response = await fetch(`${API_BASE}/api/products`);
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ DATABASE SCHEMA IS CORRECT!\n\n` +
+            `The products table exists and is accessible.\n` +
+            `Current products in database: ${data.length}\n\n` +
+            `Your D1 database is properly configured!`,
+            false
+          );
+        } else if (data.message && data.message.includes('no such table')) {
+          showResult(resultId, 
+            `❌ DATABASE SCHEMA NOT RUN!\n\n` +
+            `Error: ${data.message}\n\n` +
+            `SOLUTION:\n` +
+            `Run this command to create the tables:\n\n` +
+            `npx wrangler d1 execute campusmart --file=./DATABASE_SCHEMA.sql --remote\n\n` +
+            `This will create all necessary tables in your D1 database.`,
+            true
+          );
+        } else {
+          showResult(resultId, 
+            `❌ DATABASE ERROR!\n\n` +
+            `Status: ${response.status}\n` +
+            `Error: ${JSON.stringify(data, null, 2)}`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ CONNECTION ERROR!\n\n` +
+          `${error.message}\n\n` +
+          `Cannot connect to the API. Check if:\n` +
+          `1. The site is deployed\n` +
+          `2. The functions are deployed\n` +
+          `3. The D1 binding is configured`,
+          true
+        );
+      }
+    }
+
+    // Auto-run the first test on page load
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        console.log('Running initial API test...');
+        testGetProducts();
+      }, 500);
+    });
+  </script>
+</body>
+</html>
