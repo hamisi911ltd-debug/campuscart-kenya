@@ -274,7 +274,7 @@ const staticProducts: ProductWithCategory[] = [
 ];
 
 // Function to get all products including custom ones from localStorage
-const getProducts = (): ProductWithCategory[] => {
+export const getProducts = (): ProductWithCategory[] => {
   if (typeof window === "undefined") return staticProducts;
   
   try {
@@ -282,7 +282,7 @@ const getProducts = (): ProductWithCategory[] => {
     if (!custom) return staticProducts;
     
     const parsedCustom = JSON.parse(custom) as ProductWithCategory[];
-    // Ensure custom products have the correct structure
+    // Custom products first (newest), then static products
     return [...parsedCustom, ...staticProducts];
   } catch (e) {
     console.error("Error loading custom products:", e);
@@ -290,8 +290,20 @@ const getProducts = (): ProductWithCategory[] => {
   }
 };
 
+// Export products as a getter function instead of constant
 export const products = getProducts();
 
-export const findProduct = (id: string) => products.find((p) => p.id === id);
-export const productsByCategory = (slug: string) =>
-  products.filter((p) => p.category === slug);
+// Refresh products - call this after adding new products
+export const refreshProducts = () => {
+  return getProducts();
+};
+
+export const findProduct = (id: string) => {
+  const allProducts = getProducts();
+  return allProducts.find((p) => p.id === id);
+};
+
+export const productsByCategory = (slug: string) => {
+  const allProducts = getProducts();
+  return allProducts.filter((p) => p.category === slug);
+};

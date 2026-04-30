@@ -93,6 +93,7 @@ const SellPage = () => {
       price: parseFloat(form.currentPrice),
       oldPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,
       image: photoUrls[0], // Use the first uploaded photo as the main image
+      images: photoUrls, // Store all photo URLs
       campus: user.campus || "Main Campus",
       badge: "NEW" as const,
       rating: 5.0,
@@ -105,7 +106,8 @@ const SellPage = () => {
         email: user.email,
         phone: user.phone || 'Not provided',
         campus: user.campus || "Main Campus"
-      }
+      },
+      createdAt: new Date().toISOString()
     };
 
     // Save to localStorage
@@ -114,14 +116,16 @@ const SellPage = () => {
       existing.unshift(newProduct);
       localStorage.setItem("campusmart_products", JSON.stringify(existing));
       
+      // Trigger storage event for other tabs/windows
+      window.dispatchEvent(new Event('storage'));
+      
       toast.success("Listing submitted!", { 
         description: "Your item is now live on the marketplace." 
       });
       
-      // Refresh the page or navigate to profile
+      // Navigate to home and it will auto-refresh
       setTimeout(() => {
         navigate("/");
-        window.location.reload(); // Refresh to update the products list
       }, 1500);
     } catch (error) {
       console.error("Error saving product:", error);

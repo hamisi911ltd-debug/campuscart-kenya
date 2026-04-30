@@ -7,13 +7,39 @@ import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
-import { categories, products } from "@/data/products";
+import { categories, getProducts } from "@/data/products";
 
-const trending = products.slice(0, 4);
-const justListed = products.slice(4, 8);
+const Index = () => {
+  const navigate = useNavigate();
+  const { user } = useShop();
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [products, setProducts] = useState(getProducts());
+  const [adSlides, setAdSlides] = useState<any[]>([]);
+  const [showSignInModal, setShowSignInModal] = useState(false);
+
+  // Refresh products on mount and when returning to page
+  useEffect(() => {
+    const refreshProductList = () => {
+      setProducts(getProducts());
+    };
+    
+    refreshProductList();
+    
+    // Listen for storage changes (when products are added)
+    window.addEventListener('storage', refreshProductList);
+    window.addEventListener('focus', refreshProductList);
+    
+    return () => {
+      window.removeEventListener('storage', refreshProductList);
+      window.removeEventListener('focus', refreshProductList);
+    };
+  }, []);
+
+  const trending = products.slice(0, 4);
+  const justListed = products.slice(4, 8);
 
 // Default ad slides - Match images with descriptions
-const defaultAdSlides = [
+const getDefaultAdSlides = (products: any[]) => [
   {
     bg: "transparent",
     badge: "STUDENT SPECIAL",
@@ -94,8 +120,13 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useShop();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [adSlides, setAdSlides] = useState(defaultAdSlides);
+  const [adSlides, setAdSlides] = useState(getDefaultAdSlides(products));
   const [showSignInModal, setShowSignInModal] = useState(false);
+
+  // Update ad slides when products change
+  useEffect(() => {
+    setAdSlides(getDefaultAdSlides(products));
+  }, [products]);
 
   // Show sign-in modal on first visit if not logged in
   useEffect(() => {
