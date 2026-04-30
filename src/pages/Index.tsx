@@ -7,74 +7,77 @@ import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
-import { categories, getProducts } from "@/data/products";
+import { categories, getProducts, getStaticProducts } from "@/data/products";
 
-// Default ad slides - Match images with descriptions
-const getDefaultAdSlides = (products: any[]) => [
-  {
-    bg: "transparent",
-    badge: "STUDENT SPECIAL",
-    title: "MacBook Pro 13\"",
-    subtitle: "Perfect for Coding • KES 45K",
-    product: products[0], // MacBook
-  },
-  {
-    bg: "transparent",
-    badge: "EXAM READY",
-    title: "Introduction to Algorithms",
-    subtitle: "CLRS 4th Ed • Save 50%",
-    product: products[1], // Algorithms book
-  },
-  {
-    bg: "transparent",
-    badge: "TECH ESSENTIAL",
-    title: "Casio Calculator",
-    subtitle: "KUCCPS Approved • Brand New",
-    product: products[2], // Calculator
-  },
-  {
-    bg: "transparent",
-    badge: "FASHION DEAL",
-    title: "Nike Air Force 1",
-    subtitle: "Size 42 • Save KES 3,500",
-    product: products[3], // Sneakers
-  },
-  {
-    bg: "transparent",
-    badge: "WINTER READY",
-    title: "Warm Winter Jacket",
-    subtitle: "Grade 1 • Size M-L",
-    product: products[4], // Jacket
-  },
-  {
-    bg: "transparent",
-    badge: "HOSTEL ESSENTIAL",
-    title: "Mini Fridge",
-    subtitle: "Low Power • 1 Year Warranty",
-    product: products[5], // Mini Fridge
-  },
-  {
-    bg: "transparent",
-    badge: "QUICK BITE",
-    title: "Chips & Chicken",
-    subtitle: "Hot & Fresh • 30 Min Delivery",
-    product: products[6], // Chips & Chicken
-  },
-  {
-    bg: "transparent",
-    badge: "HOSTEL READY",
-    title: "Bedsitter Near Campus",
-    subtitle: "WiFi Included • KES 7,500/mo",
-    product: products[7], // Bedsitter
-  },
-  {
-    bg: "transparent",
-    badge: "PARTY READY",
-    title: "Bluetooth Woofer",
-    subtitle: "Powerful Bass • KES 6,500",
-    product: products[8], // Woofer
-  },
-];
+// Default ad slides - Use ONLY static products (never custom ones)
+const getDefaultAdSlides = () => {
+  const staticProducts = getStaticProducts();
+  return [
+    {
+      bg: "transparent",
+      badge: "STUDENT SPECIAL",
+      title: "MacBook Pro 13\"",
+      subtitle: "Perfect for Coding • KES 45K",
+      product: staticProducts[0], // MacBook
+    },
+    {
+      bg: "transparent",
+      badge: "EXAM READY",
+      title: "Introduction to Algorithms",
+      subtitle: "CLRS 4th Ed • Save 50%",
+      product: staticProducts[1], // Algorithms book
+    },
+    {
+      bg: "transparent",
+      badge: "TECH ESSENTIAL",
+      title: "Casio Calculator",
+      subtitle: "KUCCPS Approved • Brand New",
+      product: staticProducts[2], // Calculator
+    },
+    {
+      bg: "transparent",
+      badge: "FASHION DEAL",
+      title: "Nike Air Force 1",
+      subtitle: "Size 42 • Save KES 3,500",
+      product: staticProducts[3], // Sneakers
+    },
+    {
+      bg: "transparent",
+      badge: "WINTER READY",
+      title: "Warm Winter Jacket",
+      subtitle: "Grade 1 • Size M-L",
+      product: staticProducts[4], // Jacket
+    },
+    {
+      bg: "transparent",
+      badge: "HOSTEL ESSENTIAL",
+      title: "Mini Fridge",
+      subtitle: "Low Power • 1 Year Warranty",
+      product: staticProducts[5], // Mini Fridge
+    },
+    {
+      bg: "transparent",
+      badge: "QUICK BITE",
+      title: "Chips & Chicken",
+      subtitle: "Hot & Fresh • 30 Min Delivery",
+      product: staticProducts[6], // Chips & Chicken
+    },
+    {
+      bg: "transparent",
+      badge: "HOSTEL READY",
+      title: "Bedsitter Near Campus",
+      subtitle: "WiFi Included • KES 7,500/mo",
+      product: staticProducts[7], // Bedsitter
+    },
+    {
+      bg: "transparent",
+      badge: "PARTY READY",
+      title: "Bluetooth Woofer",
+      subtitle: "Powerful Bass • KES 6,500",
+      product: staticProducts[8], // Woofer
+    },
+  ];
+};
 
 interface Advertisement {
   id: string;
@@ -92,7 +95,7 @@ const Index = () => {
   const { user } = useShop();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [products, setProducts] = useState(getProducts());
-  const [adSlides, setAdSlides] = useState(getDefaultAdSlides(products));
+  const [adSlides, setAdSlides] = useState(getDefaultAdSlides()); // Fixed ads, never changes
   const [showSignInModal, setShowSignInModal] = useState(false);
 
   const trending = products.slice(0, 4);
@@ -103,7 +106,7 @@ const Index = () => {
     const refreshProductList = () => {
       const refreshedProducts = getProducts();
       setProducts(refreshedProducts);
-      setAdSlides(getDefaultAdSlides(refreshedProducts));
+      // Don't update ad slides when products change - keep them fixed
     };
     
     refreshProductList();

@@ -290,6 +290,11 @@ export const getProducts = (): ProductWithCategory[] => {
   }
 };
 
+// Export static products for advertisement slides (never changes)
+export const getStaticProducts = (): ProductWithCategory[] => {
+  return staticProducts;
+};
+
 // Export products as a getter function instead of constant
 export const products = getProducts();
 
