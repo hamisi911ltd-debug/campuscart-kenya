@@ -1,21 +1,16 @@
-# Cloudflare Workers configuration for CampusMart
+# Cloudflare Pages configuration for CampusMart
 
-name = "campusmart-upload"
-main = "workers/upload.ts"
-compatibility_date = "2026-04-29"
+name = "campusmart-kenya"
 pages_build_output_dir = "dist"
+compatibility_date = "2026-04-30"
 
-# R2 Bucket binding
+# D1 Database binding (if using Cloudflare D1)
+[[d1_databases]]
+binding = "DB"
+database_name = "campusmart"
+database_id = "55923843-deae-48c4-b8db-99b244dd5005"
+
+# R2 Bucket binding (for image storage)
 [[r2_buckets]]
-binding = "R2_BUCKET"
-bucket_name = "campusmart-images"
-
-# Environment variables (set these in Cloudflare dashboard)
-[vars]
-# R2_PUBLIC_URL will be set in dashboard
-# R2_ACCOUNT_ID will be set in dashboard
-# R2_BUCKET_NAME will be set in dashboard
-
-# Secrets (set using: wrangler secret put <NAME>)
-# R2_ACCESS_KEY_ID
-# R2_SECRET_ACCESS_KEY
+binding = "STORAGE"
+bucket_name = "campusmart-storage"
