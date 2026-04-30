@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CampusMart API Debug Tool</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #1e3a8a;
+      margin-bottom: 10px;
+    }
+    button {
+      background: #1e3a8a;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      margin: 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      border-left: 4px solid #1e3a8a;
+      white-space: pre-wrap;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      max-height: 500px;
+      overflow-y: auto;
+    }
+    .error {
+      border-left-color: #dc2626;
+      background: #fef2f2;
+      color: #dc2626;
+    }
+    .success {
+      border-left-color: #16a34a;
+      background: #f0fdf4;
+      color: #16a34a;
+    }
+    input {
+      width: 100%;
+      padding: 8px 12px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      margin: 5px 0;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 CampusMart API Debug Tool</h1>
+    <p>Test your API endpoints and see detailed error messages</p>
+
+    <hr style="margin: 20px 0;">
+
+    <h2>Test 1: Register New User</h2>
+    <label>Email:</label>
+    <input type="email" id="reg-email" value="test@student.uon.ac.ke" />
+    <label>Password:</label>
+    <input type="password" id="reg-password" value="test123" />
+    <label>Full Name:</label>
+    <input type="text" id="reg-name" value="Test User" />
+    <label>Phone:</label>
+    <input type="tel" id="reg-phone" value="0712345678" />
+    <button onclick="testRegister()">Test Register API</button>
+    <div id="result-register" class="result" style="display:none;"></div>
+
+    <hr style="margin: 20px 0;">
+
+    <h2>Test 2: Login</h2>
+    <label>Email:</label>
+    <input type="email" id="login-email" value="test@student.uon.ac.ke" />
+    <label>Password:</label>
+    <input type="password" id="login-password" value="test123" />
+    <button onclick="testLogin()">Test Login API</button>
+    <div id="result-login" class="result" style="display:none;"></div>
+
+    <hr style="margin: 20px 0;">
+
+    <h2>Test 3: Get All Products</h2>
+    <button onclick="testGetProducts()">Test GET /api/products</button>
+    <div id="result-products" class="result" style="display:none;"></div>
+
+    <hr style="margin: 20px 0;">
+
+    <h2>Test 4: Create Product</h2>
+    <p style="color: #666; font-size: 14px;">Note: You must register/login first to get a user ID</p>
+    <label>User ID (from registration):</label>
+    <input type="text" id="product-user-id" placeholder="Paste user ID from registration result" />
+    <label>Title:</label>
+    <input type="text" id="product-title" value="Test Product" />
+    <label>Description:</label>
+    <input type="text" id="product-description" value="This is a test product" />
+    <label>Category:</label>
+    <input type="text" id="product-category" value="electronics" />
+    <label>Price:</label>
+    <input type="number" id="product-price" value="1000" />
+    <button onclick="testCreateProduct()">Test POST /api/products</button>
+    <div id="result-create-product" class="result" style="display:none;"></div>
+  </div>
+
+  <script>
+    function showResult(elementId, content, isError = false) {
+      const el = document.getElementById(elementId);
+      el.style.display = 'block';
+      el.className = 'result ' + (isError ? 'error' : 'success');
+      el.textContent = content;
+    }
+
+    async function testRegister() {
+      const resultId = 'result-register';
+      showResult(resultId, 'Testing...', false);
+      
+      try {
+        const response = await fetch('/api/auth/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('reg-email').value,
+            password: document.getElementById('reg-password').value,
+            full_name: document.getElementById('reg-name').value,
+            phone_number: document.getElementById('reg-phone').value,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ SUCCESS!\n\n` +
+            `Status: ${response.status}\n` +
+            `User ID: ${data.user.id}\n\n` +
+            `Full Response:\n${JSON.stringify(data, null, 2)}\n\n` +
+            `Copy the User ID above to use in product creation test!`,
+            false
+          );
+          // Auto-fill user ID in product form
+          document.getElementById('product-user-id').value = data.user.id;
+        } else {
+          showResult(resultId, 
+            `❌ ERROR!\n\n` +
+            `Status: ${response.status}\n\n` +
+            `Error Response:\n${JSON.stringify(data, null, 2)}`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ NETWORK ERROR!\n\n${error.message}`,
+          true
+        );
+      }
+    }
+
+    async function testLogin() {
+      const resultId = 'result-login';
+      showResult(resultId, 'Testing...', false);
+      
+      try {
+        const response = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: document.getElementById('login-email').value,
+            password: document.getElementById('login-password').value,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ SUCCESS!\n\n` +
+            `Status: ${response.status}\n` +
+            `User ID: ${data.user.id}\n\n` +
+            `Full Response:\n${JSON.stringify(data, null, 2)}`,
+            false
+          );
+          // Auto-fill user ID in product form
+          document.getElementById('product-user-id').value = data.user.id;
+        } else {
+          showResult(resultId, 
+            `❌ ERROR!\n\n` +
+            `Status: ${response.status}\n\n` +
+            `Error Response:\n${JSON.stringify(data, null, 2)}`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ NETWORK ERROR!\n\n${error.message}`,
+          true
+        );
+      }
+    }
+
+    async function testGetProducts() {
+      const resultId = 'result-products';
+      showResult(resultId, 'Testing...', false);
+      
+      try {
+        const response = await fetch('/api/products');
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ SUCCESS!\n\n` +
+            `Status: ${response.status}\n` +
+            `Products found: ${data.length}\n\n` +
+            `Response:\n${JSON.stringify(data, null, 2)}`,
+            false
+          );
+        } else {
+          showResult(resultId, 
+            `❌ ERROR!\n\n` +
+            `Status: ${response.status}\n\n` +
+            `Error Response:\n${JSON.stringify(data, null, 2)}`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ NETWORK ERROR!\n\n${error.message}`,
+          true
+        );
+      }
+    }
+
+    async function testCreateProduct() {
+      const resultId = 'result-create-product';
+      const userId = document.getElementById('product-user-id').value;
+      
+      if (!userId) {
+        showResult(resultId, '❌ Please register/login first to get a user ID!', true);
+        return;
+      }
+      
+      showResult(resultId, 'Testing...', false);
+      
+      try {
+        const response = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            seller_id: userId,
+            title: document.getElementById('product-title').value,
+            description: document.getElementById('product-description').value,
+            category: document.getElementById('product-category').value,
+            price: parseFloat(document.getElementById('product-price').value),
+            quantity_available: 1,
+          }),
+        });
+
+        const data = await response.json();
+        
+        if (response.ok) {
+          showResult(resultId, 
+            `✅ SUCCESS!\n\n` +
+            `Status: ${response.status}\n` +
+            `Product ID: ${data.id}\n\n` +
+            `Full Response:\n${JSON.stringify(data, null, 2)}\n\n` +
+            `Product created successfully!`,
+            false
+          );
+        } else {
+          showResult(resultId, 
+            `❌ ERROR!\n\n` +
+            `Status: ${response.status}\n\n` +
+            `Error Response:\n${JSON.stringify(data, null, 2)}`,
+            true
+          );
+        }
+      } catch (error) {
+        showResult(resultId, 
+          `❌ NETWORK ERROR!\n\n${error.message}`,
+          true
+        );
+      }
+    }
+  </script>
+</body>
+</html>
