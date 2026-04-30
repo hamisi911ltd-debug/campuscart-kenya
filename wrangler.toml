@@ -1,2 +1,20 @@
-# This file tells Cloudflare to use Pages, not Workers
-# Leave this empty - Cloudflare Pages will handle deployment
+# Cloudflare Workers configuration for CampusMart
+
+name = "campusmart-upload"
+main = "workers/upload.ts"
+compatibility_date = "2026-04-29"
+
+# R2 Bucket binding
+[[r2_buckets]]
+binding = "R2_BUCKET"
+bucket_name = "campusmart-images"
+
+# Environment variables (set these in Cloudflare dashboard)
+[vars]
+# R2_PUBLIC_URL will be set in dashboard
+# R2_ACCOUNT_ID will be set in dashboard
+# R2_BUCKET_NAME will be set in dashboard
+
+# Secrets (set using: wrangler secret put <NAME>)
+# R2_ACCESS_KEY_ID
+# R2_SECRET_ACCESS_KEY
