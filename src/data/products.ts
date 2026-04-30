@@ -273,10 +273,27 @@ const staticProducts: ProductWithCategory[] = [
   },
 ];
 
-// Function to get all products including custom ones from localStorage
-export const getProducts = (): ProductWithCategory[] => {
+// Function to get all products including custom ones from localStorage or API
+export const getProducts = async (): Promise<ProductWithCategory[]> => {
   if (typeof window === "undefined") return staticProducts;
   
+  const isProduction = window.location.hostname !== 'localhost';
+  
+  if (isProduction) {
+    // Production: Fetch from D1 database via API
+    try {
+      const response = await fetch('/api/products');
+      if (response.ok) {
+        const dbProducts = await response.json();
+        // Combine database products with static products
+        return [...dbProducts, ...staticProducts];
+      }
+    } catch (error) {
+      console.error('Error fetching products from API:', error);
+    }
+  }
+  
+  // Development: Use localStorage
   try {
     const custom = localStorage.getItem("campusmart_products");
     if (!custom) return staticProducts;
@@ -290,17 +307,33 @@ export const getProducts = (): ProductWithCategory[] => {
   }
 };
 
+// Synchronous version for initial load (returns static products immediately)
+export const getProductsSync = (): ProductWithCategory[] => {
+  if (typeof window === "undefined") return staticProducts;
+  
+  try {
+    const custom = localStorage.getItem("campusmart_products");
+    if (!custom) return staticProducts;
+    
+    const parsedCustom = JSON.parse(custom) as ProductWithCategory[];
+    return [...parsedCustom, ...staticProducts];
+  } catch (e) {
+    console.error("Error loading custom products:", e);
+    return staticProducts;
+  }
+};
+
 // Export static products for advertisement slides (never changes)
 export const getStaticProducts = (): ProductWithCategory[] => {
   return staticProducts;
 };
 
 // Export products as a getter function instead of constant
-export const products = getProducts();
+export const products = getProductsSync();
 
 // Refresh products - call this after adding new products
 export const refreshProducts = () => {
-  return getProducts();
+  return getProductsSync();
 };
 
 export const findProduct = (id: string) => {

@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
-import { categories, getProducts, getStaticProducts } from "@/data/products";
+import { categories, getProducts, getProductsSync, getStaticProducts } from "@/data/products";
 
 // Default ad slides - Use ONLY static products (never custom ones)
 const getDefaultAdSlides = () => {
@@ -94,7 +94,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useShop();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [products, setProducts] = useState(getProducts());
+  const [products, setProducts] = useState(getProductsSync());
   const [adSlides, setAdSlides] = useState(getDefaultAdSlides()); // Fixed ads, never changes
   const [showSignInModal, setShowSignInModal] = useState(false);
 
@@ -103,8 +103,8 @@ const Index = () => {
 
   // Refresh products on mount and when returning to page
   useEffect(() => {
-    const refreshProductList = () => {
-      const refreshedProducts = getProducts();
+    const refreshProductList = async () => {
+      const refreshedProducts = await getProducts();
       setProducts(refreshedProducts);
       // Don't update ad slides when products change - keep them fixed
     };

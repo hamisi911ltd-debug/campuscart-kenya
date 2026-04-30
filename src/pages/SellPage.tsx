@@ -110,18 +110,23 @@ const SellPage = () => {
     // Create new product object
     const newProduct = {
       id: `custom-${Date.now()}`,
+      seller_id: user.email, // Use email as seller_id for now
       title: form.title,
       price: parseFloat(form.currentPrice),
       oldPrice: form.originalPrice ? parseFloat(form.originalPrice) : undefined,
-      image: photoUrls[0], // Use the first uploaded photo as the main image
-      images: photoUrls, // Store all photo URLs
+      image_url: photoUrls[0], // Main image from R2
+      image: photoUrls[0], // Fallback
+      images: photoUrls, // All images from R2
       campus: user.campus || "Main Campus",
       badge: "NEW" as const,
       rating: 5.0,
       sold: 0,
       category: form.category,
       description: form.description,
-      location: form.location,
+      location: form.location ? `${form.location.lat},${form.location.lng}` : '',
+      latitude: form.location?.lat,
+      longitude: form.location?.lng,
+      quantity_available: 1,
       seller: {
         name: user.name,
         email: user.email,
@@ -131,20 +136,40 @@ const SellPage = () => {
       createdAt: new Date().toISOString()
     };
 
-    // Save to localStorage
+    // Save to database (production) or localStorage (development)
     try {
-      const existing = JSON.parse(localStorage.getItem("campusmart_products") || "[]");
-      existing.unshift(newProduct);
-      localStorage.setItem("campusmart_products", JSON.stringify(existing));
+      const isProduction = window.location.hostname !== 'localhost';
       
-      // Trigger storage event for other tabs/windows
-      window.dispatchEvent(new Event('storage'));
+      if (isProduction) {
+        // Production: Save to D1 database via API
+        const response = await fetch('/api/products', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(newProduct),
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.message || 'Failed to save product');
+        }
+
+        const result = await response.json();
+        console.log('Product saved to database:', result);
+      } else {
+        // Development: Save to localStorage
+        const existing = JSON.parse(localStorage.getItem("campusmart_products") || "[]");
+        existing.unshift(newProduct);
+        localStorage.setItem("campusmart_products", JSON.stringify(existing));
+        
+        // Trigger storage event for other tabs/windows
+        window.dispatchEvent(new Event('storage'));
+      }
       
       toast.success("Listing submitted!", { 
         description: "Your item is now live on the marketplace." 
       });
       
-      // Navigate to home and it will auto-refresh
+      // Navigate to home
       setTimeout(() => {
         navigate("/");
       }, 1500);
