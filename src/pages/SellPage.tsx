@@ -86,7 +86,7 @@ const SellPage = () => {
 
   // No longer needed: getCurrentLocation and openLocationSettings are handled by LocationPicker
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!form.title || !form.currentPrice) {
       toast.error("Add a title and current price");
