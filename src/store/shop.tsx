@@ -62,30 +62,33 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
     if (!user?.id) return;
 
     try {
-      // Load cart from database
       const cartResponse = await fetch(`/api/cart?user_id=${user.id}`);
       if (cartResponse.ok) {
         const cartItems = await cartResponse.json();
-        const dbCart: CartItem[] = cartItems.map((item: any) => ({
-          product: {
-            id: item.product_id,
-            title: item.title,
-            price: item.price,
-            image: item.image_url,
-            campus: item.location || "",
-            seller_id: item.seller_id
-          },
-          qty: item.quantity
-        }));
-        setCart(dbCart);
+        if (Array.isArray(cartItems)) {
+          const dbCart: CartItem[] = cartItems.map((item: any) => ({
+            product: {
+              id: item.product_id,
+              title: item.title,
+              price: item.price,
+              image: item.image_url,
+              campus: item.location || "",
+              seller_id: item.seller_id
+            },
+            qty: item.quantity
+          }));
+          setCart(dbCart);
+        }
       }
 
       // Load favorites from database
       const favResponse = await fetch(`/api/favorites?user_id=${user.id}`);
       if (favResponse.ok) {
         const favItems = await favResponse.json();
-        const dbFavorites = favItems.map((item: any) => item.product_id);
-        setFavorites(dbFavorites);
+        if (Array.isArray(favItems)) {
+          const dbFavorites = favItems.map((item: any) => item.product_id);
+          setFavorites(dbFavorites);
+        }
       }
     } catch (error) {
       console.error('Error loading user data:', error);

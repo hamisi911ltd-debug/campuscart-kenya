@@ -63,32 +63,36 @@ const OrdersPage = () => {
       if (response.ok) {
         const dbOrders = await response.json();
         
-        // Transform database orders to match frontend format
-        const transformedOrders: Order[] = dbOrders.map((order: any) => ({
-          id: order.id,
-          orderNumber: `CM${order.id.slice(-8)}`,
-          customer: {
-            name: user.name,
-            email: user.email,
-            phone: order.delivery_phone,
-          },
-          items: order.items || [],
-          total: order.total_amount,
-          deliveryAddress: order.delivery_address,
-          status: order.status,
-          createdAt: order.created_at,
-          updatedAt: order.updated_at,
-        }));
+        if (Array.isArray(dbOrders)) {
+          // Transform database orders to match frontend format
+          const transformedOrders: Order[] = dbOrders.map((order: any) => ({
+            id: order.id,
+            orderNumber: `CM${order.id.slice(-8)}`,
+            customer: {
+              name: user.name,
+              email: user.email,
+              phone: order.delivery_phone,
+            },
+            items: order.items || [],
+            total: order.total_amount,
+            deliveryAddress: order.delivery_address,
+            status: order.status,
+            createdAt: order.created_at,
+            updatedAt: order.updated_at,
+          }));
 
-        // Sort by date (newest first)
-        transformedOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-        setOrders(transformedOrders);
+          // Sort by date (newest first)
+          transformedOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+          setOrders(transformedOrders);
 
-        // Check if there's an order parameter in URL
-        const orderId = searchParams.get('order');
-        if (orderId) {
-          const order = transformedOrders.find(o => o.id === orderId);
-          if (order) setSelectedOrder(order);
+          // Check if there's an order parameter in URL
+          const orderId = searchParams.get('order');
+          if (orderId) {
+            const order = transformedOrders.find(o => o.id === orderId);
+            if (order) setSelectedOrder(order);
+          }
+        } else {
+          throw new Error('API returned invalid data format');
         }
       } else {
         throw new Error('Failed to load orders');

@@ -94,18 +94,21 @@ const Index = () => {
   const navigate = useNavigate();
   const { user } = useShop();
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [products, setProducts] = useState(getProductsSync());
+  const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [adSlides, setAdSlides] = useState(getDefaultAdSlides()); // Fixed ads, never changes
   const [showSignInModal, setShowSignInModal] = useState(false);
 
-  const trending = products.slice(0, 4);
-  const justListed = products.slice(4, 8);
+  // Ensure products is always an array
+  const safeProducts = Array.isArray(products) ? products : [];
+  const trending = safeProducts.slice(0, 4);
+  const justListed = safeProducts.slice(4, 8);
 
   // Refresh products on mount and when returning to page
   useEffect(() => {
     const refreshProductList = async () => {
       const refreshedProducts = await getProducts();
-      setProducts(refreshedProducts);
+      // Ensure we always set an array
+      setProducts(Array.isArray(refreshedProducts) ? refreshedProducts : []);
       // Don't update ad slides when products change - keep them fixed
     };
     
