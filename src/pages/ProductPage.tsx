@@ -11,7 +11,8 @@ import { toast } from "sonner";
 const ProductPage = () => {
   const { id = "" } = useParams();
   const navigate = useNavigate();
-  const p = findProduct(id);
+  const [p, setP] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
   const { addToCart, toggleFavorite, isFavorite, user } = useShop();
   const [qty, setQty] = useState(1);
   const [priceCardClicked, setPriceCardClicked] = useState(false);
@@ -22,6 +23,17 @@ const ProductPage = () => {
 
   // Admin WhatsApp number
   const ADMIN_WHATSAPP = "254108254465"; // Format: country code + number without leading 0
+
+  // Load product data
+  useEffect(() => {
+    const loadProduct = async () => {
+      setLoading(true);
+      const product = await findProduct(id);
+      setP(product);
+      setLoading(false);
+    };
+    loadProduct();
+  }, [id]);
 
   // Check if user is logged in, show modal if not
   useEffect(() => {

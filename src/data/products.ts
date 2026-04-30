@@ -322,12 +322,12 @@ export const refreshProducts = () => {
   return getProductsSync();
 };
 
-export const findProduct = (id: string) => {
-  const allProducts = getProducts();
+export const findProduct = async (id: string) => {
+  const allProducts = await getProducts();
   return allProducts.find((p) => p.id === id);
 };
 
-export const productsByCategory = (slug: string) => {
-  const allProducts = getProducts();
+export const productsByCategory = async (slug: string) => {
+  const allProducts = await getProducts();
   return allProducts.filter((p) => p.category === slug);
 };

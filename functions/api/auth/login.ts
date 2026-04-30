@@ -5,13 +5,27 @@ interface Env {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
+    // Check if DB binding exists
+    if (!context.env.DB) {
+      return new Response(JSON.stringify({ 
+        error: "DB binding not found",
+        message: "The D1 database binding is not configured. Check Cloudflare Pages settings."
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const data = await context.request.json() as {
       email: string;
       password: string;
     };
 
     if (!data.email || !data.password) {
-      return new Response(JSON.stringify({ error: "Email and password are required" }), {
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields",
+        required: ["email", "password"]
+      }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -30,7 +44,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ).bind(data.email.toLowerCase(), passwordHash).first();
 
     if (!user) {
-      return new Response(JSON.stringify({ error: "Invalid email or password" }), {
+      return new Response(JSON.stringify({ 
+        error: "Invalid email or password",
+        email: data.email
+      }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
@@ -52,7 +69,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('POST /api/auth/login error:', err);
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      stack: err.stack,
+      details: "Failed to authenticate user"
+    }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

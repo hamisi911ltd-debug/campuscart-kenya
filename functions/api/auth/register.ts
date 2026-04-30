@@ -5,6 +5,17 @@ interface Env {
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
+    // Check if DB binding exists
+    if (!context.env.DB) {
+      return new Response(JSON.stringify({ 
+        error: "DB binding not found",
+        message: "The D1 database binding is not configured. Check Cloudflare Pages settings."
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const data = await context.request.json() as {
       email: string;
       password: string;
@@ -14,7 +25,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     };
 
     if (!data.email || !data.password || !data.full_name) {
-      return new Response(JSON.stringify({ error: "Email, password, and full name are required" }), {
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields",
+        required: ["email", "password", "full_name"],
+        received: { email: data.email, full_name: data.full_name, has_password: !!data.password }
+      }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -26,7 +41,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ).bind(data.email.toLowerCase()).first();
 
     if (existing) {
-      return new Response(JSON.stringify({ error: "Email already registered" }), {
+      return new Response(JSON.stringify({ 
+        error: "Email already registered",
+        email: data.email
+      }), {
         status: 409,
         headers: { "Content-Type": "application/json" },
       });
@@ -75,7 +93,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('POST /api/auth/register error:', err);
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      stack: err.stack,
+      details: "Failed to create user account in database"
+    }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });

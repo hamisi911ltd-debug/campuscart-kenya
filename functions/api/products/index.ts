@@ -6,6 +6,17 @@ interface Env {
 // GET all products
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   try {
+    // Check if DB binding exists
+    if (!context.env.DB) {
+      return new Response(JSON.stringify({ 
+        error: "DB binding not found",
+        message: "The D1 database binding is not configured. Check Cloudflare Pages settings."
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const url = new URL(context.request.url);
     const category = url.searchParams.get("category");
     const sellerId = url.searchParams.get("seller_id");
@@ -35,7 +46,12 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('GET /api/products error:', err);
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      stack: err.stack,
+      details: "Failed to fetch products from database"
+    }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
@@ -45,6 +61,17 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 // POST create product
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
+    // Check if DB binding exists
+    if (!context.env.DB) {
+      return new Response(JSON.stringify({ 
+        error: "DB binding not found",
+        message: "The D1 database binding is not configured. Check Cloudflare Pages settings."
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const data = await context.request.json() as {
       id?: string;
       seller_id: string;
@@ -61,7 +88,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     };
 
     if (!data.seller_id || !data.title || !data.description || !data.category || !data.price) {
-      return new Response(JSON.stringify({ error: "seller_id, title, description, category, and price are required" }), {
+      return new Response(JSON.stringify({ 
+        error: "Missing required fields",
+        required: ["seller_id", "title", "description", "category", "price"],
+        received: data
+      }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -73,7 +104,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     ).bind(data.seller_id).first();
 
     if (!seller) {
-      return new Response(JSON.stringify({ error: "Seller not found. User must register first." }), {
+      return new Response(JSON.stringify({ 
+        error: "Seller not found",
+        message: "User must register first before posting products",
+        seller_id: data.seller_id
+      }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -112,7 +147,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+    console.error('POST /api/products error:', err);
+    return new Response(JSON.stringify({ 
+      error: err.message,
+      stack: err.stack,
+      details: "Failed to create product in database"
+    }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
