@@ -282,15 +282,22 @@ export const getProducts = async (): Promise<ProductWithCategory[]> => {
     const response = await fetch('/api/products');
     if (response.ok) {
       const dbProducts = await response.json();
-      // Combine database products with static products
-      return [...dbProducts, ...staticProducts];
+      // Ensure dbProducts is an array
+      if (Array.isArray(dbProducts)) {
+        // Combine database products with static products
+        return [...dbProducts, ...staticProducts];
+      } else {
+        console.error('API returned non-array:', dbProducts);
+        return staticProducts;
+      }
+    } else {
+      console.error('API error:', response.status, response.statusText);
+      return staticProducts;
     }
   } catch (error) {
     console.error('Error fetching products from API:', error);
+    return staticProducts;
   }
-  
-  // Fallback to static products if API fails
-  return staticProducts;
 };
 
 // Synchronous version for initial load (returns static products immediately)

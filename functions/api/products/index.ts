@@ -8,11 +8,10 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   try {
     // Check if DB binding exists
     if (!context.env.DB) {
-      return new Response(JSON.stringify({ 
-        error: "DB binding not found",
-        message: "The D1 database binding is not configured. Check Cloudflare Pages settings."
-      }), {
-        status: 500,
+      console.error('DB binding not found');
+      // Return empty array instead of error object
+      return new Response(JSON.stringify([]), {
+        status: 200,
         headers: { "Content-Type": "application/json" },
       });
     }
@@ -42,17 +41,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
 
     const { results } = await context.env.DB.prepare(query).bind(...params).all();
 
-    return new Response(JSON.stringify(results), {
+    // Ensure results is always an array
+    return new Response(JSON.stringify(results || []), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {
     console.error('GET /api/products error:', err);
-    return new Response(JSON.stringify({ 
-      error: err.message,
-      stack: err.stack,
-      details: "Failed to fetch products from database"
-    }), {
-      status: 500,
+    // Return empty array on error instead of error object
+    return new Response(JSON.stringify([]), {
+      status: 200,
       headers: { "Content-Type": "application/json" },
     });
   }
