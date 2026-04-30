@@ -3,108 +3,81 @@ interface Env {
   DB: D1Database;
 }
 
-interface RegisterRequest {
-  email: string;
-  password: string;
-  full_name: string;
-  phone_number?: string;
-}
-
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    const data = await context.request.json() as RegisterRequest;
+    const data = await context.request.json() as {
+      email: string;
+      password: string;
+      full_name: string;
+      phone_number?: string;
+      location?: string;
+    };
 
-    // Validate required fields
     if (!data.email || !data.password || !data.full_name) {
-      return new Response(JSON.stringify({ 
-        error: "Missing required fields: email, password, full_name" 
-      }), { 
+      return new Response(JSON.stringify({ error: "Email, password, and full name are required" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Validate email format
-    if (!data.email.includes('@')) {
-      return new Response(JSON.stringify({ 
-        error: "Invalid email format" 
-      }), { 
-        status: 400,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
-
-    // Check if user already exists
-    const existingUser = await context.env.DB.prepare(
+    // Check if email already exists
+    const existing = await context.env.DB.prepare(
       "SELECT id FROM users WHERE email = ?"
-    ).bind(data.email).first();
+    ).bind(data.email.toLowerCase()).first();
 
-    if (existingUser) {
-      return new Response(JSON.stringify({ 
-        error: "Email already registered" 
-      }), { 
+    if (existing) {
+      return new Response(JSON.stringify({ error: "Email already registered" }), {
         status: 409,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Generate UUID for user
-    const userId = crypto.randomUUID();
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
 
-    // Hash password (simple hash for now - in production use bcrypt)
-    const passwordHash = await hashPassword(data.password);
+    // Simple password hashing (for production, use a proper hash like bcrypt in a Worker)
+    const encoder = new TextEncoder();
+    const dataToHash = encoder.encode(data.password);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", dataToHash);
+    const passwordHash = Array.from(new Uint8Array(hashBuffer))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
 
-    // Insert user into database
     await context.env.DB.prepare(
-      `INSERT INTO users (
-        id, email, password_hash, full_name, phone_number,
-        is_active, created_at
-      ) VALUES (?, ?, ?, ?, ?, 1, datetime('now'))`
+      `INSERT INTO users (id, email, password_hash, full_name, phone_number, location, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      userId,
+      id,
       data.email.toLowerCase(),
       passwordHash,
       data.full_name,
-      data.phone_number || null
+      data.phone_number || null,
+      data.location || null,
+      now,
+      now
     ).run();
 
-    // Create user settings
+    // Create default user settings
     await context.env.DB.prepare(
-      `INSERT INTO user_settings (id, user_id, created_at)
-       VALUES (?, ?, datetime('now'))`
-    ).bind(crypto.randomUUID(), userId).run();
+      `INSERT INTO user_settings (id, user_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+    ).bind(crypto.randomUUID(), id, now, now).run();
 
-    // Return user data (without password)
-    return new Response(JSON.stringify({ 
+    // Create default seller stats
+    await context.env.DB.prepare(
+      `INSERT INTO seller_stats (id, seller_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
+    ).bind(crypto.randomUUID(), id, now, now).run();
+
+    return new Response(JSON.stringify({
       success: true,
-      user: {
-        id: userId,
-        email: data.email.toLowerCase(),
-        full_name: data.full_name,
-        phone_number: data.phone_number || null
-      },
-      message: "Account created successfully" 
+      user: { id, email: data.email.toLowerCase(), full_name: data.full_name, phone_number: data.phone_number },
     }), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error: any) {
-    console.error('Registration error:', error);
-    return new Response(JSON.stringify({ 
-      error: "Failed to create account",
-      message: error.message 
-    }), { 
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
   }
 };
-
-// Simple password hashing (use bcrypt in production)
-async function hashPassword(password: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-}

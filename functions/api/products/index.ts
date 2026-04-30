@@ -1,97 +1,120 @@
-// Cloudflare Pages Function to handle products API
+// Cloudflare Pages Function - Products API
 interface Env {
   DB: D1Database;
-  STORAGE: R2Bucket;
 }
 
-// GET /api/products - Get all products
+// GET all products
 export const onRequestGet: PagesFunction<Env> = async (context) => {
   try {
-    const { results } = await context.env.DB.prepare(
-      `SELECT 
-        p.*,
-        u.full_name as seller_name,
-        u.email as seller_email,
-        u.phone_number as seller_phone
-      FROM products p
-      LEFT JOIN users u ON p.seller_id = u.id
-      WHERE p.is_available = 1
-      ORDER BY p.created_at DESC
-      LIMIT 100`
-    ).all();
+    const url = new URL(context.request.url);
+    const category = url.searchParams.get("category");
+    const sellerId = url.searchParams.get("seller_id");
+    const search = url.searchParams.get("search");
+
+    let query = "SELECT * FROM products WHERE is_available = 1";
+    const params: any[] = [];
+
+    if (category) {
+      query += " AND category = ?";
+      params.push(category);
+    }
+    if (sellerId) {
+      query += " AND seller_id = ?";
+      params.push(sellerId);
+    }
+    if (search) {
+      query += " AND (title LIKE ? OR description LIKE ?)";
+      params.push(`%${search}%`, `%${search}%`);
+    }
+
+    query += " ORDER BY created_at DESC";
+
+    const { results } = await context.env.DB.prepare(query).bind(...params).all();
 
     return new Response(JSON.stringify(results), {
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error: any) {
-    console.error('Database error:', error);
-    return new Response(JSON.stringify({ 
-      error: "Failed to fetch products",
-      message: error.message 
-    }), { 
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
   }
 };
 
-// POST /api/products - Create new product
+// POST create product
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    const product = await context.request.json();
+    const data = await context.request.json() as {
+      id?: string;
+      seller_id: string;
+      title: string;
+      description: string;
+      category: string;
+      price: number;
+      image_url?: string;
+      images?: string;
+      quantity_available?: number;
+      location?: string;
+      latitude?: number;
+      longitude?: number;
+    };
 
-    // Validate required fields
-    if (!product.title || !product.price || !product.seller_id) {
-      return new Response(JSON.stringify({ 
-        error: "Missing required fields: title, price, seller_id" 
-      }), { 
+    if (!data.seller_id || !data.title || !data.description || !data.category || !data.price) {
+      return new Response(JSON.stringify({ error: "seller_id, title, description, category, and price are required" }), {
         status: 400,
-        headers: { "Content-Type": "application/json" }
+        headers: { "Content-Type": "application/json" },
       });
     }
 
-    // Generate UUID for product
-    const productId = crypto.randomUUID();
+    // Verify seller exists
+    const seller = await context.env.DB.prepare(
+      "SELECT id FROM users WHERE id = ?"
+    ).bind(data.seller_id).first();
 
-    // Insert product into database
-    const result = await context.env.DB.prepare(
-      `INSERT INTO products (
-        id, seller_id, title, description, category, price,
-        image_url, images, quantity_available, location,
-        latitude, longitude, is_available, created_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    if (!seller) {
+      return new Response(JSON.stringify({ error: "Seller not found. User must register first." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const id = data.id || crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await context.env.DB.prepare(
+      `INSERT INTO products (id, seller_id, title, description, category, price, image_url, images, quantity_available, location, latitude, longitude, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
-      productId,
-      product.seller_id,
-      product.title,
-      product.description || '',
-      product.category || 'electronics',
-      product.price,
-      product.image_url || product.image, // Main image
-      JSON.stringify(product.images || [product.image_url]), // All images as JSON
-      product.quantity_available || 1,
-      product.location || '',
-      product.latitude || null,
-      product.longitude || null,
-      1 // is_available
+      id,
+      data.seller_id,
+      data.title,
+      data.description,
+      data.category,
+      data.price,
+      data.image_url || null,
+      data.images || null,
+      data.quantity_available || 1,
+      data.location || null,
+      data.latitude || null,
+      data.longitude || null,
+      now,
+      now
     ).run();
 
-    return new Response(JSON.stringify({ 
-      success: true,
-      id: productId,
-      message: "Product created successfully" 
-    }), {
+    // Update seller stats
+    await context.env.DB.prepare(
+      "UPDATE seller_stats SET total_products = total_products + 1, updated_at = ? WHERE seller_id = ?"
+    ).bind(now, data.seller_id).run();
+
+    return new Response(JSON.stringify({ success: true, id }), {
       status: 201,
       headers: { "Content-Type": "application/json" },
     });
-  } catch (error: any) {
-    console.error('Database error:', error);
-    return new Response(JSON.stringify({ 
-      error: "Failed to create product",
-      message: error.message 
-    }), { 
+  } catch (err: any) {
+    return new Response(JSON.stringify({ error: err.message }), {
       status: 500,
-      headers: { "Content-Type": "application/json" }
+      headers: { "Content-Type": "application/json" },
     });
   }
 };

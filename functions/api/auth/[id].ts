@@ -1,35 +1,35 @@
-// Cloudflare Pages Function - Single Product Operations
+// Cloudflare Pages Function - User Profile
 interface Env {
   DB: D1Database;
 }
 
-// GET single product
+// GET user profile
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const id = context.params.id as string;
+  const userId = context.params.id as string;
 
-  const product = await context.env.DB.prepare(
-    "SELECT * FROM products WHERE id = ?"
-  ).bind(id).first();
+  const user = await context.env.DB.prepare(
+    "SELECT id, email, full_name, phone_number, profile_image_url, bio, location, is_seller, seller_rating, seller_reviews_count, created_at FROM users WHERE id = ?"
+  ).bind(userId).first();
 
-  if (!product) {
-    return new Response(JSON.stringify({ error: "Product not found" }), {
+  if (!user) {
+    return new Response(JSON.stringify({ error: "User not found" }), {
       status: 404,
       headers: { "Content-Type": "application/json" },
     });
   }
 
-  return new Response(JSON.stringify(product), {
+  return new Response(JSON.stringify(user), {
     headers: { "Content-Type": "application/json" },
   });
 };
 
-// PATCH update product
+// PATCH update user profile
 export const onRequestPatch: PagesFunction<Env> = async (context) => {
   try {
-    const id = context.params.id as string;
+    const userId = context.params.id as string;
     const data = await context.request.json() as Record<string, any>;
 
-    const allowedFields = ["title", "description", "category", "price", "image_url", "images", "quantity_available", "location", "latitude", "longitude", "is_available"];
+    const allowedFields = ["full_name", "phone_number", "profile_image_url", "bio", "location", "latitude", "longitude", "is_seller"];
     const updates: string[] = [];
     const values: any[] = [];
 
@@ -49,10 +49,10 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
 
     updates.push("updated_at = ?");
     values.push(new Date().toISOString());
-    values.push(id);
+    values.push(userId);
 
     await context.env.DB.prepare(
-      `UPDATE products SET ${updates.join(", ")} WHERE id = ?`
+      `UPDATE users SET ${updates.join(", ")} WHERE id = ?`
     ).bind(...values).run();
 
     return new Response(JSON.stringify({ success: true }), {
@@ -64,15 +64,4 @@ export const onRequestPatch: PagesFunction<Env> = async (context) => {
       headers: { "Content-Type": "application/json" },
     });
   }
-};
-
-// DELETE product
-export const onRequestDelete: PagesFunction<Env> = async (context) => {
-  const id = context.params.id as string;
-
-  await context.env.DB.prepare("DELETE FROM products WHERE id = ?").bind(id).run();
-
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { "Content-Type": "application/json" },
-  });
 };
