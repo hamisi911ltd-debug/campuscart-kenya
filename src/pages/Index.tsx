@@ -109,15 +109,25 @@ const Index = () => {
       // Don't update ad slides when products change - keep them fixed
     };
     
+    // Initial load
     refreshProductList();
+    
+    // Refresh when page becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        refreshProductList();
+      }
+    };
     
     // Listen for storage changes (when products are added)
     window.addEventListener('storage', refreshProductList);
     window.addEventListener('focus', refreshProductList);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       window.removeEventListener('storage', refreshProductList);
       window.removeEventListener('focus', refreshProductList);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

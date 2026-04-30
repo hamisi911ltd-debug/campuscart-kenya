@@ -157,10 +157,16 @@ const SellPage = () => {
         description: "Your item is now live on the marketplace." 
       });
       
-      // Navigate to home
+      // Clear form
+      setForm({ title: "", description: "", category: "", price: "", location: null });
+      setPhotoUrls([]);
+      
+      // Navigate to home to see the new product
       setTimeout(() => {
-        navigate("/");
-      }, 1500);
+        navigate("/", { replace: true });
+        // Force page reload to show new product immediately
+        window.location.reload();
+      }, 1000);
     } catch (error) {
       console.error("Error saving product:", error);
       toast.error("Failed to save listing. Please try again.");
