@@ -1,34 +1,46 @@
 import { useEffect, useState } from "react";
 import { Zap } from "lucide-react";
 
-const target = () => {
-  const now = new Date();
-  const hours = now.getHours();
-  const t = new Date();
+const TWO_HOURS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
+
+const getNextResetTime = () => {
+  const now = Date.now();
+  const lastReset = localStorage.getItem('campusmart_timer_reset');
   
-  // Reset every 2 hours (0, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22)
-  const nextResetHour = Math.ceil(hours / 2) * 2;
-  t.setHours(nextResetHour, 0, 0, 0);
-  
-  // If we're past 22:00, reset to midnight
-  if (nextResetHour >= 24) {
-    t.setDate(t.getDate() + 1);
-    t.setHours(0, 0, 0, 0);
+  if (!lastReset) {
+    // First time - set reset time to 2 hours from now
+    const resetTime = now + TWO_HOURS;
+    localStorage.setItem('campusmart_timer_reset', resetTime.toString());
+    return resetTime;
   }
   
-  return t;
+  const resetTime = parseInt(lastReset);
+  
+  // If reset time has passed, set new reset time
+  if (now >= resetTime) {
+    const newResetTime = now + TWO_HOURS;
+    localStorage.setItem('campusmart_timer_reset', newResetTime.toString());
+    return newResetTime;
+  }
+  
+  return resetTime;
 };
 
 export const FlashCountdown = () => {
   const [now, setNow] = useState(Date.now());
+  
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
   }, []);
-  const diff = Math.max(0, target().getTime() - now);
+  
+  const targetTime = getNextResetTime();
+  const diff = Math.max(0, targetTime - now);
+  
   const h = String(Math.floor(diff / 3.6e6)).padStart(2, "0");
   const m = String(Math.floor((diff % 3.6e6) / 6e4)).padStart(2, "0");
   const s = String(Math.floor((diff % 6e4) / 1000)).padStart(2, "0");
+  
   return (
     <div className="flex items-center gap-3 text-primary-foreground">
       <div className="flex items-center gap-2">
