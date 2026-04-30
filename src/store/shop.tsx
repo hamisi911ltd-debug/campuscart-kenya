@@ -18,16 +18,17 @@ interface ShopState {
   cart: CartItem[];
   favorites: string[];
   user: { id?: string; name: string; email: string; phone?: string; picture?: string; campus?: string } | null;
-  addToCart: (p: Product, qty?: number) => void;
-  removeFromCart: (id: string) => void;
-  setQty: (id: string, qty: number) => void;
-  clearCart: () => void;
-  toggleFavorite: (id: string) => void;
+  addToCart: (p: Product, qty?: number) => Promise<void>;
+  removeFromCart: (id: string) => Promise<void>;
+  setQty: (id: string, qty: number) => Promise<void>;
+  clearCart: () => Promise<void>;
+  toggleFavorite: (id: string) => Promise<void>;
   isFavorite: (id: string) => boolean;
   signIn: (name: string, email: string, phone?: string, picture?: string, campus?: string, id?: string) => void;
   signOut: () => void;
   cartCount: number;
   cartTotal: number;
+  loadUserData: () => Promise<void>;
 }
 
 const ShopCtx = createContext<ShopState | null>(null);
@@ -50,32 +51,170 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => localStorage.setItem("cm:favs", JSON.stringify(favorites)), [favorites]);
   useEffect(() => localStorage.setItem("cm:user", JSON.stringify(user)), [user]);
 
-  const addToCart = useCallback((p: Product, qty = 1) => {
+  // Load user data from database when user changes
+  useEffect(() => {
+    if (user?.id) {
+      loadUserData();
+    }
+  }, [user?.id]);
+
+  const loadUserData = useCallback(async () => {
+    if (!user?.id) return;
+
+    try {
+      // Load cart from database
+      const cartResponse = await fetch(`/api/cart?user_id=${user.id}`);
+      if (cartResponse.ok) {
+        const cartItems = await cartResponse.json();
+        const dbCart: CartItem[] = cartItems.map((item: any) => ({
+          product: {
+            id: item.product_id,
+            title: item.title,
+            price: item.price,
+            image: item.image_url,
+            campus: item.location || "",
+            seller_id: item.seller_id
+          },
+          qty: item.quantity
+        }));
+        setCart(dbCart);
+      }
+
+      // Load favorites from database
+      const favResponse = await fetch(`/api/favorites?user_id=${user.id}`);
+      if (favResponse.ok) {
+        const favItems = await favResponse.json();
+        const dbFavorites = favItems.map((item: any) => item.product_id);
+        setFavorites(dbFavorites);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+      // Keep localStorage data as fallback
+    }
+  }, [user?.id]);
+
+  const addToCart = useCallback(async (p: Product, qty = 1) => {
+    if (user?.id) {
+      try {
+        const response = await fetch('/api/cart', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            user_id: user.id,
+            product_id: p.id,
+            quantity: qty
+          })
+        });
+
+        if (response.ok) {
+          await loadUserData(); // Reload from database
+          toast.success("Added to cart", { description: p.title });
+          return;
+        }
+      } catch (error) {
+        console.error('Error adding to cart:', error);
+      }
+    }
+
+    // Fallback to localStorage
     setCart((prev) => {
       const found = prev.find((i) => i.product.id === p.id);
       if (found) return prev.map((i) => (i.product.id === p.id ? { ...i, qty: i.qty + qty } : i));
       return [...prev, { product: p, qty }];
     });
     toast.success("Added to cart", { description: p.title });
-  }, []);
+  }, [user?.id, loadUserData]);
 
-  const removeFromCart = useCallback((id: string) => {
+  const removeFromCart = useCallback(async (id: string) => {
+    if (user?.id) {
+      try {
+        const response = await fetch(`/api/cart?user_id=${user.id}&product_id=${id}`, {
+          method: 'DELETE'
+        });
+
+        if (response.ok) {
+          await loadUserData(); // Reload from database
+          return;
+        }
+      } catch (error) {
+        console.error('Error removing from cart:', error);
+      }
+    }
+
+    // Fallback to localStorage
     setCart((prev) => prev.filter((i) => i.product.id !== id));
-  }, []);
+  }, [user?.id, loadUserData]);
 
-  const setQty = useCallback((id: string, qty: number) => {
+  const setQty = useCallback(async (id: string, qty: number) => {
+    if (user?.id) {
+      // For now, remove and re-add with new quantity
+      // TODO: Implement PATCH endpoint for updating quantity
+      await removeFromCart(id);
+      const product = cart.find(item => item.product.id === id)?.product;
+      if (product && qty > 0) {
+        await addToCart(product, qty);
+      }
+      return;
+    }
+
+    // Fallback to localStorage
     setCart((prev) => prev.map((i) => (i.product.id === id ? { ...i, qty: Math.max(1, qty) } : i)));
-  }, []);
+  }, [user?.id, cart, removeFromCart, addToCart]);
 
-  const clearCart = useCallback(() => setCart([]), []);
+  const clearCart = useCallback(async () => {
+    if (user?.id) {
+      // Clear all cart items for user
+      for (const item of cart) {
+        await removeFromCart(item.product.id);
+      }
+      return;
+    }
 
-  const toggleFavorite = useCallback((id: string) => {
+    // Fallback to localStorage
+    setCart([]);
+  }, [user?.id, cart, removeFromCart]);
+
+  const toggleFavorite = useCallback(async (id: string) => {
+    const isCurrentlyFavorite = favorites.includes(id);
+
+    if (user?.id) {
+      try {
+        if (isCurrentlyFavorite) {
+          const response = await fetch(`/api/favorites?user_id=${user.id}&product_id=${id}`, {
+            method: 'DELETE'
+          });
+          if (response.ok) {
+            await loadUserData(); // Reload from database
+            toast("Removed from favorites");
+            return;
+          }
+        } else {
+          const response = await fetch('/api/favorites', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              user_id: user.id,
+              product_id: id
+            })
+          });
+          if (response.ok) {
+            await loadUserData(); // Reload from database
+            toast("Saved to favorites");
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Error toggling favorite:', error);
+      }
+    }
+
+    // Fallback to localStorage
     setFavorites((prev) => {
       const has = prev.includes(id);
       toast(has ? "Removed from favorites" : "Saved to favorites");
       return has ? prev.filter((x) => x !== id) : [...prev, id];
     });
-  }, []);
+  }, [user?.id, favorites, loadUserData]);
 
   const isFavorite = useCallback((id: string) => favorites.includes(id), [favorites]);
 
@@ -86,6 +225,8 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
 
   const signOut = useCallback(() => {
     setUser(null);
+    setCart([]); // Clear cart on sign out
+    setFavorites([]); // Clear favorites on sign out
     toast("Signed out");
   }, []);
 
@@ -104,8 +245,9 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       signOut,
       cartCount: cart.reduce((n, i) => n + i.qty, 0),
       cartTotal: cart.reduce((n, i) => n + i.qty * i.product.price, 0),
+      loadUserData,
     }),
-    [cart, favorites, user, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut]
+    [cart, favorites, user, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut, loadUserData]
   );
 
   return <ShopCtx.Provider value={value}>{children}</ShopCtx.Provider>;

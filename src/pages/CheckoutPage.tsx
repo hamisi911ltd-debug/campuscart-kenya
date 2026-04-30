@@ -88,7 +88,7 @@ const CheckoutPage = () => {
     );
   }
 
-  const submit = (e: FormEvent) => {
+  const submit = async (e: FormEvent) => {
     e.preventDefault();
     
     if (!user) {
@@ -106,79 +106,119 @@ const CheckoutPage = () => {
     const newOrderNumber = `CM${Date.now().toString().slice(-8)}`;
     setOrderNumber(newOrderNumber);
 
-    // Create order object with location
-    const order: Order = {
-      id: Date.now().toString(),
-      orderNumber: newOrderNumber,
-      customer: {
-        name: user.name,
-        email: user.email,
-        phone: user.phone || 'Not provided',
-      },
+    // Prepare order data for API
+    const orderData = {
+      buyer_id: user.id,
       items: cart.map(({ product, qty }) => ({
-        productId: product.id,
-        productTitle: product.title,
-        price: product.price,
+        product_id: product.id,
         quantity: qty,
-        seller: product.seller,
+        price: product.price,
       })),
-      total: cartTotal + 100,
-      deliveryAddress: address,
-      location: location, // Save the captured location
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
+      total_amount: cartTotal + 100,
+      delivery_address: address,
+      delivery_phone: user.phone || 'Not provided',
+      payment_method: 'cash_on_delivery',
+      notes: `Location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`,
     };
 
-    // Save order to localStorage
-    const existingOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
-    existingOrders.push(order);
-    localStorage.setItem('campusmart_orders', JSON.stringify(existingOrders));
+    try {
+      // Save order to database
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
 
-    // Prepare WhatsApp message with location
-    const googleMapsLink = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
-    
-    let message = `🛒 *New Order - #${newOrderNumber}*\n\n`;
-    message += `👤 *Customer Details:*\n`;
-    message += `Name: ${user.name}\n`;
-    message += `Email: ${user.email}\n`;
-    message += `Phone: ${user.phone || 'Not provided'}\n`;
-    message += `Delivery: ${address}\n\n`;
-    message += `📍 *Live Location:*\n`;
-    message += `${googleMapsLink}\n`;
-    message += `Coordinates: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n`;
-    message += `📦 *Order Items:*\n`;
-    
-    cart.forEach(({ product, qty }, index) => {
-      message += `\n${index + 1}. ${product.title}\n`;
-      message += `   Price: KES ${product.price.toLocaleString()} × ${qty} = KES ${(product.price * qty).toLocaleString()}\n`;
-      message += `   Category: ${product.category}\n`;
-      message += `   Campus: ${product.campus}\n`;
-      if (product.seller) {
-        message += `   Seller: ${product.seller.name}\n`;
-        message += `   Seller Phone: ${product.seller.phone}\n`;
-        message += `   Seller Email: ${product.seller.email}\n`;
+      if (!response.ok) {
+        throw new Error('Failed to save order');
       }
-    });
 
-    message += `\n💰 *Order Summary:*\n`;
-    message += `Subtotal: KES ${cartTotal.toLocaleString()}\n`;
-    message += `Delivery: KES 100\n`;
-    message += `*Total: KES ${(cartTotal + 100).toLocaleString()}*\n\n`;
-    message += `Please process this order. Thank you!`;
+      const result = await response.json();
+      
+      // Prepare WhatsApp message with location
+      const googleMapsLink = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+      
+      let message = `🛒 *New Order - #${newOrderNumber}*\n\n`;
+      message += `👤 *Customer Details:*\n`;
+      message += `Name: ${user.name}\n`;
+      message += `Email: ${user.email}\n`;
+      message += `Phone: ${user.phone || 'Not provided'}\n`;
+      message += `Delivery: ${address}\n\n`;
+      message += `📍 *Live Location:*\n`;
+      message += `${googleMapsLink}\n`;
+      message += `Coordinates: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n`;
+      message += `📦 *Order Items:*\n`;
+      
+      cart.forEach(({ product, qty }, index) => {
+        message += `\n${index + 1}. ${product.title}\n`;
+        message += `   Price: KES ${product.price.toLocaleString()} × ${qty} = KES ${(product.price * qty).toLocaleString()}\n`;
+        message += `   Category: ${product.category}\n`;
+        message += `   Campus: ${product.campus}\n`;
+        if (product.seller) {
+          message += `   Seller: ${product.seller.name}\n`;
+          message += `   Seller Phone: ${product.seller.phone}\n`;
+          message += `   Seller Email: ${product.seller.email}\n`;
+        }
+      });
 
-    // Encode and send WhatsApp message
-    const encodedMessage = encodeURIComponent(message);
-    const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodedMessage}`;
-    
-    // Open WhatsApp in new tab
-    window.open(whatsappUrl, '_blank');
+      message += `\n💰 *Order Summary:*\n`;
+      message += `Subtotal: KES ${cartTotal.toLocaleString()}\n`;
+      message += `Delivery: KES 100\n`;
+      message += `*Total: KES ${(cartTotal + 100).toLocaleString()}*\n\n`;
+      message += `Order ID: ${result.order_id}\n`;
+      message += `Please process this order. Thank you!`;
 
-    toast.success("Order placed successfully!");
-    setTimeout(() => { 
-      clearCart(); 
-      setDone(true); 
-    }, 800);
+      // Encode and send WhatsApp message
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodedMessage}`;
+      
+      // Open WhatsApp in new tab
+      window.open(whatsappUrl, '_blank');
+
+      toast.success("Order placed successfully!");
+      setTimeout(async () => { 
+        await clearCart(); 
+        setDone(true); 
+      }, 800);
+
+    } catch (error) {
+      console.error('Error placing order:', error);
+      
+      // Fallback to localStorage if API fails
+      const order: Order = {
+        id: Date.now().toString(),
+        orderNumber: newOrderNumber,
+        customer: {
+          name: user.name,
+          email: user.email,
+          phone: user.phone || 'Not provided',
+        },
+        items: cart.map(({ product, qty }) => ({
+          productId: product.id,
+          productTitle: product.title,
+          price: product.price,
+          quantity: qty,
+          seller: product.seller,
+        })),
+        total: cartTotal + 100,
+        deliveryAddress: address,
+        location: location,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Save order to localStorage as fallback
+      const existingOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
+      existingOrders.push(order);
+      localStorage.setItem('campusmart_orders', JSON.stringify(existingOrders));
+
+      toast.success("Order placed successfully (saved locally)!");
+      setTimeout(async () => { 
+        await clearCart(); 
+        setDone(true); 
+      }, 800);
+    }
   };
 
   return (

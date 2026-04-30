@@ -52,21 +52,64 @@ const OrdersPage = () => {
       return;
     }
 
-    // Load orders from localStorage
-    const savedOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
-    // Filter orders for current user
-    const userOrders = savedOrders.filter((order: Order) => order.customer.email === user.email);
-    // Sort by date (newest first)
-    userOrders.sort((a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-    setOrders(userOrders);
-
-    // Check if there's an order parameter in URL
-    const orderId = searchParams.get('order');
-    if (orderId) {
-      const order = userOrders.find((o: Order) => o.id === orderId);
-      if (order) setSelectedOrder(order);
-    }
+    loadOrders();
   }, [user, navigate, searchParams]);
+
+  const loadOrders = async () => {
+    if (!user?.id) return;
+
+    try {
+      const response = await fetch(`/api/orders?user_id=${user.id}`);
+      if (response.ok) {
+        const dbOrders = await response.json();
+        
+        // Transform database orders to match frontend format
+        const transformedOrders: Order[] = dbOrders.map((order: any) => ({
+          id: order.id,
+          orderNumber: `CM${order.id.slice(-8)}`,
+          customer: {
+            name: user.name,
+            email: user.email,
+            phone: order.delivery_phone,
+          },
+          items: order.items || [],
+          total: order.total_amount,
+          deliveryAddress: order.delivery_address,
+          status: order.status,
+          createdAt: order.created_at,
+          updatedAt: order.updated_at,
+        }));
+
+        // Sort by date (newest first)
+        transformedOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+        setOrders(transformedOrders);
+
+        // Check if there's an order parameter in URL
+        const orderId = searchParams.get('order');
+        if (orderId) {
+          const order = transformedOrders.find(o => o.id === orderId);
+          if (order) setSelectedOrder(order);
+        }
+      } else {
+        throw new Error('Failed to load orders');
+      }
+    } catch (error) {
+      console.error('Error loading orders:', error);
+      
+      // Fallback to localStorage
+      const savedOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
+      const userOrders = savedOrders.filter((order: Order) => order.customer.email === user.email);
+      userOrders.sort((a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      setOrders(userOrders);
+
+      // Check if there's an order parameter in URL
+      const orderId = searchParams.get('order');
+      if (orderId) {
+        const order = userOrders.find((o: Order) => o.id === orderId);
+        if (order) setSelectedOrder(order);
+      }
+    }
+  };
 
   if (!user) {
     return null;
