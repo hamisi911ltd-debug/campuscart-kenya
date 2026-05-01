@@ -1,12 +1,25 @@
 import { useParams, Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
 import { categories, productsByCategory } from "@/data/products";
+import type { ProductWithCategory } from "@/data/products";
 
 const CategoryPage = () => {
   const { slug = "" } = useParams();
   const cat = categories.find((c) => c.slug === slug);
-  const items = productsByCategory(slug);
+  const [items, setItems] = useState<ProductWithCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadProducts = async () => {
+      setLoading(true);
+      const products = await productsByCategory(slug);
+      setItems(products);
+      setLoading(false);
+    };
+    loadProducts();
+  }, [slug]);
 
   return (
     <PageShell title={cat?.name ?? "Category"}>
@@ -21,7 +34,11 @@ const CategoryPage = () => {
           </Link>
         ))}
       </div>
-      {items.length === 0 ? (
+      {loading ? (
+        <p className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground shadow-card">
+          Loading products...
+        </p>
+      ) : items.length === 0 ? (
         <p className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground shadow-card">
           No listings yet in this category. Be the first to <Link to="/sell" className="font-bold text-accent">post one</Link>.
         </p>

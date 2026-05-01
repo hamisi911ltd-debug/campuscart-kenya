@@ -1,17 +1,36 @@
 import { Link } from "react-router-dom";
+import { useEffect, useState } from "react";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
 import { useShop } from "@/store/shop";
 import { findProduct } from "@/data/products";
+import type { ProductWithCategory } from "@/data/products";
 import { Heart } from "lucide-react";
 
 const FavoritesPage = () => {
   const { favorites } = useShop();
-  const items = favorites.map(findProduct).filter(Boolean) as ReturnType<typeof findProduct>[];
+  const [items, setItems] = useState<ProductWithCategory[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadFavorites = async () => {
+      setLoading(true);
+      const products = await Promise.all(
+        favorites.map(id => findProduct(id))
+      );
+      setItems(products.filter(Boolean) as ProductWithCategory[]);
+      setLoading(false);
+    };
+    loadFavorites();
+  }, [favorites]);
 
   return (
     <PageShell title="Favorites">
-      {items.length === 0 ? (
+      {loading ? (
+        <div className="rounded-2xl bg-card p-10 text-center shadow-card">
+          <p className="text-sm text-muted-foreground">Loading favorites...</p>
+        </div>
+      ) : items.length === 0 ? (
         <div className="rounded-2xl bg-card p-10 text-center shadow-card">
           <Heart className="mx-auto h-12 w-12 text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground">No favorites yet. Tap the heart on items you love.</p>
@@ -21,7 +40,7 @@ const FavoritesPage = () => {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
-          {items.map((p) => p && <ProductCard key={p.id} p={p} />)}
+          {items.map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       )}
     </PageShell>
