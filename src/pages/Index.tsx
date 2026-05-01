@@ -9,72 +9,73 @@ import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
 import { categories, getProducts, getProductsSync, getStaticProducts, transformDatabaseProduct } from "@/data/products";
 
-// Default ad slides - Use ONLY static products (never custom ones)
+// Import category images for slides
+import catBooks from "@/assets/cat-books.jpg";
+import catElec from "@/assets/cat-electronics.jpg";
+import catFashion from "@/assets/cat-fashion.jpg";
+import catFood from "@/assets/cat-food.jpg";
+import catRooms from "@/assets/cat-rooms.jpg";
+import catStat from "@/assets/cat-stationery.jpg";
+import catFurn from "@/assets/cat-furniture.jpg";
+
+// Default ad slides - Use category images instead of products
 const getDefaultAdSlides = () => {
-  const staticProducts = getStaticProducts();
   return [
     {
       bg: "transparent",
-      badge: "STUDENT SPECIAL",
-      title: "MacBook Pro 13\"",
-      subtitle: "Perfect for Coding • KES 45K",
-      product: staticProducts[0], // MacBook
+      badge: "ELECTRONICS",
+      title: "Shop Electronics",
+      subtitle: "Laptops, Phones & More",
+      categorySlug: "electronics",
+      imageUrl: catElec,
     },
     {
       bg: "transparent",
-      badge: "EXAM READY",
-      title: "Introduction to Algorithms",
-      subtitle: "CLRS 4th Ed • Save 50%",
-      product: staticProducts[1], // Algorithms book
+      badge: "BOOKS",
+      title: "Textbooks & Novels",
+      subtitle: "Save Up To 50%",
+      categorySlug: "books",
+      imageUrl: catBooks,
     },
     {
       bg: "transparent",
-      badge: "TECH ESSENTIAL",
-      title: "Casio Calculator",
-      subtitle: "KUCCPS Approved • Brand New",
-      product: staticProducts[2], // Calculator
+      badge: "FASHION",
+      title: "Fashion & Accessories",
+      subtitle: "Shoes, Clothes & More",
+      categorySlug: "fashion",
+      imageUrl: catFashion,
     },
     {
       bg: "transparent",
-      badge: "FASHION DEAL",
-      title: "Nike Air Force 1",
-      subtitle: "Size 42 • Save KES 3,500",
-      product: staticProducts[3], // Sneakers
+      badge: "FOOD",
+      title: "Food & Delivery",
+      subtitle: "Hot Meals Delivered Fast",
+      categorySlug: "food",
+      imageUrl: catFood,
     },
     {
       bg: "transparent",
-      badge: "WINTER READY",
-      title: "Warm Winter Jacket",
-      subtitle: "Grade 1 • Size M-L",
-      product: staticProducts[4], // Jacket
+      badge: "HOSTELS",
+      title: "Rooms & Accommodation",
+      subtitle: "Find Your Perfect Space",
+      categorySlug: "hostels",
+      imageUrl: catRooms,
     },
     {
       bg: "transparent",
-      badge: "HOSTEL ESSENTIAL",
-      title: "Mini Fridge",
-      subtitle: "Low Power • 1 Year Warranty",
-      product: staticProducts[5], // Mini Fridge
+      badge: "STATIONERY",
+      title: "School Supplies",
+      subtitle: "Everything You Need",
+      categorySlug: "stationery",
+      imageUrl: catStat,
     },
     {
       bg: "transparent",
-      badge: "QUICK BITE",
-      title: "Chips & Chicken",
-      subtitle: "Hot & Fresh • 30 Min Delivery",
-      product: staticProducts[6], // Chips & Chicken
-    },
-    {
-      bg: "transparent",
-      badge: "HOSTEL READY",
-      title: "Bedsitter Near Campus",
-      subtitle: "WiFi Included • KES 7,500/mo",
-      product: staticProducts[7], // Bedsitter
-    },
-    {
-      bg: "transparent",
-      badge: "PARTY READY",
-      title: "Bluetooth Woofer",
-      subtitle: "Powerful Bass • KES 6,500",
-      product: staticProducts[8], // Woofer
+      badge: "FURNITURE",
+      title: "Furniture & Appliances",
+      subtitle: "Make Your Room Home",
+      categorySlug: "furniture",
+      imageUrl: catFurn,
     },
   ];
 };
@@ -240,23 +241,18 @@ const Index = () => {
         {/* Advertisement Carousel */}
         <section className="relative overflow-hidden rounded-xl shadow-card h-[160px] md:h-[180px]">
           {adSlides.map((slide, idx) => {
-            // Check if this is an admin ad or default ad
+            // Check if this is an admin ad or category slide
             const isAdminAd = 'isAdminAd' in slide && slide.isAdminAd;
-            const imageUrl = isAdminAd ? slide.imageUrl : slide.product?.image;
+            const isCategorySlide = 'categorySlug' in slide;
+            const imageUrl = isAdminAd ? slide.imageUrl : (isCategorySlide ? slide.imageUrl : null);
             const slideTitle = slide.title;
             const slideSubtitle = slide.subtitle;
-            
-            // Special handling for winter jacket and woofer in default ads
-            const isSpecialItem = !isAdminAd && slide.product && (
-              slide.product.title.includes("Winter Jacket") || slide.product.title.includes("Woofer")
-            );
-            const imageClass = isSpecialItem 
-              ? "absolute inset-0 h-full w-full object-contain p-4"
-              : "absolute inset-0 h-full w-full object-cover";
             
             const handleClick = () => {
               if (isAdminAd && slide.link) {
                 navigate(slide.link);
+              } else if (isCategorySlide && slide.categorySlug) {
+                navigate(`/category/${slide.categorySlug}`);
               } else {
                 navigate("/search");
               }
@@ -273,15 +269,15 @@ const Index = () => {
                   onClick={handleClick}
                   className="relative h-full w-full cursor-pointer hover:scale-[1.01] transition-transform overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
                 >
-                  {/* Product/Ad image - Dynamic sizing based on type */}
+                  {/* Category/Ad image */}
                   {imageUrl && (
                     <img
                       src={imageUrl}
                       alt={slideTitle}
                       loading="lazy"
-                      className={imageClass}
+                      className="absolute inset-0 h-full w-full object-cover"
                       onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/src/assets/placeholder.svg';
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
                       }}
                     />
                   )}
