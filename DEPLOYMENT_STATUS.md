@@ -4,14 +4,18 @@
 
 ### 1. Image Upload & Display
 **Problem:** Images not uploading or displaying  
-**Solution:** Fixed R2 image serving with catch-all routing  
+**Solution:** Created correct R2 image serving endpoint  
 **Status:** ✅ Fixed - Deploy to test
 
 **Changes:**
-- Changed `/api/images/[key].ts` → `/api/images/[[path]].ts` for nested paths
-- Now handles: `/api/images/products/123.jpg` correctly
+- Created `/api/images/products/[[key]].ts` for product images
+- Handles: `/api/images/products/1777543425964-dnoxfj.jpg`
+- Maps to R2 key: `products/1777543425964-dnoxfj.jpg`
 - Upload endpoint already working: `/api/upload-image`
 - Images stored in R2 bucket: `campusmart-storage`
+- Added CORS headers for cross-origin requests
+
+**This was the missing piece!** The database had image paths, R2 had the files, but there was no Function to serve them.
 
 ### 2. Service Worker Navigation Errors
 **Problem:** "Failed to convert value to 'Response'" on navigation  
@@ -152,7 +156,7 @@ API Data:               No cache (always fresh)
 
 ### API Endpoints:
 - `functions/api/cart/index.ts` → Fixed column names
-- `functions/api/images/[[path]].ts` → Catch-all routing
+- `functions/api/images/products/[[key]].ts` → **NEW** Serves R2 images
 - `src/lib/api.ts` → Added `fetchWithCache()` utility
 - `src/data/products.ts` → Added cache-control headers
 
