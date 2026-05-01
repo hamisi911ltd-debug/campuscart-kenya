@@ -32,7 +32,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
       WHERE ci.user_id = ? AND p.is_available = 1
-      ORDER BY ci.created_at DESC
+      ORDER BY ci.added_at DESC
     `).bind(userId).all();
 
     return new Response(JSON.stringify(results), {
@@ -100,14 +100,14 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     if (existing) {
       // Update quantity
       await context.env.DB.prepare(
-        "UPDATE cart_items SET quantity = quantity + ?, updated_at = ? WHERE id = ?"
-      ).bind(data.quantity, now, (existing as any).id).run();
+        "UPDATE cart_items SET quantity = quantity + ? WHERE id = ?"
+      ).bind(data.quantity, (existing as any).id).run();
     } else {
       // Add new item
       const id = crypto.randomUUID();
       await context.env.DB.prepare(
-        "INSERT INTO cart_items (id, user_id, product_id, quantity, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)"
-      ).bind(id, data.user_id, data.product_id, data.quantity, now, now).run();
+        "INSERT INTO cart_items (id, user_id, product_id, quantity, added_at) VALUES (?, ?, ?, ?, ?)"
+      ).bind(id, data.user_id, data.product_id, data.quantity, now).run();
     }
 
     return new Response(JSON.stringify({ success: true }), {
