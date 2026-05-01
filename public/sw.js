@@ -1,5 +1,5 @@
 // Service Worker for CampusMart PWA
-const CACHE_NAME = 'campusmart-v1';
+const CACHE_NAME = 'campusmart-v2';  // Incremented to force cache refresh
 const urlsToCache = [
   '/',
   '/index.html',
@@ -48,6 +48,25 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  const url = new URL(event.request.url);
+
+  // NEVER cache API calls - always fetch fresh
+  if (url.pathname.startsWith('/api/')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // NEVER cache HTML pages - always fetch fresh
+  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match('/offline.html');
+      })
+    );
+    return;
+  }
+
+  // For static assets (JS, CSS, images), use cache-first strategy
   event.respondWith(
     caches.match(event.request)
       .then((response) => {
@@ -59,17 +78,18 @@ self.addEventListener('fetch', (event) => {
         return fetch(event.request).then(
           (response) => {
             // Check if valid response
-            if (!response || response.status !== 200 || response.type !== 'basic') {
+            if (!response || response.status !== 200) {
               return response;
             }
 
-            // Clone the response
-            const responseToCache = response.clone();
-
-            caches.open(CACHE_NAME)
-              .then((cache) => {
-                cache.put(event.request, responseToCache);
-              });
+            // Only cache static assets (images, JS, CSS)
+            if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico)$/)) {
+              const responseToCache = response.clone();
+              caches.open(CACHE_NAME)
+                .then((cache) => {
+                  cache.put(event.request, responseToCache);
+                });
+            }
 
             return response;
           }
