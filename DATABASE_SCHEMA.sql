@@ -89,6 +89,7 @@ CREATE TABLE orders (
   buyer_id VARCHAR(36) NOT NULL,
   seller_id VARCHAR(36) NOT NULL,
   total_amount DECIMAL(10, 2) NOT NULL,
+  delivery_fee DECIMAL(10, 2) DEFAULT 0,
   status VARCHAR(50) DEFAULT 'pending', -- pending, processing, shipped, delivered, cancelled
   payment_method VARCHAR(50), -- mpesa, card, cash
   delivery_address TEXT NOT NULL,
