@@ -1,9 +1,8 @@
 // Service Worker for CampusMart PWA
-const CACHE_NAME = 'campusmart-v2';  // Incremented to force cache refresh
+const CACHE_NAME = 'campusmart-v3';  // Incremented to force cache refresh
 const urlsToCache = [
   '/',
   '/index.html',
-  '/offline.html',
   '/manifest.json',
   '/icon-192x192.png',
   '/icon-512x512.png'
@@ -43,6 +42,11 @@ self.addEventListener('activate', (event) => {
 
 // Fetch event - serve from cache, fallback to network
 self.addEventListener('fetch', (event) => {
+  // Skip navigation requests - let the browser handle them for SPA routing
+  if (event.request.mode === 'navigate') {
+    return;
+  }
+
   // Skip non-GET requests
   if (event.request.method !== 'GET') {
     return;
@@ -53,16 +57,6 @@ self.addEventListener('fetch', (event) => {
   // NEVER cache API calls - always fetch fresh
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(fetch(event.request));
-    return;
-  }
-
-  // NEVER cache HTML pages - always fetch fresh
-  if (event.request.mode === 'navigate' || event.request.headers.get('accept')?.includes('text/html')) {
-    event.respondWith(
-      fetch(event.request).catch(() => {
-        return caches.match('/offline.html');
-      })
-    );
     return;
   }
 
@@ -93,13 +87,10 @@ self.addEventListener('fetch', (event) => {
 
             return response;
           }
-        );
-      })
-      .catch(() => {
-        // Network failed, return offline page for navigation requests
-        if (event.request.mode === 'navigate') {
-          return caches.match('/offline.html');
-        }
+        ).catch(() => {
+          // Network failed for static assets
+          return new Response('Offline', { status: 503 });
+        });
       })
   );
 });
