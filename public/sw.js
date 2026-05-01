@@ -1,5 +1,6 @@
 // Service Worker for CampusMart PWA
-const CACHE_NAME = 'campusmart-v3';  // Incremented to force cache refresh
+const CACHE_NAME = 'campusmart-v4';  // Incremented to force cache refresh
+const CACHE_VERSION = 4;
 const urlsToCache = [
   '/',
   '/index.html',
@@ -29,15 +30,18 @@ self.addEventListener('activate', (event) => {
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
+          // Delete ALL old caches
           if (cacheName !== CACHE_NAME) {
             console.log('🗑️ Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
+    }).then(() => {
+      // Force all clients to use the new service worker immediately
+      return self.clients.claim();
     })
   );
-  self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network
