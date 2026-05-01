@@ -132,7 +132,14 @@ const ProductPage = () => {
 
       <div className="grid gap-6 md:grid-cols-2">
         <div className="overflow-hidden rounded-2xl bg-card shadow-card">
-          <img src={p.image} alt={p.title} className="aspect-square w-full object-cover" />
+          <img 
+            src={p.image} 
+            alt={p.title} 
+            className="aspect-square w-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = '/placeholder.svg';
+            }}
+          />
         </div>
         <div className="flex flex-col gap-4">
           <div>

@@ -39,6 +39,9 @@ export const ProductCard = ({ p }: { p: Product }) => {
           width={512}
           height={512}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+          onError={(e) => {
+            (e.target as HTMLImageElement).src = '/placeholder.svg';
+          }}
         />
         {p.badge && (
           <span

@@ -273,6 +273,38 @@ const staticProducts: ProductWithCategory[] = [
   },
 ];
 
+// Function to transform database product to frontend format
+const transformDatabaseProduct = (dbProduct: any): ProductWithCategory => {
+  // Parse images JSON string safely
+  let images: string[] = [];
+  try {
+    if (typeof dbProduct.images === 'string') {
+      images = JSON.parse(dbProduct.images);
+    } else if (Array.isArray(dbProduct.images)) {
+      images = dbProduct.images;
+    }
+  } catch (error) {
+    console.error('Error parsing product images:', error);
+    images = [];
+  }
+
+  // Use image_url as primary image, fallback to first image in array
+  const primaryImage = dbProduct.image_url || images[0] || '/placeholder.svg';
+
+  return {
+    id: dbProduct.id,
+    title: dbProduct.title,
+    price: parseFloat(dbProduct.price),
+    image: primaryImage, // Map image_url to image field
+    campus: dbProduct.location || 'Unknown',
+    rating: parseFloat(dbProduct.rating) || 0,
+    sold: 0, // Not tracked in database yet
+    category: dbProduct.category,
+    description: dbProduct.description,
+    totalReviews: dbProduct.reviews_count || 0,
+  };
+};
+
 // Function to get all products including custom ones from database API
 export const getProducts = async (): Promise<ProductWithCategory[]> => {
   if (typeof window === "undefined") return staticProducts;
@@ -288,8 +320,10 @@ export const getProducts = async (): Promise<ProductWithCategory[]> => {
       const dbProducts = await response.json();
       // Ensure dbProducts is an array
       if (Array.isArray(dbProducts)) {
-        // Combine database products with static products
-        return [...dbProducts, ...staticProducts];
+        // Transform database products to frontend format
+        const transformedProducts = dbProducts.map(transformDatabaseProduct);
+        // Combine with static products
+        return [...transformedProducts, ...staticProducts];
       } else {
         console.error('API returned non-array:', dbProducts);
         return staticProducts;
