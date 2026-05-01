@@ -20,6 +20,9 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const category = url.searchParams.get("category");
     const sellerId = url.searchParams.get("seller_id");
     const search = url.searchParams.get("search");
+    const sort = url.searchParams.get("sort") || "newest";
+    const limit = parseInt(url.searchParams.get("limit") || "50");
+    const offset = parseInt(url.searchParams.get("offset") || "0");
 
     let query = "SELECT * FROM products WHERE is_available = 1";
     const params: any[] = [];
@@ -37,7 +40,30 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       params.push(`%${search}%`, `%${search}%`);
     }
 
-    query += " ORDER BY created_at DESC";
+    // Sort order
+    switch (sort) {
+      case "trending":
+        // Trending: High rating + many reviews
+        query += " ORDER BY (rating * reviews_count) DESC, created_at DESC";
+        break;
+      case "newest":
+        query += " ORDER BY created_at DESC";
+        break;
+      case "price_low":
+        query += " ORDER BY price ASC";
+        break;
+      case "price_high":
+        query += " ORDER BY price DESC";
+        break;
+      case "rating":
+        query += " ORDER BY rating DESC, reviews_count DESC";
+        break;
+      default:
+        query += " ORDER BY created_at DESC";
+    }
+
+    query += " LIMIT ? OFFSET ?";
+    params.push(limit, offset);
 
     const { results } = await context.env.DB.prepare(query).bind(...params).all();
 

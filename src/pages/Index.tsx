@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
-import { categories, getProducts, getProductsSync, getStaticProducts } from "@/data/products";
+import { categories, getProducts, getProductsSync, getStaticProducts, transformDatabaseProduct } from "@/data/products";
 
 // Default ad slides - Use ONLY static products (never custom ones)
 const getDefaultAdSlides = () => {
@@ -100,8 +100,37 @@ const Index = () => {
 
   // Ensure products is always an array
   const safeProducts = Array.isArray(products) ? products : [];
-  const trending = safeProducts.slice(0, 4);
-  const justListed = safeProducts.slice(4, 8);
+  const [trending, setTrending] = useState<ProductWithCategory[]>([]);
+  const [justListed, setJustListed] = useState<ProductWithCategory[]>([]);
+
+  // Fetch trending and just listed products
+  useEffect(() => {
+    const fetchSortedProducts = async () => {
+      try {
+        // Fetch trending products
+        const trendingResponse = await fetch('/api/products?sort=trending&limit=8', {
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        if (trendingResponse.ok) {
+          const trendingData = await trendingResponse.json();
+          setTrending(Array.isArray(trendingData) ? trendingData.map(transformDatabaseProduct) : []);
+        }
+
+        // Fetch just listed products
+        const newestResponse = await fetch('/api/products?sort=newest&limit=8', {
+          headers: { 'Cache-Control': 'no-cache' },
+        });
+        if (newestResponse.ok) {
+          const newestData = await newestResponse.json();
+          setJustListed(Array.isArray(newestData) ? newestData.map(transformDatabaseProduct) : []);
+        }
+      } catch (error) {
+        console.error('Error fetching sorted products:', error);
+      }
+    };
+
+    fetchSortedProducts();
+  }, []);
 
   // Refresh products on mount and when returning to page
   useEffect(() => {

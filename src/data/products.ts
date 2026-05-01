@@ -274,7 +274,7 @@ const staticProducts: ProductWithCategory[] = [
 ];
 
 // Function to transform database product to frontend format
-const transformDatabaseProduct = (dbProduct: any): ProductWithCategory => {
+export const transformDatabaseProduct = (dbProduct: any): ProductWithCategory => {
   // Parse images JSON string safely
   let images: string[] = [];
   try {
