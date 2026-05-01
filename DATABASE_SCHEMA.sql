@@ -36,8 +36,8 @@ CREATE TABLE products (
   description TEXT NOT NULL,
   category VARCHAR(100) NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
-  image_url TEXT, -- Changed to TEXT to support base64 images
-  images TEXT, -- Changed to TEXT to support base64 JSON array
+  image_url VARCHAR(500), -- URL path to R2 image
+  images TEXT, -- JSON array of image URL paths
   quantity_available INT NOT NULL DEFAULT 1,
   location VARCHAR(255),
   latitude DECIMAL(10, 8),
