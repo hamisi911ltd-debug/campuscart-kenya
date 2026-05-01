@@ -1,13 +1,25 @@
 // API client for backend communication
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 
+// Fetch with cache control for fresh data
+const fetchWithCache = async (url: string, options: RequestInit = {}) => {
+  const response = await fetch(url, {
+    ...options,
+    headers: {
+      'Cache-Control': 'no-cache',  // Always get fresh data
+      ...options.headers,
+    },
+  });
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  return response;
+};
+
 // Products API
 export const productsAPI = {
   // Get all products
   getAll: async () => {
     try {
-      const response = await fetch(`${API_URL}/products`);
-      if (!response.ok) throw new Error('Failed to fetch products');
+      const response = await fetchWithCache(`${API_URL}/products`);
       return response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -19,8 +31,7 @@ export const productsAPI = {
   // Get single product
   getById: async (id: string) => {
     try {
-      const response = await fetch(`${API_URL}/products/${id}`);
-      if (!response.ok) throw new Error('Failed to fetch product');
+      const response = await fetchWithCache(`${API_URL}/products/${id}`);
       return response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -84,8 +95,7 @@ export const productsAPI = {
   // Search products
   search: async (query: string) => {
     try {
-      const response = await fetch(`${API_URL}/products/search?q=${encodeURIComponent(query)}`);
-      if (!response.ok) throw new Error('Failed to search products');
+      const response = await fetchWithCache(`${API_URL}/products/search?q=${encodeURIComponent(query)}`);
       return response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -120,8 +130,7 @@ export const ordersAPI = {
   // Get user orders
   getByUser: async (userId: string) => {
     try {
-      const response = await fetch(`${API_URL}/orders/user/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch orders');
+      const response = await fetchWithCache(`${API_URL}/orders/user/${userId}`);
       return response.json();
     } catch (error) {
       console.error('API Error:', error);
@@ -186,8 +195,7 @@ export const usersAPI = {
   // Get user profile
   getProfile: async (userId: string) => {
     try {
-      const response = await fetch(`${API_URL}/users/${userId}`);
-      if (!response.ok) throw new Error('Failed to fetch profile');
+      const response = await fetchWithCache(`${API_URL}/users/${userId}`);
       return response.json();
     } catch (error) {
       console.error('API Error:', error);

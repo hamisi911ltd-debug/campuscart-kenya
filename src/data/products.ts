@@ -279,7 +279,11 @@ export const getProducts = async (): Promise<ProductWithCategory[]> => {
   
   // ALWAYS fetch from D1 database via API (both production and development)
   try {
-    const response = await fetch('/api/products');
+    const response = await fetch('/api/products', {
+      headers: {
+        'Cache-Control': 'no-cache',  // Always get fresh data
+      },
+    });
     if (response.ok) {
       const dbProducts = await response.json();
       // Ensure dbProducts is an array
