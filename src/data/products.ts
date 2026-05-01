@@ -295,10 +295,11 @@ const transformDatabaseProduct = (dbProduct: any): ProductWithCategory => {
     id: dbProduct.id,
     title: dbProduct.title,
     price: parseFloat(dbProduct.price),
+    oldPrice: dbProduct.original_price ? parseFloat(dbProduct.original_price) : undefined, // Map original_price to oldPrice
     image: primaryImage, // Map image_url to image field
     campus: dbProduct.location || 'Unknown',
     rating: parseFloat(dbProduct.rating) || 0,
-    sold: 0, // Not tracked in database yet
+    sold: dbProduct.reviews_count || 0, // Map reviews_count to sold for display
     category: dbProduct.category,
     description: dbProduct.description,
     totalReviews: dbProduct.reviews_count || 0,

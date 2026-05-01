@@ -36,6 +36,7 @@ CREATE TABLE products (
   description TEXT NOT NULL,
   category VARCHAR(100) NOT NULL,
   price DECIMAL(10, 2) NOT NULL,
+  original_price DECIMAL(10, 2), -- Original price for discount display
   image_url VARCHAR(500), -- URL path to R2 image
   images TEXT, -- JSON array of image URL paths
   quantity_available INT NOT NULL DEFAULT 1,

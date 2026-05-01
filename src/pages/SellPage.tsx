@@ -129,6 +129,7 @@ const SellPage = () => {
         description: form.description || '',
         category: form.category,
         price: parseFloat(form.currentPrice),
+        original_price: form.originalPrice ? parseFloat(form.originalPrice) : null, // Add original price
         image_url: photoUrls[0] || null, // Main image URL from R2
         images: photoUrls.length > 0 ? JSON.stringify(photoUrls) : null, // All image URLs as JSON array
         quantity_available: 1,

@@ -76,6 +76,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       description: string;
       category: string;
       price: number;
+      original_price?: number;
       image_url?: string;
       images?: string;
       quantity_available?: number;
@@ -115,8 +116,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const now = new Date().toISOString();
 
     await context.env.DB.prepare(
-      `INSERT INTO products (id, seller_id, title, description, category, price, image_url, images, quantity_available, location, latitude, longitude, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (id, seller_id, title, description, category, price, original_price, image_url, images, quantity_available, location, latitude, longitude, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       id,
       data.seller_id,
@@ -124,6 +125,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       data.description,
       data.category,
       data.price,
+      data.original_price || null,
       data.image_url || null,
       data.images || null,
       data.quantity_available || 1,
