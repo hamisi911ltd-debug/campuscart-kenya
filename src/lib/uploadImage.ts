@@ -1,46 +1,19 @@
-// Image upload utility for Cloudflare R2
+// Image upload utility - converts to base64 for database storage
 export const uploadImage = async (file: File): Promise<string> => {
-  // Check if we're in production (has API endpoint)
-  const isProduction = window.location.hostname !== 'localhost';
-  
-  if (isProduction) {
-    // Production: Upload to R2
-    const formData = new FormData();
-    formData.append('image', file);
-
-    try {
-      const response = await fetch('/api/upload-image', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Upload failed');
-      }
-
-      const data = await response.json();
-      return data.url; // Returns "/api/images/products/1234-photo.jpg"
-    } catch (error) {
-      console.error('R2 upload error:', error);
-      throw error;
-    }
-  } else {
-    // Development: Use base64 for localStorage
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onloadend = () => {
-        resolve(reader.result as string);
-      };
-      
-      reader.onerror = () => {
-        reject(new Error('Failed to read file'));
-      };
-      
-      reader.readAsDataURL(file);
-    });
-  }
+  // Always convert to base64 for database storage
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    
+    reader.onloadend = () => {
+      resolve(reader.result as string);
+    };
+    
+    reader.onerror = () => {
+      reject(new Error('Failed to read file'));
+    };
+    
+    reader.readAsDataURL(file);
+  });
 };
 
 // Upload multiple images

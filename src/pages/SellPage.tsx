@@ -58,16 +58,16 @@ const SellPage = () => {
     setUploading(true);
 
     try {
-      // Upload to R2 (or base64 in dev)
+      // Convert images to base64
       const uploadedUrls = await uploadImages(files);
       
       setPhotos([...photos, ...files]);
       setPhotoUrls([...photoUrls, ...uploadedUrls]);
       
-      toast.success(`${files.length} photo(s) uploaded successfully!`);
+      toast.success(`${files.length} photo(s) added successfully!`);
     } catch (error) {
       console.error('Upload error:', error);
-      toast.error("Failed to upload photos. Please try again.");
+      toast.error("Failed to process photos. Please try again.");
     } finally {
       setUploading(false);
     }
@@ -76,9 +76,6 @@ const SellPage = () => {
   const removePhoto = (index: number) => {
     const newPhotos = photos.filter((_, i) => i !== index);
     const newUrls = photoUrls.filter((_, i) => i !== index);
-    
-    // Revoke the URL to free memory
-    URL.revokeObjectURL(photoUrls[index]);
     
     setPhotos(newPhotos);
     setPhotoUrls(newUrls);
@@ -132,8 +129,8 @@ const SellPage = () => {
         description: form.description || '',
         category: form.category,
         price: parseFloat(form.currentPrice),
-        image_url: photoUrls[0] || null, // Main image from R2
-        images: photoUrls.length > 0 ? JSON.stringify(photoUrls) : null, // All images as JSON string
+        image_url: photoUrls[0] || null, // Main image as base64
+        images: photoUrls.length > 0 ? JSON.stringify(photoUrls) : null, // All images as base64 JSON array
         quantity_available: 1,
         location: form.location ? `${form.location.lat},${form.location.lng}` : null,
         latitude: form.location?.lat || null,
