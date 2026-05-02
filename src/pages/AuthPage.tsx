@@ -124,10 +124,10 @@ const AuthPage = () => {
 
   return (
     <PageShell title="">
-      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 pt-20">
-        <div className="max-w-md mx-auto px-4 py-6">
+      <div className="bg-gradient-to-br from-background via-background to-accent/5">
+        <div className="max-w-md mx-auto px-4 pt-4 pb-6">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6">
             <h1 className="text-3xl font-bold text-foreground mb-2">
               {mode === "signin" ? "Welcome back!" : "Join CampusMart"}
             </h1>
