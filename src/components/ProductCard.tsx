@@ -75,7 +75,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
         </div>
         <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
           <Star className="h-2.5 w-2.5 fill-warning text-warning" />
-          {p.rating ?? 4.7}
+          {Math.round(p.rating ?? 4.7)}
           {p.sold !== undefined && <span className="ml-0.5">· {p.sold}</span>}
         </div>
         <button
