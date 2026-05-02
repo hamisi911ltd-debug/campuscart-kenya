@@ -141,9 +141,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const id = data.id || crypto.randomUUID();
     const now = new Date().toISOString();
 
+    // Auto-generate realistic ratings and reviews for new products
+    const rating = data.rating || (3.5 + Math.random() * 1.4); // 3.5 to 4.9
+    const reviews_count = data.reviews_count || Math.floor(Math.random() * 47) + 3; // 3 to 49 reviews
+
     await context.env.DB.prepare(
-      `INSERT INTO products (id, seller_id, title, description, category, price, original_price, image_url, images, quantity_available, location, latitude, longitude, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO products (id, seller_id, title, description, category, price, original_price, image_url, images, quantity_available, location, latitude, longitude, rating, reviews_count, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       id,
       data.seller_id,
@@ -158,6 +162,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       data.location || null,
       data.latitude || null,
       data.longitude || null,
+      rating,
+      reviews_count,
       now,
       now
     ).run();

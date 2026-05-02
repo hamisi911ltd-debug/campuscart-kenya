@@ -335,24 +335,24 @@ const Index = () => {
                 navigate('/sell');
               }
             }}
-            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 p-6 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
+            className="relative overflow-hidden rounded-xl bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 p-3 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
           >
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center justify-between gap-3">
               <div className="flex-1">
-                <h3 className="text-lg font-extrabold text-foreground mb-1">
+                <h3 className="text-sm font-extrabold text-foreground mb-0.5">
                   Got something to sell?
                 </h3>
-                <p className="text-sm text-muted-foreground">
-                  List your item in seconds and reach thousands of students
+                <p className="text-xs text-muted-foreground">
+                  List your item in seconds
                 </p>
               </div>
-              <button className="shrink-0 rounded-full gradient-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-105 transition-transform">
+              <button className="shrink-0 rounded-full gradient-accent px-4 py-2 text-xs font-bold text-accent-foreground shadow-accent hover:scale-105 transition-transform">
                 Post Now
               </button>
             </div>
             {/* Decorative elements */}
-            <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-accent/5 blur-2xl"></div>
-            <div className="absolute -left-4 -bottom-4 h-24 w-24 rounded-full bg-primary/5 blur-2xl"></div>
+            <div className="absolute -right-3 -top-3 h-16 w-16 rounded-full bg-accent/5 blur-xl"></div>
+            <div className="absolute -left-3 -bottom-3 h-16 w-16 rounded-full bg-primary/5 blur-xl"></div>
           </div>
         </div>
       </main>

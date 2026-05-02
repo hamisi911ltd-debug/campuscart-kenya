@@ -67,12 +67,12 @@ export const ProductCard = ({ p }: { p: Product }) => {
       </div>
       <div className="flex flex-1 flex-col gap-0.5 p-1.5">
         <h3 className="line-clamp-2 text-[11px] font-medium text-foreground leading-tight">{p.title}</h3>
-        <div className="flex items-baseline gap-1">
+        <div className="flex items-center gap-1.5">
           <span className="text-sm font-extrabold text-primary">KES {p.price.toLocaleString()}</span>
+          {p.oldPrice && (
+            <span className="text-[9px] text-red-500 line-through font-medium">KES {p.oldPrice.toLocaleString()}</span>
+          )}
         </div>
-        {p.oldPrice && (
-          <span className="text-[9px] text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
-        )}
         <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
           <Star className="h-2.5 w-2.5 fill-warning text-warning" />
           {p.rating ?? 4.7}
