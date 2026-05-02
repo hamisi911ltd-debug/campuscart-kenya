@@ -47,6 +47,17 @@ const CheckoutPage = () => {
 
   const ADMIN_WHATSAPP = "254759159881";
 
+  // Calculate delivery fee based on cart total
+  const getDeliveryFee = (subtotal: number): number => {
+    if (subtotal <= 100) return 40;
+    if (subtotal <= 200) return 70;
+    if (subtotal <= 400) return 90;
+    return 100;
+  };
+
+  const deliveryFee = getDeliveryFee(cartTotal);
+  const orderTotal = cartTotal + deliveryFee;
+
   // No longer needed: getCurrentLocation and openLocationSettings are handled by LocationPicker
 
   if (cart.length === 0 && !done) {
@@ -114,7 +125,7 @@ const CheckoutPage = () => {
         quantity: qty,
         price: product.price,
       })),
-      total_amount: cartTotal + 100,
+      total_amount: orderTotal,
       delivery_address: address,
       delivery_latitude: location.lat,
       delivery_longitude: location.lng,
@@ -163,8 +174,8 @@ const CheckoutPage = () => {
 
       message += `\n💰 *Order Summary:*\n`;
       message += `Subtotal: KES ${cartTotal.toLocaleString()}\n`;
-      message += `Delivery: KES 100\n`;
-      message += `*Total: KES ${(cartTotal + 100).toLocaleString()}*\n\n`;
+      message += `Delivery: KES ${deliveryFee}\n`;
+      message += `*Total: KES ${orderTotal.toLocaleString()}*\n\n`;
       message += `Order ID: ${result.order_id}\n`;
       message += `Please process this order. Thank you!`;
 
@@ -200,7 +211,7 @@ const CheckoutPage = () => {
           quantity: qty,
           seller: product.seller,
         })),
-        total: cartTotal + 100,
+        total: orderTotal,
         deliveryAddress: address,
         location: location,
         status: 'pending',
@@ -297,12 +308,18 @@ const CheckoutPage = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-muted-foreground">Delivery</span>
-              <span className="font-semibold">KES 100</span>
+              <span className="font-semibold">KES {deliveryFee}</span>
+            </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {cartTotal <= 100 && "KES 0-100 → KES 40"}
+              {cartTotal > 100 && cartTotal <= 200 && "KES 101-200 → KES 70"}
+              {cartTotal > 200 && cartTotal <= 400 && "KES 201-400 → KES 90"}
+              {cartTotal > 400 && "KES 400+ → KES 100"}
             </div>
           </div>
           <div className="mt-3 flex justify-between border-t border-border pt-3 text-base font-extrabold">
             <span>Total</span>
-            <span className="text-accent">KES {(cartTotal + 100).toLocaleString()}</span>
+            <span className="text-accent">KES {orderTotal.toLocaleString()}</span>
           </div>
           <button 
             type="submit"
