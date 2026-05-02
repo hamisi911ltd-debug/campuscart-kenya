@@ -15,6 +15,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       notes?: string;
     };
 
+    if (!body.items || body.items.length === 0) {
+      return new Response(JSON.stringify({ error: "No items in order" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     // Calculate delivery fee
     const subtotal = body.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
@@ -31,21 +38,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     const total_amount = subtotal + delivery_fee;
 
-    // Create the order
+    // Get seller_id from first product
+    const product = await context.env.DB.prepare(
+      "SELECT seller_id FROM products WHERE id = ?"
+    ).bind(body.items[0].product_id).first();
+
+    const seller_id = product?.seller_id || "unknown";
+
+    // Create the order - matches actual schema (no created_at, uses default)
     const orderId = crypto.randomUUID();
 
-    // Get first product's seller_id
-    const firstProduct = await context.env.DB.prepare(
-      "SELECT seller_id FROM products WHERE id = ?"
-    ).bind(body.items[0]?.product_id).first();
-
     await context.env.DB.prepare(`
-      INSERT INTO orders (id, buyer_id, seller_id, total_amount, delivery_fee, delivery_address, delivery_latitude, delivery_longitude, buyer_phone, notes, status, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', datetime('now'))
+      INSERT INTO orders (id, buyer_id, seller_id, total_amount, delivery_fee, delivery_address, delivery_latitude, delivery_longitude, buyer_phone, notes, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
     `).bind(
       orderId,
-      body.buyer_id,
-      firstProduct?.seller_id || "",
+      body.buyer_id || "guest",
+      seller_id,
       total_amount,
       delivery_fee,
       body.delivery_address,
@@ -55,7 +64,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body.notes || null
     ).run();
 
-    // Create order items
+    // Create order items - column is price_at_purchase, not price
     for (const item of body.items) {
       await context.env.DB.prepare(`
         INSERT INTO order_items (id, order_id, product_id, quantity, price_at_purchase)
@@ -69,16 +78,18 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       ).run();
     }
 
-    // Build WhatsApp message for admin
-    const itemsList = body.items.map((item, i) => `${i + 1}. ${item.product_id} x${item.quantity} @ KES ${item.price}`).join("\n");
+    // Build WhatsApp message
+    const itemsList = body.items.map((item, i) => 
+      `${i + 1}. Product ${item.product_id} x${item.quantity} @ KES ${item.price}`
+    ).join("\n");
 
     const whatsappMessage = `🛒 *NEW ORDER - CampusMart*\n\n` +
-      `📋 Order ID: ${orderId}\n` +
-      `📱 Buyer Phone: ${body.buyer_phone}\n` +
+      `📋 Order: ${orderId}\n` +
+      `📱 Phone: ${body.buyer_phone}\n` +
       `📍 Address: ${body.delivery_address}\n\n` +
       `📦 Items:\n${itemsList}\n\n` +
       `💰 Subtotal: KES ${subtotal}\n` +
-      `🚚 Delivery Fee: KES ${delivery_fee}\n` +
+      `🚚 Delivery: KES ${delivery_fee}\n` +
       `💵 Total: KES ${total_amount}\n\n` +
       `${body.notes ? `📝 Notes: ${body.notes}\n\n` : ""}` +
       `⏰ ${new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}`;
@@ -95,9 +106,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     });
   } catch (error: any) {
     console.error('Checkout error:', error);
-    return new Response(JSON.stringify({
-      error: "Checkout failed",
-      message: error.message
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Checkout failed"
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

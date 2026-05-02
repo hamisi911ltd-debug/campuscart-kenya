@@ -12,6 +12,11 @@ interface CartItem {
   image_url: string;
 }
 
+// Helper function to safely format prices
+const formatPrice = (price: number | undefined | null): string => {
+  return (price ?? 0).toLocaleString();
+};
+
 export default function CheckoutPage() {
   const navigate = useNavigate();
   const { user, cart } = useShop();
@@ -136,8 +141,8 @@ export default function CheckoutPage() {
               <img src={item.image_url} alt={item.title} />
               <div className="flex-1">
                 <p className="item-title">{item.title}</p>
-                <p className="text-sm text-muted-foreground">KES {item.price.toLocaleString()} x {item.quantity}</p>
-                <p className="item-total">KES {(item.price * item.quantity).toLocaleString()}</p>
+                <p className="text-sm text-muted-foreground">KES {formatPrice(item.price)} x {item.quantity}</p>
+                <p className="item-total">KES {formatPrice(item.price * item.quantity)}</p>
               </div>
             </div>
           ))}
@@ -145,15 +150,15 @@ export default function CheckoutPage() {
           <div className="price-breakdown">
             <div className="price-row">
               <span>Subtotal</span>
-              <span>KES {subtotal.toLocaleString()}</span>
+              <span>KES {formatPrice(subtotal)}</span>
             </div>
             <div className="price-row">
               <span>🚚 Delivery Fee</span>
-              <span>KES {deliveryFee}</span>
+              <span>KES {formatPrice(deliveryFee)}</span>
             </div>
             <div className="price-row total">
               <span>Total</span>
-              <span>KES {totalAmount.toLocaleString()}</span>
+              <span>KES {formatPrice(totalAmount)}</span>
             </div>
           </div>
         </div>
@@ -187,7 +192,7 @@ export default function CheckoutPage() {
           />
 
           <button onClick={handleCheckout} disabled={loading}>
-            {loading ? "Processing..." : `Place Order — KES ${totalAmount.toLocaleString()}`}
+            {loading ? "Processing..." : `Place Order — KES ${formatPrice(totalAmount)}`}
           </button>
         </div>
 
