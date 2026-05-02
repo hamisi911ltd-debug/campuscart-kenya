@@ -165,24 +165,21 @@ const ProfilePage = () => {
       </button>
 
       {/* Support & Feedback Section */}
-      <div className="mt-6 rounded-2xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 p-5 border border-green-200 dark:border-green-800">
-        <div className="flex items-center gap-2 mb-3">
-          <HelpCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-          <h3 className="text-base font-bold text-green-900 dark:text-green-100">Need Help?</h3>
+      <div className="mt-4 rounded-xl bg-card p-4 shadow-card border border-border">
+        <div className="flex items-center gap-2 mb-2">
+          <HelpCircle className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-bold text-foreground">Need Help?</h3>
         </div>
-        <p className="text-sm text-green-700 dark:text-green-300 mb-4">
-          Have an issue or feedback? Our support team is here to help you via WhatsApp.
+        <p className="text-xs text-muted-foreground mb-3">
+          Have an issue or feedback? Contact our support team via WhatsApp.
         </p>
         <button
           onClick={handleContactSupport}
-          className="w-full flex items-center justify-center gap-2 rounded-xl bg-green-600 hover:bg-green-700 p-3 shadow-lg hover:shadow-xl transition text-white font-bold text-sm"
+          className="w-full flex items-center justify-center gap-2 rounded-lg bg-primary hover:bg-primary-glow p-2.5 shadow-md hover:shadow-lg transition text-primary-foreground font-bold text-xs"
         >
-          <MessageCircle className="h-5 w-5" />
-          Contact Support on WhatsApp
+          <MessageCircle className="h-4 w-4" />
+          Contact Support
         </button>
-        <p className="text-xs text-green-600 dark:text-green-400 mt-3 text-center">
-          📱 Available 24/7 • Response within 1 hour
-        </p>
       </div>
 
       <button
