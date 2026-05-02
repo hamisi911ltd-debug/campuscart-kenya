@@ -2,8 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { Eye, EyeOff, Mail, User, Lock, Shield, Smartphone, Phone } from "lucide-react";
-import { Logo } from "@/components/Logo";
+import { Eye, EyeOff, Mail, User, Lock, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 const AuthPage = () => {
@@ -127,12 +126,9 @@ const AuthPage = () => {
     <PageShell title="">
       <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/5">
         <div className="w-full max-w-md">
-          {/* Logo and Header */}
+          {/* Header */}
           <div className="text-center mb-8">
-            <div className="flex justify-center mb-4">
-              <Logo />
-            </div>
-            <h1 className="text-2xl font-bold text-foreground mb-2">
+            <h1 className="text-3xl font-bold text-foreground mb-2">
               {mode === "signin" ? "Welcome back!" : "Join CampusMart"}
             </h1>
             <p className="text-muted-foreground text-sm">
@@ -348,18 +344,6 @@ const AuthPage = () => {
                     : "Already have an account? Sign in"
                   }
                 </button>
-              </div>
-
-              {/* Security Info */}
-              <div className="flex items-center justify-center gap-4 pt-4 border-t border-border/50">
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Shield className="h-3 w-3" />
-                  University verified
-                </div>
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Smartphone className="h-3 w-3" />
-                  M-PESA enabled
-                </div>
               </div>
             </div>
           </form>
