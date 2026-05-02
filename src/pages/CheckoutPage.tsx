@@ -45,7 +45,7 @@ const CheckoutPage = () => {
   const [showMap, setShowMap] = useState(false);
   const [locationError, setLocationError] = useState<string>("");
 
-  const ADMIN_WHATSAPP = "254759159881";
+  const ADMIN_WHATSAPP = "254108254465";
 
   // Calculate delivery fee based on cart total
   const getDeliveryFee = (subtotal: number): number => {
@@ -147,7 +147,7 @@ const CheckoutPage = () => {
 
       const result = await response.json();
       
-      // Prepare WhatsApp message with location
+      // Prepare WhatsApp message with location and seller details
       const googleMapsLink = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
       
       let message = `🛒 *New Order - #${newOrderNumber}*\n\n`;
@@ -165,10 +165,16 @@ const CheckoutPage = () => {
         message += `\n${index + 1}. ${product.title}\n`;
         message += `   Price: KES ${product.price.toLocaleString()} × ${qty} = KES ${(product.price * qty).toLocaleString()}\n`;
         message += `   Category: ${product.category}\n`;
+        
+        // Add seller details if available
         if (product.seller) {
-          message += `   Seller: ${product.seller.name}\n`;
-          message += `   Seller Phone: ${product.seller.phone}\n`;
-          message += `   Seller Email: ${product.seller.email}\n`;
+          message += `\n   👨‍💼 *Seller Info:*\n`;
+          message += `   Name: ${product.seller.name}\n`;
+          message += `   Phone: ${product.seller.phone}\n`;
+          message += `   Email: ${product.seller.email}\n`;
+          if (product.seller.campus) {
+            message += `   Campus: ${product.seller.campus}\n`;
+          }
         }
       });
 
@@ -179,12 +185,16 @@ const CheckoutPage = () => {
       message += `Order ID: ${result.order_id}\n`;
       message += `Please process this order. Thank you!`;
 
-      // Encode and send WhatsApp message
+      // Encode and open WhatsApp app directly (not web)
       const encodedMessage = encodeURIComponent(message);
-      const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodedMessage}`;
+      // Use whatsapp:// protocol to open app directly on mobile, wa.me for desktop
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      const whatsappUrl = isMobile 
+        ? `whatsapp://send?phone=${ADMIN_WHATSAPP}&text=${encodedMessage}`
+        : `https://wa.me/${ADMIN_WHATSAPP}?text=${encodedMessage}`;
       
-      // Open WhatsApp in new tab
-      window.open(whatsappUrl, '_blank');
+      // Open WhatsApp app
+      window.location.href = whatsappUrl;
 
       toast.success("Order placed successfully!");
       setTimeout(async () => { 

@@ -100,7 +100,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       subtotal,
       delivery_fee,
       total_amount,
-      admin_whatsapp: `https://wa.me/254759159881?text=${encodeURIComponent(whatsappMessage)}`,
+      admin_whatsapp: `https://wa.me/254108254465?text=${encodeURIComponent(whatsappMessage)}`,
     }), {
       headers: { "Content-Type": "application/json" },
     });
