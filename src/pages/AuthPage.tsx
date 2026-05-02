@@ -124,8 +124,8 @@ const AuthPage = () => {
 
   return (
     <PageShell title="">
-      <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-background via-background to-accent/5">
-        <div className="w-full max-w-md">
+      <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent/5 pt-20">
+        <div className="max-w-md mx-auto px-4 py-6">
           {/* Header */}
           <div className="text-center mb-8">
             <h1 className="text-3xl font-bold text-foreground mb-2">
@@ -289,11 +289,15 @@ const AuthPage = () => {
               <button 
                 type="submit"
                 disabled={isLoading}
-                className="w-full mt-6 rounded-xl gradient-accent py-3.5 text-sm font-bold text-accent-foreground shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                className={`w-full mt-6 rounded-xl py-3.5 text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
+                  mode === "signin" 
+                    ? "gradient-accent text-accent-foreground" 
+                    : "bg-green-600 hover:bg-green-700 text-white"
+                }`}
               >
                 {isLoading ? (
                   <div className="flex items-center justify-center gap-2">
-                    <div className="w-4 h-4 border-2 border-accent-foreground/30 border-t-accent-foreground rounded-full animate-spin"></div>
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
                     {mode === "signin" ? "Signing in..." : "Creating account..."}
                   </div>
                 ) : (
@@ -340,7 +344,7 @@ const AuthPage = () => {
                   className="text-sm text-muted-foreground hover:text-accent transition-colors"
                 >
                   {mode === "signin" 
-                    ? "New to CampusMart? Create account" 
+                    ? <span>New to CampusMart? <span className="text-green-600 font-semibold">Create account</span></span>
                     : "Already have an account? Sign in"
                   }
                 </button>
