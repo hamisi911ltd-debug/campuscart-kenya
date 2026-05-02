@@ -325,7 +325,7 @@ const Index = () => {
           <ProductGrid items={justListed} />
         </Section>
 
-        {/* Post Item CTA Card - Shows at bottom */}
+        {/* Post Item CTA Card - Shows at bottom with blue color */}
         <div className="mt-8 mb-4">
           <div 
             onClick={() => {
@@ -335,26 +335,29 @@ const Index = () => {
                 navigate('/sell');
               }
             }}
-            className="relative overflow-hidden rounded-xl bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 p-3 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
+            className="relative overflow-hidden rounded-xl bg-primary p-3 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1">
-                <h3 className="text-sm font-extrabold text-foreground mb-0.5">
+                <h3 className="text-sm font-extrabold text-primary-foreground mb-0.5">
                   Got something to sell?
                 </h3>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-primary-foreground/90">
                   List your item in seconds
                 </p>
               </div>
-              <button className="shrink-0 rounded-full gradient-accent px-4 py-2 text-xs font-bold text-accent-foreground shadow-accent hover:scale-105 transition-transform">
+              <button className="shrink-0 rounded-full bg-white text-primary px-4 py-2 text-xs font-bold hover:scale-105 transition-transform shadow-lg">
                 Post Now
               </button>
             </div>
             {/* Decorative elements */}
-            <div className="absolute -right-3 -top-3 h-16 w-16 rounded-full bg-accent/5 blur-xl"></div>
-            <div className="absolute -left-3 -bottom-3 h-16 w-16 rounded-full bg-primary/5 blur-xl"></div>
+            <div className="absolute -right-3 -top-3 h-16 w-16 rounded-full bg-white/10 blur-xl"></div>
+            <div className="absolute -left-3 -bottom-3 h-16 w-16 rounded-full bg-white/10 blur-xl"></div>
           </div>
         </div>
+
+        {/* Category Sections - All Products by Category */}
+        <CategorySections />
       </main>
 
       <BottomNav />
@@ -391,5 +394,76 @@ const ProductGrid = ({ items }: { items: any[] }) => (
     </div>
   </div>
 );
+
+// Category Sections Component - Shows products by category
+const CategorySections = () => {
+  const [categoryProducts, setCategoryProducts] = useState<Record<string, any[]>>({});
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchCategoryProducts = async () => {
+      setLoading(true);
+      const productsByCategory: Record<string, any[]> = {};
+
+      try {
+        // Fetch products for each category
+        for (const category of categories) {
+          const response = await fetch(`/api/products?category=${category.slug}&limit=10`, {
+            headers: { 'Cache-Control': 'no-cache' },
+          });
+          
+          if (response.ok) {
+            const data = await response.json();
+            productsByCategory[category.slug] = Array.isArray(data) 
+              ? data.map(transformDatabaseProduct) 
+              : [];
+          } else {
+            productsByCategory[category.slug] = [];
+          }
+        }
+
+        setCategoryProducts(productsByCategory);
+      } catch (error) {
+        console.error('Error fetching category products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategoryProducts();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="mt-8 text-center">
+        <p className="text-sm text-muted-foreground">Loading categories...</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {categories.map((category) => {
+        const products = categoryProducts[category.slug] || [];
+        
+        // Only show category if it has products
+        if (products.length === 0) return null;
+
+        return (
+          <Section 
+            key={category.slug}
+            icon={<Zap className="h-5 w-5 text-accent" />} 
+            title={category.name} 
+            subtitle={`Browse ${category.name.toLowerCase()}`}
+            link="View All" 
+            linkTo={`/category/${category.slug}`}
+          >
+            <ProductGrid items={products} />
+          </Section>
+        );
+      })}
+    </>
+  );
+};
 
 export default Index;
