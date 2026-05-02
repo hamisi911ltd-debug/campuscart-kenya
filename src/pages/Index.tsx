@@ -385,9 +385,9 @@ const Section = ({ icon, title, subtitle, link, linkTo, children }: { icon: Reac
 
 const ProductGrid = ({ items }: { items: any[] }) => (
   <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
-    <div className="flex gap-1.5">
+    <div className="flex gap-1">
       {items.map((p) => (
-        <div key={p.id} className="w-[90px] shrink-0 md:w-[110px]">
+        <div key={p.id} className="w-[calc((100vw-2rem-0.5rem)/3)] shrink-0 md:w-[110px]">
           <ProductCard p={p} />
         </div>
       ))}
