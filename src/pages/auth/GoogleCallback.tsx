@@ -32,8 +32,9 @@ const GoogleCallback = () => {
           }),
         });
 
+        const data = await res.json();
+
         if (res.ok) {
-          const data = await res.json();
           // Sign in using the shop context
           signIn(
             data.user.full_name,
@@ -45,10 +46,11 @@ const GoogleCallback = () => {
           );
           navigate("/", { replace: true });
         } else {
-          const data = await res.json();
-          setError(data.error || "Sign-in failed. Please try again.");
+          console.error('Google auth error:', data);
+          setError(data.details || data.error || "Sign-in failed. Please try again.");
         }
-      } catch {
+      } catch (err) {
+        console.error('Network error:', err);
         setError("Network error. Please try again.");
       }
     }
