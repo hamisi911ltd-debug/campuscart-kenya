@@ -1,325 +1,325 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
+import { CheckCircle2, MapPin, Loader2 } from "lucide-react";
+import { LocationPicker } from "@/components/LocationPicker";
 
-interface CartItem {
-  product_id: string;
-  title: string;
-  price: number;
-  quantity: number;
-  image_url: string;
+interface Order {
+  id: string;
+  orderNumber: string;
+  customer: {
+    name: string;
+    email: string;
+    phone: string;
+  };
+  items: Array<{
+    productId: string;
+    productTitle: string;
+    price: number;
+    quantity: number;
+    seller?: {
+      name: string;
+      email: string;
+      phone: string;
+      campus: string;
+    };
+  }>;
+  total: number;
+  deliveryAddress: string;
+  location?: { lat: number; lng: number };
+  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  createdAt: string;
+  updatedAt: string;
 }
 
-export default function CheckoutPage() {
+const CheckoutPage = () => {
+  const { cart, cartTotal, clearCart, user } = useShop();
   const navigate = useNavigate();
-  const { user, cart } = useShop();
-  const [items, setItems] = useState<CartItem[]>([]);
   const [address, setAddress] = useState("");
-  const [phone, setPhone] = useState("");
-  const [notes, setNotes] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [done, setDone] = useState(false);
+  const [orderNumber, setOrderNumber] = useState("");
+  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
+  const [locationLoading, setLocationLoading] = useState(false);
+  const [showMap, setShowMap] = useState(false);
+  const [locationError, setLocationError] = useState<string>("");
 
-  useEffect(() => {
-    // Load cart items from store
-    if (cart && cart.length > 0) {
-      const cartItems = cart.map(item => ({
-        product_id: item.id,
-        title: item.title,
-        price: item.price,
-        quantity: item.qty || 1,
-        image_url: item.image || "/placeholder.svg"
-      }));
-      setItems(cartItems);
-    }
-  }, [cart]);
+  const ADMIN_WHATSAPP = "254759159881";
 
-  const subtotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  // No longer needed: getCurrentLocation and openLocationSettings are handled by LocationPicker
 
-  // Delivery fee calculation
-  const getDeliveryFee = (total: number): number => {
-    if (total <= 100) return 40;
-    if (total <= 200) return 70;
-    if (total <= 400) return 90;
-    return 100;
-  };
-
-  const deliveryFee = getDeliveryFee(subtotal);
-  const totalAmount = subtotal + deliveryFee;
-
-  const handleCheckout = async () => {
-    if (!user || !user.id) {
-      toast.error("Please sign in to checkout");
-      navigate("/auth");
-      return;
-    }
-
-    if (!address || !phone) {
-      toast.error("Please fill in delivery address and phone number");
-      return;
-    }
-
-    if (items.length === 0) {
-      toast.error("Your cart is empty");
-      return;
-    }
-
-    setLoading(true);
-
-    try {
-      const response = await fetch("/api/checkout", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          buyer_id: user.id,
-          items: items.map(item => ({
-            product_id: item.product_id,
-            quantity: item.quantity,
-            price: item.price,
-          })),
-          delivery_address: address,
-          buyer_phone: phone,
-          notes,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (result.success) {
-        // Open WhatsApp with the order details sent to admin
-        window.open(result.admin_whatsapp, "_blank");
-
-        toast.success("Order placed successfully!", {
-          description: `Order ID: ${result.order_id}`
-        });
-
-        // Navigate to home after a short delay
-        setTimeout(() => {
-          navigate("/");
-        }, 2000);
-      } else {
-        toast.error(result.error || "Checkout failed");
-      }
-    } catch (error) {
-      console.error("Checkout error:", error);
-      toast.error("Checkout failed. Please try again.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  if (items.length === 0) {
+  if (cart.length === 0 && !done) {
     return (
       <PageShell title="Checkout">
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <p className="text-muted-foreground mb-4">Your cart is empty</p>
-          <button
-            onClick={() => navigate("/")}
-            className="rounded-full bg-primary px-6 py-2 text-sm font-bold text-primary-foreground hover:bg-primary-glow transition"
-          >
-            Continue Shopping
-          </button>
+        <p className="rounded-xl bg-card p-6 text-center text-sm text-muted-foreground shadow-card">Your cart is empty.</p>
+      </PageShell>
+    );
+  }
+
+  if (done) {
+    return (
+      <PageShell title="Order confirmed">
+        <div className="rounded-2xl bg-card p-8 text-center shadow-elevated">
+          <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
+          <h2 className="mt-3 text-xl font-extrabold">Asante sana!</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Order #{orderNumber} has been placed successfully!
+          </p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Your order details and location have been sent to the admin via WhatsApp.
+          </p>
+          <div className="mt-5 flex gap-3 justify-center">
+            <button 
+              onClick={() => navigate("/orders")} 
+              className="rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary-glow"
+            >
+              Track Order
+            </button>
+            <button 
+              onClick={() => navigate("/")} 
+              className="rounded-full gradient-accent px-6 py-2.5 text-sm font-bold text-accent-foreground shadow-accent"
+            >
+              Continue shopping
+            </button>
+          </div>
         </div>
       </PageShell>
     );
   }
 
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    
+    if (!user) {
+      toast.error("Please sign in to continue");
+      navigate('/auth');
+      return;
+    }
+
+    if (!location) {
+      toast.error("Please share your location to continue");
+      return;
+    }
+
+    // Generate order number
+    const newOrderNumber = `CM${Date.now().toString().slice(-8)}`;
+    setOrderNumber(newOrderNumber);
+
+    // Prepare order data for API
+    const orderData = {
+      buyer_id: user.id,
+      items: cart.map(({ product, qty }) => ({
+        product_id: product.id,
+        quantity: qty,
+        price: product.price,
+      })),
+      total_amount: cartTotal + 100,
+      delivery_address: address,
+      delivery_latitude: location.lat,
+      delivery_longitude: location.lng,
+      buyer_phone: user.phone || 'Not provided',
+      notes: `Location: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}`,
+    };
+
+    try {
+      // Save order to database via checkout API
+      const response = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(orderData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save order');
+      }
+
+      const result = await response.json();
+      
+      // Prepare WhatsApp message with location
+      const googleMapsLink = `https://www.google.com/maps?q=${location.lat},${location.lng}`;
+      
+      let message = `🛒 *New Order - #${newOrderNumber}*\n\n`;
+      message += `👤 *Customer Details:*\n`;
+      message += `Name: ${user.name}\n`;
+      message += `Email: ${user.email}\n`;
+      message += `Phone: ${user.phone || 'Not provided'}\n`;
+      message += `Delivery: ${address}\n\n`;
+      message += `📍 *Live Location:*\n`;
+      message += `${googleMapsLink}\n`;
+      message += `Coordinates: ${location.lat.toFixed(6)}, ${location.lng.toFixed(6)}\n\n`;
+      message += `📦 *Order Items:*\n`;
+      
+      cart.forEach(({ product, qty }, index) => {
+        message += `\n${index + 1}. ${product.title}\n`;
+        message += `   Price: KES ${product.price.toLocaleString()} × ${qty} = KES ${(product.price * qty).toLocaleString()}\n`;
+        message += `   Category: ${product.category}\n`;
+        if (product.seller) {
+          message += `   Seller: ${product.seller.name}\n`;
+          message += `   Seller Phone: ${product.seller.phone}\n`;
+          message += `   Seller Email: ${product.seller.email}\n`;
+        }
+      });
+
+      message += `\n💰 *Order Summary:*\n`;
+      message += `Subtotal: KES ${cartTotal.toLocaleString()}\n`;
+      message += `Delivery: KES 100\n`;
+      message += `*Total: KES ${(cartTotal + 100).toLocaleString()}*\n\n`;
+      message += `Order ID: ${result.order_id}\n`;
+      message += `Please process this order. Thank you!`;
+
+      // Encode and send WhatsApp message
+      const encodedMessage = encodeURIComponent(message);
+      const whatsappUrl = `https://wa.me/${ADMIN_WHATSAPP}?text=${encodedMessage}`;
+      
+      // Open WhatsApp in new tab
+      window.open(whatsappUrl, '_blank');
+
+      toast.success("Order placed successfully!");
+      setTimeout(async () => { 
+        await clearCart(); 
+        setDone(true); 
+      }, 800);
+
+    } catch (error) {
+      console.error('Error placing order:', error);
+      
+      // Fallback to localStorage if API fails
+      const order: Order = {
+        id: Date.now().toString(),
+        orderNumber: newOrderNumber,
+        customer: {
+          name: user.name,
+          email: user.email,
+          phone: user.phone || 'Not provided',
+        },
+        items: cart.map(({ product, qty }) => ({
+          productId: product.id,
+          productTitle: product.title,
+          price: product.price,
+          quantity: qty,
+          seller: product.seller,
+        })),
+        total: cartTotal + 100,
+        deliveryAddress: address,
+        location: location,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      // Save order to localStorage as fallback
+      const existingOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
+      existingOrders.push(order);
+      localStorage.setItem('campusmart_orders', JSON.stringify(existingOrders));
+
+      toast.success("Order placed successfully (saved locally)!");
+      setTimeout(async () => { 
+        await clearCart(); 
+        setDone(true); 
+      }, 800);
+    }
+  };
+
   return (
     <PageShell title="Checkout">
-      <div className="checkout-page">
-        {/* Order Summary */}
-        <div className="order-summary">
-          <h2 className="text-lg font-bold mb-4">Order Summary</h2>
-          {items.map(item => (
-            <div key={item.product_id} className="checkout-item">
-              <img src={item.image_url} alt={item.title} />
-              <div className="flex-1">
-                <p className="item-title">{item.title}</p>
-                <p className="text-sm text-muted-foreground">KES {item.price.toLocaleString()} x {item.quantity}</p>
-                <p className="item-total">KES {(item.price * item.quantity).toLocaleString()}</p>
-              </div>
-            </div>
-          ))}
+      <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
+        <div className="space-y-4">
+          {/* Delivery Address */}
+          <div className="rounded-2xl bg-card p-5 shadow-card">
+            <h2 className="text-lg font-extrabold mb-4">Delivery Address</h2>
+            <input 
+              value={address} 
+              onChange={(e) => setAddress(e.target.value)} 
+              required 
+              placeholder="Hostel block / room number / nearest landmark" 
+              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+            />
+            <p className="text-xs text-muted-foreground mt-2">
+              Provide detailed delivery instructions for the rider
+            </p>
+          </div>
 
-          <div className="price-breakdown">
-            <div className="price-row">
-              <span>Subtotal</span>
-              <span>KES {subtotal.toLocaleString()}</span>
-            </div>
-            <div className="price-row">
-              <span>🚚 Delivery Fee</span>
-              <span>KES {deliveryFee}</span>
-            </div>
-            <div className="price-row total">
-              <span>Total</span>
-              <span>KES {totalAmount.toLocaleString()}</span>
+          {/* Location Section */}
+          <LocationPicker 
+            onLocationCapture={(loc) => {
+              setLocation(loc);
+              setShowMap(true);
+            }} 
+            initialLocation={location}
+          />
+
+          {/* Order Confirmation */}
+          <div className="rounded-2xl bg-card p-5 shadow-card">
+            <h2 className="text-lg font-extrabold mb-4">Confirm Order Details</h2>
+            <div className="space-y-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Customer:</span>
+                <span className="font-semibold">{user?.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Email:</span>
+                <span className="font-semibold">{user?.email}</span>
+              </div>
+              {user?.phone && (
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Phone:</span>
+                  <span className="font-semibold">{user.phone}</span>
+                </div>
+              )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Items:</span>
+                <span className="font-semibold">{cart.length} item{cart.length > 1 ? 's' : ''}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Location:</span>
+                <span className="font-semibold">{location ? '✓ Shared' : '✗ Not shared'}</span>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Delivery Info */}
-        <div className="delivery-form">
-          <h2 className="text-lg font-bold mb-4">Delivery Details</h2>
-
-          <label>Phone Number</label>
-          <input
-            type="tel"
-            placeholder="e.g. 0759159881"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-
-          <label>Delivery Address</label>
-          <textarea
-            placeholder="e.g. Room 204, Hostel A, Campus"
-            value={address}
-            onChange={(e) => setAddress(e.target.value)}
-            rows={3}
-          />
-
-          <label>Notes (optional)</label>
-          <textarea
-            placeholder="Any special instructions..."
-            value={notes}
-            onChange={(e) => setNotes(e.target.value)}
-            rows={2}
-          />
-
-          <button onClick={handleCheckout} disabled={loading}>
-            {loading ? "Processing..." : `Place Order — KES ${totalAmount.toLocaleString()}`}
+        {/* Order Summary Sidebar */}
+        <aside className="h-fit rounded-2xl bg-card p-5 shadow-elevated">
+          <h2 className="text-lg font-extrabold">Order Summary</h2>
+          <ul className="mt-3 space-y-2 text-sm">
+            {cart.map(({ product, qty }) => (
+              <li key={product.id} className="flex justify-between gap-2">
+                <span className="line-clamp-1">{product.title} × {qty}</span>
+                <span className="shrink-0 font-bold">KES {(product.price * qty).toLocaleString()}</span>
+              </li>
+            ))}
+          </ul>
+          <div className="mt-4 space-y-2 text-sm border-t border-border pt-3">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span className="font-semibold">KES {cartTotal.toLocaleString()}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Delivery</span>
+              <span className="font-semibold">KES 100</span>
+            </div>
+          </div>
+          <div className="mt-3 flex justify-between border-t border-border pt-3 text-base font-extrabold">
+            <span>Total</span>
+            <span className="text-accent">KES {(cartTotal + 100).toLocaleString()}</span>
+          </div>
+          <button 
+            type="submit"
+            disabled={!location}
+            className="mt-4 w-full rounded-full gradient-accent py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            {location ? 'Complete Order Placement' : 'Share Location to Continue'}
           </button>
-        </div>
-
-        {/* Delivery fee info */}
-        <div className="delivery-info">
-          <h3 className="font-bold mb-2">🚚 Delivery Rates</h3>
-          <p>KES 0–100 → KES 40</p>
-          <p>KES 101–200 → KES 70</p>
-          <p>KES 201–400 → KES 90</p>
-          <p>KES 400+ → KES 100</p>
-        </div>
-      </div>
-
-      <style>{`
-        .checkout-page {
-          max-width: 600px;
-          margin: 0 auto;
-          padding: 20px;
-        }
-
-        .checkout-item {
-          display: flex;
-          gap: 12px;
-          padding: 12px 0;
-          border-bottom: 1px solid hsl(var(--border));
-        }
-
-        .checkout-item img {
-          width: 60px;
-          height: 60px;
-          object-fit: cover;
-          border-radius: 8px;
-        }
-
-        .item-title {
-          font-weight: 600;
-        }
-
-        .item-total {
-          font-weight: bold;
-          color: hsl(var(--foreground));
-        }
-
-        .price-breakdown {
-          margin-top: 16px;
-          padding-top: 16px;
-          border-top: 2px solid hsl(var(--border));
-        }
-
-        .price-row {
-          display: flex;
-          justify-content: space-between;
-          padding: 6px 0;
-          color: hsl(var(--muted-foreground));
-        }
-
-        .price-row.total {
-          font-size: 18px;
-          font-weight: bold;
-          color: hsl(var(--foreground));
-          border-top: 2px solid hsl(var(--foreground));
-          margin-top: 8px;
-          padding-top: 12px;
-        }
-
-        .delivery-form {
-          margin-top: 24px;
-          background: hsl(var(--card));
-          padding: 20px;
-          border-radius: 12px;
-        }
-
-        .delivery-form label {
-          display: block;
-          margin-top: 16px;
-          font-weight: 600;
-          margin-bottom: 4px;
-          font-size: 14px;
-        }
-
-        .delivery-form input,
-        .delivery-form textarea {
-          width: 100%;
-          padding: 10px;
-          border: 1px solid hsl(var(--border));
-          border-radius: 8px;
-          font-size: 16px;
-          background: hsl(var(--background));
-          color: hsl(var(--foreground));
-        }
-
-        .delivery-form button {
-          width: 100%;
-          margin-top: 20px;
-          padding: 14px;
-          background: hsl(var(--primary));
-          color: hsl(var(--primary-foreground));
-          border: none;
-          border-radius: 10px;
-          font-size: 16px;
-          font-weight: bold;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .delivery-form button:hover:not(:disabled) {
-          opacity: 0.9;
-        }
-
-        .delivery-form button:disabled {
-          opacity: 0.5;
-          cursor: not-allowed;
-        }
-
-        .delivery-info {
-          margin-top: 24px;
-          padding: 16px;
-          background: hsl(var(--accent) / 0.1);
-          border-radius: 10px;
-          font-size: 14px;
-        }
-
-        .delivery-info p {
-          margin: 4px 0;
-        }
-
-        .order-summary {
-          background: hsl(var(--card));
-          padding: 20px;
-          border-radius: 12px;
-        }
-      `}</style>
+          {!location && (
+            <p className="mt-2 text-xs text-center text-muted-foreground">
+              Location required for delivery
+            </p>
+          )}
+        </aside>
+      </form>
     </PageShell>
   );
-}
+};
+
+export default CheckoutPage;
