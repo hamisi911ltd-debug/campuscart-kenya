@@ -53,16 +53,25 @@ const AuthPage = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleGoogleSignIn = () => {
-    const clientId = "YOUR_GOOGLE_CLIENT_ID"; // Set in Cloudflare Pages environment variables
-    const redirectUri = `${window.location.origin}/auth/google-callback`;
-    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    authUrl.searchParams.set("client_id", clientId);
-    authUrl.searchParams.set("redirect_uri", redirectUri);
-    authUrl.searchParams.set("response_type", "code");
-    authUrl.searchParams.set("scope", "openid email profile");
-    authUrl.searchParams.set("prompt", "select_account");
-    window.location.href = authUrl.toString();
+  const handleGoogleSignIn = async () => {
+    try {
+      // Fetch Google Client ID from backend
+      const configRes = await fetch('/api/config/google');
+      const config = await configRes.json();
+      const clientId = config.clientId;
+      
+      const redirectUri = `${window.location.origin}/auth/google-callback`;
+      const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+      authUrl.searchParams.set("client_id", clientId);
+      authUrl.searchParams.set("redirect_uri", redirectUri);
+      authUrl.searchParams.set("response_type", "code");
+      authUrl.searchParams.set("scope", "openid email profile");
+      authUrl.searchParams.set("prompt", "select_account");
+      window.location.href = authUrl.toString();
+    } catch (error) {
+      console.error('Failed to initiate Google Sign-In:', error);
+      toast.error("Failed to start Google Sign-In. Please try again.");
+    }
   };
 
   const submit = async (e: FormEvent) => {
