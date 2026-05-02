@@ -8,13 +8,10 @@ const campuses = ["UoN Main Campus", "JKUAT Juja", "Kenyatta U.", "Strathmore", 
 
 export const TopBar = () => {
   const navigate = useNavigate();
-  const { cartCount, user } = useShop();
+  const { cartCount, user, unreadNotificationCount } = useShop();
   const [q, setQ] = useState("");
   const [campus, setCampus] = useState(campuses[0]);
   const [openCampus, setOpenCampus] = useState(false);
-  
-  // Mock notification count - in real app, fetch from API
-  const notificationCount = 3; // You can replace this with actual notification count from your store/API
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -65,9 +62,9 @@ export const TopBar = () => {
         </form>
         <Link to="/notifications" className="relative ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Notifications">
           <Bell className="h-4 w-4" />
-          {notificationCount > 0 && (
+          {unreadNotificationCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
-              {notificationCount}
+              {unreadNotificationCount}
             </span>
           )}
         </Link>

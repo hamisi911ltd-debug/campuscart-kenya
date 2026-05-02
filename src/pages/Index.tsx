@@ -18,64 +18,64 @@ import catRooms from "@/assets/cat-rooms.jpg";
 import catStat from "@/assets/cat-stationery.jpg";
 import catFurn from "@/assets/cat-furniture.jpg";
 
-// Default ad slides - Use category images instead of products
+// Gen Z Catchy Product Slides - Replace these URLs with actual Pinterest images
 const getDefaultAdSlides = () => {
   return [
     {
       bg: "transparent",
-      badge: "ELECTRONICS",
-      title: "Shop Electronics",
-      subtitle: "Laptops, Phones & More",
+      badge: "TRENDING",
+      title: "AirPods Pro 🎧",
+      subtitle: "Wireless Freedom Awaits",
       categorySlug: "electronics",
-      imageUrl: catElec,
+      imageUrl: "https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=1200&h=600&fit=crop", // Replace with Pinterest image
     },
     {
       bg: "transparent",
-      badge: "BOOKS",
-      title: "Textbooks & Novels",
-      subtitle: "Save Up To 50%",
-      categorySlug: "books",
-      imageUrl: catBooks,
+      badge: "HOT DEAL",
+      title: "MacBook Air M2 💻",
+      subtitle: "Power Meets Portability",
+      categorySlug: "electronics",
+      imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200&h=600&fit=crop", // Replace with Pinterest image
     },
     {
       bg: "transparent",
       badge: "FASHION",
-      title: "Fashion & Accessories",
-      subtitle: "Shoes, Clothes & More",
+      title: "Streetwear Vibes 👟",
+      subtitle: "Fresh Kicks & Fits",
       categorySlug: "fashion",
-      imageUrl: catFashion,
+      imageUrl: "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=1200&h=600&fit=crop", // Replace with Pinterest image
     },
     {
       bg: "transparent",
       badge: "FOOD",
-      title: "Food & Delivery",
-      subtitle: "Hot Meals Delivered Fast",
+      title: "Campus Eats 🍕",
+      subtitle: "Delivered Hot & Fast",
       categorySlug: "food",
-      imageUrl: catFood,
+      imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=600&fit=crop", // Replace with Pinterest image
     },
     {
       bg: "transparent",
-      badge: "HOSTELS",
-      title: "Rooms & Accommodation",
-      subtitle: "Find Your Perfect Space",
+      badge: "BOOKS",
+      title: "Textbooks 50% OFF 📚",
+      subtitle: "Save Big This Semester",
+      categorySlug: "books",
+      imageUrl: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=1200&h=600&fit=crop", // Replace with Pinterest image
+    },
+    {
+      bg: "transparent",
+      badge: "GAMING",
+      title: "PS5 & Accessories 🎮",
+      subtitle: "Level Up Your Game",
+      categorySlug: "electronics",
+      imageUrl: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=1200&h=600&fit=crop", // Replace with Pinterest image
+    },
+    {
+      bg: "transparent",
+      badge: "ROOMS",
+      title: "Cozy Hostels 🏠",
+      subtitle: "Your Home Away From Home",
       categorySlug: "hostels",
-      imageUrl: catRooms,
-    },
-    {
-      bg: "transparent",
-      badge: "STATIONERY",
-      title: "School Supplies",
-      subtitle: "Everything You Need",
-      categorySlug: "stationery",
-      imageUrl: catStat,
-    },
-    {
-      bg: "transparent",
-      badge: "FURNITURE",
-      title: "Furniture & Appliances",
-      subtitle: "Make Your Room Home",
-      categorySlug: "furniture",
-      imageUrl: catFurn,
+      imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=600&fit=crop", // Replace with Pinterest image
     },
   ];
 };

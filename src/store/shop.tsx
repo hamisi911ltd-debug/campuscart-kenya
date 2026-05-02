@@ -18,6 +18,8 @@ interface ShopState {
   cart: CartItem[];
   favorites: string[];
   user: { id?: string; name: string; email: string; phone?: string; picture?: string; campus?: string } | null;
+  notifications: Array<{ id: string; title: string; message: string; time: string; read: boolean }>;
+  unreadNotificationCount: number;
   addToCart: (p: Product, qty?: number) => Promise<void>;
   removeFromCart: (id: string) => Promise<void>;
   setQty: (id: string, qty: number) => Promise<void>;
@@ -26,6 +28,7 @@ interface ShopState {
   isFavorite: (id: string) => boolean;
   signIn: (name: string, email: string, phone?: string, picture?: string, campus?: string, id?: string) => void;
   signOut: () => void;
+  markNotificationsAsRead: () => void;
   cartCount: number;
   cartTotal: number;
   loadUserData: () => Promise<void>;
@@ -46,10 +49,18 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
   const [cart, setCart] = useState<CartItem[]>(() => load("cm:cart", []));
   const [favorites, setFavorites] = useState<string[]>(() => load("cm:favs", []));
   const [user, setUser] = useState<ShopState["user"]>(() => load("cm:user", null));
+  const [notifications, setNotifications] = useState<ShopState["notifications"]>(() => 
+    load("cm:notifications", [
+      { id: "1", title: "Flash deal alert!", message: "MacBook Pro is 25% off — ends tonight 🔥", time: "2m", read: false },
+      { id: "2", title: "Your order is on the way", message: "Boda rider Kevin is 5 min from your hostel.", time: "1h", read: false },
+      { id: "3", title: "New message from seller", message: "About 'CLRS Algorithms 4th Ed'", time: "3h", read: false },
+    ])
+  );
 
   useEffect(() => localStorage.setItem("cm:cart", JSON.stringify(cart)), [cart]);
   useEffect(() => localStorage.setItem("cm:favs", JSON.stringify(favorites)), [favorites]);
   useEffect(() => localStorage.setItem("cm:user", JSON.stringify(user)), [user]);
+  useEffect(() => localStorage.setItem("cm:notifications", JSON.stringify(notifications)), [notifications]);
 
   // Load user data from database when user changes
   useEffect(() => {
@@ -233,11 +244,22 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
     toast("Signed out");
   }, []);
 
+  const markNotificationsAsRead = useCallback(() => {
+    setNotifications((prev) => prev.map(n => ({ ...n, read: true })));
+  }, []);
+
+  const unreadNotificationCount = useMemo(() => 
+    notifications.filter(n => !n.read).length, 
+    [notifications]
+  );
+
   const value = useMemo<ShopState>(
     () => ({
       cart,
       favorites,
       user,
+      notifications,
+      unreadNotificationCount,
       addToCart,
       removeFromCart,
       setQty,
@@ -246,11 +268,12 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       isFavorite,
       signIn,
       signOut,
+      markNotificationsAsRead,
       cartCount: cart.reduce((n, i) => n + i.qty, 0),
       cartTotal: cart.reduce((n, i) => n + i.qty * i.product.price, 0),
       loadUserData,
     }),
-    [cart, favorites, user, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut, loadUserData]
+    [cart, favorites, user, notifications, unreadNotificationCount, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut, markNotificationsAsRead, loadUserData]
   );
 
   return <ShopCtx.Provider value={value}>{children}</ShopCtx.Provider>;
