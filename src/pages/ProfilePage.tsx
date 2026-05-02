@@ -77,7 +77,7 @@ const ProfilePage = () => {
     { i: ShoppingBag, t: "My Cart", s: `${cartCount} items`, to: "/cart" },
     { i: Heart, t: "Favorites", s: `${favorites.length} saved`, to: "/favorites" },
     { i: Package, t: "My Orders", s: "Track deliveries", to: "/orders" },
-    { i: Store, t: "My Listings", s: "Manage what you sell", to: "/sell" },
+    { i: Store, t: "My Listings", s: "Manage what you sell", to: "/my-listings" },
   ];
 
   // Add Install App option if not installed

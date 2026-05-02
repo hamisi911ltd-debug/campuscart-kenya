@@ -76,7 +76,7 @@ const SearchPage = () => {
       ) : results.length === 0 ? (
         <p className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground shadow-card">No matches. Try a different keyword.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <div className="grid grid-cols-3 gap-1.5 md:grid-cols-6 md:gap-2">
           {results.map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       )}

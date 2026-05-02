@@ -29,14 +29,26 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     `).bind(product_id).all();
 
     // Transform reviews to frontend format
-    const reviews = (results || []).map((review: any) => ({
-      id: review.id,
-      userName: review.buyer_id === 'auto-generated' ? getRandomName() : 'Anonymous',
-      rating: review.rating,
-      comment: review.comment,
-      date: review.created_at,
-      verified: review.is_verified_purchase === 1,
-    }));
+    const reviews = (results || []).map((review: any) => {
+      // Parse name from comment if it's in format "Name: Comment"
+      let userName = getRandomName();
+      let comment = review.comment || '';
+      
+      if (comment.includes(':')) {
+        const parts = comment.split(':', 2);
+        userName = parts[0].trim();
+        comment = parts[1].trim();
+      }
+
+      return {
+        id: review.id,
+        userName,
+        rating: review.rating,
+        comment,
+        date: review.created_at,
+        verified: review.is_verified_purchase === 1,
+      };
+    });
 
     return new Response(JSON.stringify(reviews), {
       headers: { "Content-Type": "application/json" },

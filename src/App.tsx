@@ -14,9 +14,11 @@ import CartPage from "./pages/CartPage";
 import FavoritesPage from "./pages/FavoritesPage";
 import SearchPage from "./pages/SearchPage";
 import SellPage from "./pages/SellPage";
+import MyListingsPage from "./pages/MyListingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import OrdersPage from "./pages/OrdersPage";
 import AuthPage from "./pages/AuthPage";
+import GoogleCallback from "./pages/auth/GoogleCallback";
 import NotificationsPage from "./pages/NotificationsPage";
 import CheckoutPage from "./pages/CheckoutPage";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -48,9 +50,11 @@ const App = () => (
             <Route path="/favorites" element={<FavoritesPage />} />
             <Route path="/search" element={<SearchPage />} />
             <Route path="/sell" element={<SellPage />} />
+            <Route path="/my-listings" element={<MyListingsPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/orders" element={<OrdersPage />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/auth/google-callback" element={<GoogleCallback />} />
             <Route path="/notifications" element={<NotificationsPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             {/* Admin Routes */}

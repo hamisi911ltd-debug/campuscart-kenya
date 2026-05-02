@@ -43,7 +43,7 @@ const CategoryPage = () => {
           No listings yet in this category. Be the first to <Link to="/sell" className="font-bold text-accent">post one</Link>.
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        <div className="grid grid-cols-3 gap-1.5 md:grid-cols-6 md:gap-2">
           {items.map((p) => <ProductCard key={p.id} p={p} />)}
         </div>
       )}

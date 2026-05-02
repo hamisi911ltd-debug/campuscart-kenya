@@ -1,78 +1,137 @@
-// Cloudflare Pages Function - Single Product Operations
+// Cloudflare Pages Function - Single Product API (GET, DELETE, PATCH)
 interface Env {
   DB: D1Database;
 }
 
-// GET single product
+// GET single product by ID
 export const onRequestGet: PagesFunction<Env> = async (context) => {
-  const id = context.params.id as string;
-
-  const product = await context.env.DB.prepare(
-    "SELECT * FROM products WHERE id = ?"
-  ).bind(id).first();
-
-  if (!product) {
-    return new Response(JSON.stringify({ error: "Product not found" }), {
-      status: 404,
-      headers: { "Content-Type": "application/json" },
-    });
-  }
-
-  return new Response(JSON.stringify(product), {
-    headers: { "Content-Type": "application/json" },
-  });
-};
-
-// PATCH update product
-export const onRequestPatch: PagesFunction<Env> = async (context) => {
   try {
     const id = context.params.id as string;
-    const data = await context.request.json() as Record<string, any>;
 
-    const allowedFields = ["title", "description", "category", "price", "image_url", "images", "quantity_available", "location", "latitude", "longitude", "is_available"];
-    const updates: string[] = [];
-    const values: any[] = [];
-
-    for (const field of allowedFields) {
-      if (data[field] !== undefined) {
-        updates.push(`${field} = ?`);
-        values.push(data[field]);
-      }
-    }
-
-    if (updates.length === 0) {
-      return new Response(JSON.stringify({ error: "No valid fields to update" }), {
+    if (!id) {
+      return new Response(JSON.stringify({ error: "Product ID required" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
     }
 
-    updates.push("updated_at = ?");
-    values.push(new Date().toISOString());
-    values.push(id);
+    const product = await context.env.DB.prepare(
+      "SELECT * FROM products WHERE id = ?"
+    ).bind(id).first();
 
-    await context.env.DB.prepare(
-      `UPDATE products SET ${updates.join(", ")} WHERE id = ?`
-    ).bind(...values).run();
+    if (!product) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-    return new Response(JSON.stringify({ success: true }), {
+    return new Response(JSON.stringify(product), {
       headers: { "Content-Type": "application/json" },
     });
-  } catch (err: any) {
-    return new Response(JSON.stringify({ error: err.message }), {
+  } catch (error: any) {
+    console.error('GET /api/products/[id] error:', error);
+    return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
     });
   }
 };
 
-// DELETE product
+// DELETE product by ID
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
-  const id = context.params.id as string;
+  try {
+    const id = context.params.id as string;
 
-  await context.env.DB.prepare("DELETE FROM products WHERE id = ?").bind(id).run();
+    if (!id) {
+      return new Response(JSON.stringify({ error: "Product ID required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
-  return new Response(JSON.stringify({ success: true }), {
-    headers: { "Content-Type": "application/json" },
-  });
+    // Check if product exists
+    const product = await context.env.DB.prepare(
+      "SELECT id, seller_id FROM products WHERE id = ?"
+    ).bind(id).first();
+
+    if (!product) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Delete the product (CASCADE will handle related records)
+    await context.env.DB.prepare(
+      "DELETE FROM products WHERE id = ?"
+    ).bind(id).run();
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "Product deleted successfully" 
+    }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    console.error('DELETE /api/products/[id] error:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Failed to delete product"
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+};
+
+// PATCH product by ID (update availability)
+export const onRequestPatch: PagesFunction<Env> = async (context) => {
+  try {
+    const id = context.params.id as string;
+
+    if (!id) {
+      return new Response(JSON.stringify({ error: "Product ID required" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const body = await context.request.json() as { is_available?: number };
+
+    // Check if product exists
+    const product = await context.env.DB.prepare(
+      "SELECT id, seller_id FROM products WHERE id = ?"
+    ).bind(id).first();
+
+    if (!product) {
+      return new Response(JSON.stringify({ error: "Product not found" }), {
+        status: 404,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    // Update availability if provided
+    if (body.is_available !== undefined) {
+      await context.env.DB.prepare(
+        "UPDATE products SET is_available = ? WHERE id = ?"
+      ).bind(body.is_available, id).run();
+    }
+
+    return new Response(JSON.stringify({ 
+      success: true, 
+      message: "Product updated successfully" 
+    }), {
+      headers: { "Content-Type": "application/json" },
+    });
+  } catch (error: any) {
+    console.error('PATCH /api/products/[id] error:', error);
+    return new Response(JSON.stringify({ 
+      error: error.message,
+      details: "Failed to update product"
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
 };

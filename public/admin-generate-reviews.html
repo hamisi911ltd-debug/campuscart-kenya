@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generate Reviews - CampusMart Admin</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 40px;
+      max-width: 600px;
+      width: 100%;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    
+    .info-box {
+      background: #f0f4ff;
+      border-left: 4px solid #667eea;
+      padding: 15px;
+      margin-bottom: 30px;
+      border-radius: 8px;
+    }
+    
+    .info-box h3 {
+      color: #667eea;
+      margin-bottom: 10px;
+      font-size: 16px;
+    }
+    
+    .info-box ul {
+      margin-left: 20px;
+      color: #555;
+      font-size: 14px;
+      line-height: 1.8;
+    }
+    
+    button {
+      width: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+    
+    .result {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 12px;
+      display: none;
+    }
+    
+    .result.success {
+      background: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+      display: block;
+    }
+    
+    .result.error {
+      background: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+      display: block;
+    }
+    
+    .result h3 {
+      margin-bottom: 10px;
+      font-size: 18px;
+    }
+    
+    .result pre {
+      background: rgba(0, 0, 0, 0.05);
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      margin-top: 10px;
+    }
+    
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      border-top-color: white;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+    
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌟 Generate Reviews</h1>
+    <p class="subtitle">CampusMart Admin Tool</p>
+    
+    <div class="info-box">
+      <h3>What This Does:</h3>
+      <ul>
+        <li>Finds all products without reviews</li>
+        <li>Generates 3-5 reviews per product</li>
+        <li>Assigns 4-5 star ratings</li>
+        <li>Marks all as "Verified Purchase"</li>
+        <li>Sets random dates (1-30 days ago)</li>
+      </ul>
+    </div>
+    
+    <button id="generateBtn" onclick="generateReviews()">
+      Generate Reviews for Existing Products
+    </button>
+    
+    <div id="result" class="result"></div>
+  </div>
+
+  <script>
+    async function generateReviews() {
+      const btn = document.getElementById('generateBtn');
+      const result = document.getElementById('result');
+      
+      // Disable button and show loading
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spinner"></span>Generating reviews...';
+      result.style.display = 'none';
+      
+      try {
+        const response = await fetch('/api/admin/generate-reviews', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+          result.className = 'result success';
+          result.innerHTML = `
+            <h3>✅ Success!</h3>
+            <p><strong>Products Processed:</strong> ${data.productsProcessed}</p>
+            <p><strong>Reviews Created:</strong> ${data.reviewsCreated}</p>
+            <p style="margin-top: 15px;">${data.message}</p>
+            ${data.products && data.products.length > 0 ? `
+              <pre>${JSON.stringify(data.products, null, 2)}</pre>
+            ` : ''}
+          `;
+        } else {
+          throw new Error(data.error || 'Unknown error');
+        }
+        
+      } catch (error) {
+        result.className = 'result error';
+        result.innerHTML = `
+          <h3>❌ Error</h3>
+          <p>${error.message}</p>
+          <p style="margin-top: 10px; font-size: 13px;">Please check the console for more details.</p>
+        `;
+        console.error('Error:', error);
+      } finally {
+        // Re-enable button
+        btn.disabled = false;
+        btn.innerHTML = 'Generate Reviews for Existing Products';
+      }
+    }
+  </script>
+</body>
+</html>

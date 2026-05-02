@@ -156,14 +156,20 @@ const SellPage = () => {
       });
       
       // Clear form
-      setForm({ title: "", description: "", category: "", price: "", location: null });
+      setForm({ 
+        title: "", 
+        currentPrice: "", 
+        originalPrice: "",
+        category: categories[0].slug, 
+        description: "", 
+        location: null 
+      });
+      setPhotos([]);
       setPhotoUrls([]);
       
-      // Navigate to home to see the new product
+      // Navigate to my listings page
       setTimeout(() => {
-        navigate("/", { replace: true });
-        // Force page reload to show new product immediately
-        window.location.reload();
+        navigate("/my-listings", { replace: true });
       }, 1000);
     } catch (error) {
       console.error("Error saving product:", error);
