@@ -25,7 +25,9 @@ const badgeStyles: Record<string, string> = {
 export const ProductCard = ({ p }: { p: Product }) => {
   const { toggleFavorite, isFavorite, addToCart } = useShop();
   const liked = isFavorite(p.id);
-  const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
+  const discount = p.oldPrice && p.oldPrice > p.price 
+    ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100) 
+    : 0;
   return (
     <Link
       to={`/product/${p.id}`}
@@ -63,22 +65,22 @@ export const ProductCard = ({ p }: { p: Product }) => {
           <Heart className={`h-3 w-3 transition ${liked ? "fill-accent text-accent" : "text-muted-foreground"}`} />
         </button>
       </div>
-      <div className="flex flex-1 flex-col gap-1 p-2">
-        <h3 className="line-clamp-2 text-xs font-medium text-foreground leading-tight">{p.title}</h3>
+      <div className="flex flex-1 flex-col gap-0.5 p-1.5">
+        <h3 className="line-clamp-2 text-[11px] font-medium text-foreground leading-tight">{p.title}</h3>
         <div className="flex items-baseline gap-1">
           <span className="text-sm font-extrabold text-primary">KES {p.price.toLocaleString()}</span>
         </div>
         {p.oldPrice && (
-          <span className="text-[10px] text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
+          <span className="text-[9px] text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
         )}
-        <div className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
+        <div className="flex items-center gap-0.5 text-[9px] text-muted-foreground">
           <Star className="h-2.5 w-2.5 fill-warning text-warning" />
           {p.rating ?? 4.7}
           {p.sold !== undefined && <span className="ml-0.5">· {p.sold}</span>}
         </div>
         <button
           onClick={(e) => { e.preventDefault(); addToCart(p); }}
-          className="mt-1 flex items-center justify-center gap-1 rounded-full bg-primary px-2 py-1 text-[10px] font-bold text-primary-foreground hover:bg-primary-glow transition"
+          className="mt-0.5 flex items-center justify-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[9px] font-bold text-primary-foreground hover:bg-primary-glow transition"
         >
           <ShoppingCart className="h-2.5 w-2.5" /> Add
         </button>

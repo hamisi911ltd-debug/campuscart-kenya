@@ -25,9 +25,11 @@ export default function InstallPrompt() {
     // Check if user has dismissed the prompt before
     const dismissed = localStorage.getItem('pwa-install-dismissed');
     
-    // Only show on page load/refresh (not after delay)
+    // Show after 30 seconds delay
     if (!standalone && !dismissed) {
-      setShowPrompt(true);
+      const timer = setTimeout(() => {
+        setShowPrompt(true);
+      }, 30000); // 30 seconds
 
       // For Android/Desktop - listen for beforeinstallprompt
       const handleBeforeInstallPrompt = (e: Event) => {
@@ -38,6 +40,7 @@ export default function InstallPrompt() {
       window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
       return () => {
+        clearTimeout(timer);
         window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
       };
     }

@@ -317,13 +317,44 @@ const Index = () => {
           </div>
         </section>
 
-        <Section icon={<Flame className="h-5 w-5 text-accent" />} title="Trending Near You" subtitle="Popular with students this week" link="View All" linkTo="/search">
+        <Section icon={<Flame className="h-5 w-5 text-accent" />} title="Trending Near You" subtitle="Popular with students this week" link="View All" linkTo="/search?sort=trending">
           <ProductGrid items={trending} />
         </Section>
 
-        <Section icon={<Sparkles className="h-5 w-5 text-accent" />} title="Just Listed" subtitle="Fresh from your fellow students" link="See More" linkTo="/search">
+        <Section icon={<Sparkles className="h-5 w-5 text-accent" />} title="Just Listed" subtitle="Fresh from your fellow students" link="See More" linkTo="/search?sort=newest">
           <ProductGrid items={justListed} />
         </Section>
+
+        {/* Post Item CTA Card - Shows at bottom */}
+        <div className="mt-8 mb-4">
+          <div 
+            onClick={() => {
+              if (!user) {
+                setShowSignInModal(true);
+              } else {
+                navigate('/sell');
+              }
+            }}
+            className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-accent/10 via-primary/10 to-accent/10 p-6 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
+          >
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex-1">
+                <h3 className="text-lg font-extrabold text-foreground mb-1">
+                  Got something to sell?
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  List your item in seconds and reach thousands of students
+                </p>
+              </div>
+              <button className="shrink-0 rounded-full gradient-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-105 transition-transform">
+                Post Now
+              </button>
+            </div>
+            {/* Decorative elements */}
+            <div className="absolute -right-4 -top-4 h-24 w-24 rounded-full bg-accent/5 blur-2xl"></div>
+            <div className="absolute -left-4 -bottom-4 h-24 w-24 rounded-full bg-primary/5 blur-2xl"></div>
+          </div>
+        </div>
       </main>
 
       <BottomNav />

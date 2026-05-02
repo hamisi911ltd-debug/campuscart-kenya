@@ -38,7 +38,7 @@ export const OfferNotifications = () => {
                        sessionStorage.getItem('campusmart_just_logged_in') === 'true';
 
     if (shouldShow) {
-      // Show offer notifications
+      // Show offer notifications after 1 minute
       setTimeout(() => {
         toast(
           <div className="flex items-start gap-3">
@@ -53,11 +53,16 @@ export const OfferNotifications = () => {
             </div>
           </div>,
           {
-            duration: 5000,
+            duration: 8000,
             position: "top-center",
+            dismissible: true,
+            cancel: {
+              label: "Dismiss",
+              onClick: () => {},
+            },
           }
         );
-      }, 1500);
+      }, 60000); // 1 minute
 
       setTimeout(() => {
         toast(
@@ -73,11 +78,16 @@ export const OfferNotifications = () => {
             </div>
           </div>,
           {
-            duration: 5000,
+            duration: 8000,
             position: "top-center",
+            dismissible: true,
+            cancel: {
+              label: "Dismiss",
+              onClick: () => {},
+            },
           }
         );
-      }, 3500);
+      }, 65000); // 1 minute 5 seconds
 
       setTimeout(() => {
         toast(
@@ -93,11 +103,16 @@ export const OfferNotifications = () => {
             </div>
           </div>,
           {
-            duration: 5000,
+            duration: 8000,
             position: "top-center",
+            dismissible: true,
+            cancel: {
+              label: "Dismiss",
+              onClick: () => {},
+            },
           }
         );
-      }, 5500);
+      }, 70000); // 1 minute 10 seconds
 
       // Update last notification time
       localStorage.setItem('campusmart_last_notification', now.toString());
