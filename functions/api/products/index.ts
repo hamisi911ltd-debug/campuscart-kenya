@@ -168,6 +168,54 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       now
     ).run();
 
+    // Auto-generate sample reviews for the product
+    const reviewNames = [
+      'John M.', 'Sarah K.', 'David O.', 'Mary W.', 'Peter N.',
+      'Grace A.', 'James T.', 'Lucy M.', 'Michael K.', 'Faith W.',
+      'Brian O.', 'Jane N.', 'Kevin M.', 'Rose K.', 'Daniel W.'
+    ];
+
+    const reviewComments = [
+      'Great product! Exactly as described.',
+      'Very satisfied with this purchase. Highly recommend!',
+      'Good quality and fast delivery.',
+      'Excellent seller, smooth transaction.',
+      'Product is in perfect condition. Thank you!',
+      'Amazing deal! Worth every shilling.',
+      'Quick response from seller. Very professional.',
+      'Product exceeded my expectations!',
+      'Fair price and good quality.',
+      'Would definitely buy from this seller again.',
+      'Genuine product, no complaints.',
+      'Seller was very helpful and responsive.',
+      'Great value for money!',
+      'Product arrived as described. Happy with purchase.',
+      'Smooth transaction, reliable seller.'
+    ];
+
+    // Generate 3-5 random reviews
+    const numReviews = Math.floor(Math.random() * 3) + 3; // 3 to 5 reviews
+    for (let i = 0; i < numReviews; i++) {
+      const reviewRating = Math.floor(Math.random() * 2) + 4; // 4 or 5 stars
+      const reviewName = reviewNames[Math.floor(Math.random() * reviewNames.length)];
+      const reviewComment = reviewComments[Math.floor(Math.random() * reviewComments.length)];
+      const daysAgo = Math.floor(Math.random() * 30) + 1; // 1-30 days ago
+      const reviewDate = new Date(Date.now() - daysAgo * 24 * 60 * 60 * 1000).toISOString();
+
+      await context.env.DB.prepare(`
+        INSERT INTO product_reviews (id, product_id, buyer_id, rating, comment, is_verified_purchase, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        crypto.randomUUID(),
+        id,
+        'auto-generated', // Placeholder buyer_id
+        reviewRating,
+        reviewComment,
+        true, // Mark as verified purchase
+        reviewDate
+      ).run();
+    }
+
     // Update seller stats
     await context.env.DB.prepare(
       "UPDATE seller_stats SET total_products = total_products + 1, updated_at = ? WHERE seller_id = ?"

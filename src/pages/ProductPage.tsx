@@ -20,6 +20,8 @@ const ProductPage = () => {
   const [showReviewForm, setShowReviewForm] = useState(false);
   const [reviewRating, setReviewRating] = useState(5);
   const [reviewComment, setReviewComment] = useState("");
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
 
   // Admin WhatsApp number
   const ADMIN_WHATSAPP = "254108254465"; // Format: country code + number without leading 0
@@ -33,6 +35,28 @@ const ProductPage = () => {
       setLoading(false);
     };
     loadProduct();
+  }, [id]);
+
+  // Load reviews for the product
+  useEffect(() => {
+    const loadReviews = async () => {
+      if (!id) return;
+      
+      setLoadingReviews(true);
+      try {
+        const response = await fetch(`/api/reviews/${id}`);
+        if (response.ok) {
+          const data = await response.json();
+          setReviews(Array.isArray(data) ? data : []);
+        }
+      } catch (error) {
+        console.error('Error loading reviews:', error);
+      } finally {
+        setLoadingReviews(false);
+      }
+    };
+    
+    loadReviews();
   }, [id]);
 
   // Check if user is logged in, show modal if not
@@ -239,12 +263,12 @@ const ProductPage = () => {
       </div>
 
       {/* Reviews Section */}
-      {p.reviews && p.reviews.length > 0 && (
+      {(reviews.length > 0 || !loadingReviews) && (
         <section className="mt-8">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-extrabold flex items-center gap-2">
               <Star className="h-5 w-5 fill-warning text-warning" />
-              Customer Reviews
+              Customer Reviews ({reviews.length})
             </h2>
             <button
               onClick={() => setShowReviewForm(!showReviewForm)}
@@ -316,99 +340,114 @@ const ProductPage = () => {
           )}
 
           {/* Rating Summary */}
-          <div className="rounded-2xl bg-card p-4 shadow-card mb-4">
-            <div className="flex items-center gap-4">
-              <div className="text-center">
-                <div className="text-4xl font-extrabold text-foreground">{p.rating}</div>
-                <div className="flex items-center gap-0.5 mt-1">
-                  {[1, 2, 3, 4, 5].map((star) => (
-                    <Star
-                      key={star}
-                      className={`h-4 w-4 ${
-                        star <= Math.round(p.rating || 0)
-                          ? "fill-warning text-warning"
-                          : "text-muted-foreground"
-                      }`}
-                    />
-                  ))}
+          {reviews.length > 0 && (
+            <div className="rounded-2xl bg-card p-4 shadow-card mb-4">
+              <div className="flex items-center gap-4">
+                <div className="text-center">
+                  <div className="text-4xl font-extrabold text-foreground">{p?.rating?.toFixed(1) || '0.0'}</div>
+                  <div className="flex items-center gap-0.5 mt-1">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <Star
+                        key={star}
+                        className={`h-4 w-4 ${
+                          star <= Math.round(p?.rating || 0)
+                            ? "fill-warning text-warning"
+                            : "text-muted-foreground"
+                        }`}
+                      />
+                    ))}
+                  </div>
+                  <div className="text-xs text-muted-foreground mt-1">
+                    {reviews.length} reviews
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground mt-1">
-                  {p.totalReviews || p.reviews.length} reviews
-                </div>
-              </div>
-              <div className="flex-1 space-y-1">
-                {[5, 4, 3, 2, 1].map((rating) => {
-                  const count = p.reviews?.filter((r) => r.rating === rating).length || 0;
-                  const percentage = ((count / (p.reviews?.length || 1)) * 100).toFixed(0);
-                  return (
-                    <div key={rating} className="flex items-center gap-2 text-xs">
-                      <span className="w-8 text-muted-foreground">{rating} ★</span>
-                      <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-warning"
-                          style={{ width: `${percentage}%` }}
-                        />
+                <div className="flex-1 space-y-1">
+                  {[5, 4, 3, 2, 1].map((rating) => {
+                    const count = reviews.filter((r) => r.rating === rating).length;
+                    const percentage = reviews.length > 0 ? ((count / reviews.length) * 100).toFixed(0) : '0';
+                    return (
+                      <div key={rating} className="flex items-center gap-2 text-xs">
+                        <span className="w-8 text-muted-foreground">{rating} ★</span>
+                        <div className="flex-1 h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-warning"
+                            style={{ width: `${percentage}%` }}
+                          />
+                        </div>
+                        <span className="w-10 text-right text-muted-foreground">{percentage}%</span>
                       </div>
-                      <span className="w-10 text-right text-muted-foreground">{percentage}%</span>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Individual Reviews */}
-          <div className="space-y-3">
-            {p.reviews.slice(0, 3).map((review) => (
-              <div key={review.id} className="rounded-xl bg-card p-4 shadow-card">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold">
-                    <User className="h-5 w-5 text-muted-foreground" />
-                  </div>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <div>
-                        <div className="font-bold text-sm flex items-center gap-2">
-                          {review.userName}
-                          {review.verified && (
-                            <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">
-                              ✓ Verified Purchase
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1 mt-0.5">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <Star
-                              key={star}
-                              className={`h-3 w-3 ${
-                                star <= review.rating
-                                  ? "fill-warning text-warning"
-                                  : "text-muted-foreground"
-                              }`}
-                            />
-                          ))}
-                        </div>
+          {loadingReviews ? (
+            <div className="text-center py-8">
+              <p className="text-sm text-muted-foreground">Loading reviews...</p>
+            </div>
+          ) : reviews.length > 0 ? (
+            <>
+              <div className="space-y-3">
+                {reviews.slice(0, 5).map((review) => (
+                  <div key={review.id} className="rounded-xl bg-card p-4 shadow-card">
+                    <div className="flex items-start gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-sm font-bold">
+                        <User className="h-5 w-5 text-muted-foreground" />
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(review.date).toLocaleDateString('en-US', { 
-                          month: 'short', 
-                          day: 'numeric', 
-                          year: 'numeric' 
-                        })}
-                      </span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between mb-1">
+                          <div>
+                            <div className="font-bold text-sm flex items-center gap-2">
+                              {review.userName}
+                              {review.verified && (
+                                <span className="text-xs bg-accent/10 text-accent px-2 py-0.5 rounded-full">
+                                  ✓ Verified Purchase
+                                </span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-1 mt-0.5">
+                              {[1, 2, 3, 4, 5].map((star) => (
+                                <Star
+                                  key={star}
+                                  className={`h-3 w-3 ${
+                                    star <= review.rating
+                                      ? "fill-warning text-warning"
+                                      : "text-muted-foreground"
+                                  }`}
+                                />
+                              ))}
+                            </div>
+                          </div>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(review.date).toLocaleDateString('en-US', { 
+                              month: 'short', 
+                              day: 'numeric', 
+                              year: 'numeric' 
+                            })}
+                          </span>
+                        </div>
+                        <p className="text-sm text-foreground/90 mt-2">{review.comment}</p>
+                      </div>
                     </div>
-                    <p className="text-sm text-foreground/90 mt-2">{review.comment}</p>
                   </div>
-                </div>
+                ))}
               </div>
-            ))}
-          </div>
 
-          {p.reviews.length > 3 && (
-            <div className="text-center mt-4">
-              <button className="text-sm text-accent hover:underline font-medium">
-                View all {p.reviews.length} reviews →
-              </button>
+              {reviews.length > 5 && (
+                <div className="text-center mt-4">
+                  <button className="text-sm text-accent hover:underline font-medium">
+                    View all {reviews.length} reviews →
+                  </button>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="rounded-2xl bg-card p-8 text-center shadow-card">
+              <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
+              <p className="text-sm text-muted-foreground">No reviews yet. Be the first to review!</p>
             </div>
           )}
         </section>
