@@ -128,12 +128,9 @@ const AuthPage = () => {
         <div className="max-w-md mx-auto px-4 pb-6">
           {/* Header */}
           <div className="text-center mb-4">
-            <h1 className="text-3xl font-bold text-foreground mb-2">
-              {mode === "signin" ? "Welcome back!" : "Join CampusMart"}
-            </h1>
-            <p className="text-muted-foreground text-sm">
+            <p className="text-base text-foreground">
               {mode === "signin" 
-                ? "Sign in to your account to continue" 
+                ? "Sign in to your account" 
                 : "Create your account to start shopping"
               }
             </p>
