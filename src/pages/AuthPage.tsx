@@ -2,7 +2,7 @@ import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { Eye, EyeOff, Mail, User, Lock, Phone } from "lucide-react";
+import { Eye, EyeOff, Mail, User, Lock, Phone, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const AuthPage = () => {
