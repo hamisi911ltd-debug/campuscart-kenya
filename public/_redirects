@@ -1,0 +1,7 @@
+# Redirect admin routes from main domain to admin subdomain
+https://campusmart.co.ke/admin/* https://admin.campusmart.co.ke/admin/:splat 301!
+https://www.campusmart.co.ke/admin/* https://admin.campusmart.co.ke/admin/:splat 301!
+https://*.pages.dev/admin/* https://admin.campusmart.co.ke/admin/:splat 301!
+
+# Allow admin routes only on admin subdomain
+/admin/* /admin/:splat 200

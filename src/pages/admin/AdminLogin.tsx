@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import { Logo } from "@/components/Logo";
@@ -15,6 +15,25 @@ const AdminLogin = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Check if we're on the correct domain and redirect if not
+  useEffect(() => {
+    const hostname = window.location.hostname;
+    const isAdminDomain = hostname === "admin.campusmart.co.ke" || 
+                         hostname === "localhost" ||
+                         hostname === "127.0.0.1";
+    
+    const isMainDomain = hostname === "campusmart.co.ke" || 
+                        hostname === "www.campusmart.co.ke" ||
+                        hostname.includes("campusmart-kenya.pages.dev");
+    
+    if (isMainDomain) {
+      setIsRedirecting(true);
+      // Redirect to admin subdomain
+      window.location.href = `https://admin.campusmart.co.ke/admin/login`;
+    }
+  }, []);
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
@@ -68,6 +87,18 @@ const AdminLogin = () => {
       setIsLoading(false);
     }
   };
+
+  // Show redirecting message if on wrong domain
+  if (isRedirecting) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
+        <div className="bg-white rounded-3xl p-8 shadow-2xl max-w-md text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-700">Redirecting to admin portal...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-purple-900 via-blue-900 to-indigo-900">
