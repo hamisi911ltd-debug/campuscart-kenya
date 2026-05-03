@@ -325,7 +325,7 @@ const Index = () => {
           <ProductGrid items={justListed} />
         </Section>
 
-        {/* Post Item CTA Card - Shows at bottom with blue color */}
+        {/* Post Item CTA Card - Shows at bottom with red color */}
         <div className="mt-8 mb-4">
           <div 
             onClick={() => {
@@ -335,7 +335,7 @@ const Index = () => {
                 navigate('/sell');
               }
             }}
-            className="relative overflow-hidden rounded-xl bg-primary p-3 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
+            className="relative overflow-hidden rounded-xl bg-red-600 p-3 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
           >
             <div className="flex items-center justify-between gap-3">
               <div className="flex-1">
@@ -346,7 +346,7 @@ const Index = () => {
                   List your item in seconds
                 </p>
               </div>
-              <button className="shrink-0 rounded-full bg-white text-primary px-4 py-2 text-xs font-bold hover:scale-105 transition-transform shadow-lg">
+              <button className="shrink-0 rounded-full bg-white text-red-600 px-4 py-2 text-xs font-bold hover:scale-105 transition-transform shadow-lg">
                 Post Now
               </button>
             </div>
