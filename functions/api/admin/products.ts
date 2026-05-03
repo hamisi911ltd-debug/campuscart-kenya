@@ -27,6 +27,20 @@ interface Product {
   updated_at: string;
 }
 
+// Enforce admin subdomain access only
+function enforceAdminDomain(request: Request): Response | null {
+  const url = new URL(request.url);
+  if (url.hostname !== "admin.campusmart.co.ke" && url.hostname !== "localhost") {
+    return new Response(JSON.stringify({ 
+      error: "Admin access is only available at admin.campusmart.co.ke" 
+    }), {
+      status: 403,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+  return null;
+}
+
 // Simple admin authentication check
 function isAdmin(request: Request): boolean {
   const cookie = request.headers.get("Cookie") || "";
@@ -35,6 +49,10 @@ function isAdmin(request: Request): boolean {
 
 export async function onRequestGet(context: { env: Env; request: Request }) {
   const { env, request } = context;
+
+  // Check domain restriction
+  const domainCheck = enforceAdminDomain(request);
+  if (domainCheck) return domainCheck;
 
   // Check admin authentication
   if (!isAdmin(request)) {
@@ -75,6 +93,10 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
 
 export async function onRequestDelete(context: { env: Env; request: Request }) {
   const { env, request } = context;
+
+  // Check domain restriction
+  const domainCheck = enforceAdminDomain(request);
+  if (domainCheck) return domainCheck;
 
   // Check admin authentication
   if (!isAdmin(request)) {
@@ -160,6 +182,10 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
 
 export async function onRequestPut(context: { env: Env; request: Request }) {
   const { env, request } = context;
+
+  // Check domain restriction
+  const domainCheck = enforceAdminDomain(request);
+  if (domainCheck) return domainCheck;
 
   // Check admin authentication
   if (!isAdmin(request)) {

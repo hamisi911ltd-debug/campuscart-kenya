@@ -37,20 +37,12 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       });
     }
 
-    // Get credentials from environment variables
-    const adminEmail = env.ADMIN_EMAIL;
-    const adminPassword = env.ADMIN_PASSWORD;
-
-    if (!adminEmail || !adminPassword) {
-      console.error("Admin credentials not configured in environment variables");
-      return new Response(JSON.stringify({ error: "Server configuration error" }), {
-        status: 500,
-        headers: { "Content-Type": "application/json" }
-      });
-    }
+    // TEMPORARY: Hardcoded credentials (will fix with env vars later)
+    const TEMP_ADMIN_EMAIL = "campusmart.care@gmail.com";
+    const TEMP_ADMIN_PASSWORD = "LUCYISOKORE@2026";
 
     // Validate email
-    if (email.toLowerCase() !== adminEmail.toLowerCase()) {
+    if (email.toLowerCase() !== TEMP_ADMIN_EMAIL.toLowerCase()) {
       return new Response(JSON.stringify({ error: "Invalid email address" }), {
         status: 401,
         headers: { "Content-Type": "application/json" }
@@ -58,7 +50,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     }
 
     // Validate password
-    if (password !== adminPassword) {
+    if (password !== TEMP_ADMIN_PASSWORD) {
       return new Response(JSON.stringify({ error: "Invalid password" }), {
         status: 401,
         headers: { "Content-Type": "application/json" }
