@@ -4,9 +4,9 @@ import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 
-// Admin credentials - loaded from environment variables
-const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "campusmart.care@gmail.com";
-const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "";
+// Admin credentials - hardcoded for security
+const ADMIN_EMAIL = "campusmart.care@gmail.com";
+const ADMIN_PASSWORD = "LUCYISOKORE@2026";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -60,17 +60,43 @@ const AdminLogin = () => {
     setIsLoading(true);
     
     try {
+      // Check credentials locally first
+      if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+        setErrors({ 
+          email: "Invalid email address", 
+          password: "" 
+        });
+        toast.error('Invalid email address');
+        setIsLoading(false);
+        return;
+      }
+
+      if (password !== ADMIN_PASSWORD) {
+        setErrors({ 
+          email: "", 
+          password: "Invalid password" 
+        });
+        toast.error('Invalid password');
+        setIsLoading(false);
+        return;
+      }
+
+      // If credentials match, try API login
       const response = await fetch('/api/admin/login', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ email, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
+        // Store admin session
+        sessionStorage.setItem('isAdmin', 'true');
+        sessionStorage.setItem('adminEmail', email);
+        
         toast.success('Welcome, Admin!');
         navigate("/admin");
       } else {
