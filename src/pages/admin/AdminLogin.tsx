@@ -41,26 +41,29 @@ const AdminLogin = () => {
     setIsLoading(true);
     
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Check credentials
-      if (email === ADMIN_EMAIL && password === ADMIN_PASSWORD) {
-        // Store admin session
-        sessionStorage.setItem('isAdmin', 'true');
-        sessionStorage.setItem('adminEmail', email);
-        
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
         toast.success('Welcome, Admin!');
         navigate("/admin");
       } else {
         setErrors({ 
-          email: "Invalid credentials", 
-          password: "Invalid credentials" 
+          email: data.error || "Invalid credentials", 
+          password: data.error || "Invalid credentials" 
         });
-        toast.error('Invalid email or password');
+        toast.error(data.error || 'Invalid credentials');
       }
     } catch (error) {
       toast.error('Authentication failed. Please try again.');
+      console.error('Login error:', error);
     } finally {
       setIsLoading(false);
     }

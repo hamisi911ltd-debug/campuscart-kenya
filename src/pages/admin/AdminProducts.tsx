@@ -1,59 +1,166 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, CheckCircle, XCircle, Eye } from "lucide-react";
+import { Search, Filter, CheckCircle, XCircle, Eye, Trash2 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 interface Product {
   id: string;
   title: string;
-  seller: string;
+  seller_name: string;
+  seller_email: string;
   category: string;
   price: number;
-  status: 'approved' | 'pending' | 'rejected';
-  listedDate: string;
-  views: number;
-  image?: string;
+  original_price?: number;
+  image_url?: string;
+  images?: string;
+  quantity_available: number;
+  location?: string;
+  rating: number;
+  reviews_count: number;
+  is_available: boolean;
+  created_at: string;
+  updated_at: string;
 }
 
 const AdminProducts = () => {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/admin/products');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch products');
+      }
+      
+      setProducts(data.products || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch products');
+      console.error('Error fetching products:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch products from localStorage (custom products)
-    const custom = JSON.parse(localStorage.getItem('campusmart_products') || '[]');
-    
-    // Combine with some initial mock data or just use custom
-    const allProducts = custom.map((p: any) => ({
-      id: p.id,
-      title: p.title,
-      seller: p.seller?.name || 'Unknown',
-      category: p.category,
-      price: p.price,
-      status: 'approved', // Custom products are approved by default for now
-      listedDate: new Date().toISOString(),
-      views: 0,
-      image: p.image,
-    }));
-
-    setProducts(allProducts);
+    fetchProducts();
   }, []);
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/admin/products?id=${productId}`, {
+        method: 'DELETE',
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete product');
+      }
+      
+      // Remove product from local state
+      setProducts(prev => prev.filter(p => p.id !== productId));
+      
+      // Show success message (you can use a toast library here)
+      alert('Product deleted successfully');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete product';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error deleting product:', err);
+    }
+  };
+
+  const handleToggleAvailability = async (productId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch('/api/admin/products', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: productId,
+          is_available: !currentStatus,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update product');
+      }
+      
+      // Update product in local state
+      setProducts(prev => prev.map(p => 
+        p.id === productId ? { ...p, is_available: !currentStatus } : p
+      ));
+      
+      alert(data.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update product';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error updating product:', err);
+    }
+  };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.seller.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || product.status === filterStatus;
+                         product.seller_name.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === 'all' || 
+                         (filterStatus === 'approved' && product.is_available) ||
+                         (filterStatus === 'rejected' && !product.is_available);
     return matchesSearch && matchesFilter;
   });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'approved': return 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200';
-      case 'rejected': return 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200';
-      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-200';
-    }
+  const getStatusColor = (isAvailable: boolean) => {
+    return isAvailable 
+      ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200'
+      : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200';
   };
+
+  const getStatusText = (isAvailable: boolean) => {
+    return isAvailable ? 'approved' : 'rejected';
+  };
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-muted-foreground">Loading products...</div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="text-red-800">Error: {error}</div>
+            <button 
+              onClick={fetchProducts}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -99,15 +206,15 @@ const AdminProducts = () => {
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Approved</p>
-              <p className="text-2xl font-bold text-green-600">{products.filter(p => p.status === 'approved').length}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pending</p>
-              <p className="text-2xl font-bold text-yellow-600">{products.filter(p => p.status === 'pending').length}</p>
+              <p className="text-2xl font-bold text-green-600">{products.filter(p => p.is_available).length}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Rejected</p>
-              <p className="text-2xl font-bold text-red-600">{products.filter(p => p.status === 'rejected').length}</p>
+              <p className="text-2xl font-bold text-red-600">{products.filter(p => !p.is_available).length}</p>
+            </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Total Revenue</p>
+              <p className="text-2xl font-bold text-accent">KES {products.reduce((sum, p) => sum + p.price, 0).toLocaleString()}</p>
             </div>
           </div>
         </div>
@@ -117,8 +224,8 @@ const AdminProducts = () => {
           {filteredProducts.map((product) => (
             <div key={product.id} className="bg-card rounded-2xl shadow-lg border border-border/50 overflow-hidden hover:shadow-xl transition-all">
               <div className="h-48 bg-secondary flex items-center justify-center">
-                {product.image ? (
-                  <img src={product.image} alt={product.title} className="h-full w-full object-cover" />
+                {product.image_url ? (
+                  <img src={product.image_url} alt={product.title} className="h-full w-full object-cover" />
                 ) : (
                   <div className="text-6xl text-muted-foreground">📦</div>
                 )}
@@ -127,46 +234,59 @@ const AdminProducts = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <h3 className="font-bold text-foreground mb-1">{product.title}</h3>
-                    <p className="text-sm text-muted-foreground">by {product.seller}</p>
+                    <p className="text-sm text-muted-foreground">by {product.seller_name}</p>
+                    <p className="text-xs text-muted-foreground">{product.seller_email}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(product.status)}`}>
-                    {product.status}
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(product.is_available)}`}>
+                    {getStatusText(product.is_available)}
                   </span>
                 </div>
                 <div className="flex items-center justify-between mb-4">
-                  <span className="text-lg font-bold text-accent">KES {product.price.toLocaleString()}</span>
+                  <div>
+                    <span className="text-lg font-bold text-accent">KES {product.price.toLocaleString()}</span>
+                    {product.original_price && product.original_price > product.price && (
+                      <span className="text-sm text-muted-foreground line-through ml-2">
+                        KES {product.original_price.toLocaleString()}
+                      </span>
+                    )}
+                  </div>
                   <span className="text-xs text-muted-foreground">{product.category}</span>
                 </div>
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
-                  <span>{new Date(product.listedDate).toLocaleDateString()}</span>
+                  <span>{new Date(product.created_at).toLocaleDateString()}</span>
                   <span className="flex items-center gap-1">
                     <Eye className="h-3 w-3" />
-                    {product.views} views
+                    Qty: {product.quantity_available}
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  {product.status === 'pending' && (
-                    <>
-                      <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-green-500 hover:bg-green-600 text-white rounded-xl transition-colors">
-                        <CheckCircle className="h-4 w-4" />
-                        Approve
-                      </button>
-                      <button className="flex-1 flex items-center justify-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-xl transition-colors">
+                  <button 
+                    onClick={() => handleToggleAvailability(product.id, product.is_available)}
+                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-colors ${
+                      product.is_available 
+                        ? 'bg-red-500 hover:bg-red-600 text-white' 
+                        : 'bg-green-500 hover:bg-green-600 text-white'
+                    }`}
+                  >
+                    {product.is_available ? (
+                      <>
                         <XCircle className="h-4 w-4" />
                         Reject
-                      </button>
-                    </>
-                  )}
-                  {product.status === 'approved' && (
-                    <button className="w-full px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-xl transition-colors">
-                      View Details
-                    </button>
-                  )}
-                  {product.status === 'rejected' && (
-                    <button className="w-full px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-xl transition-colors">
-                      Review Again
-                    </button>
-                  )}
+                      </>
+                    ) : (
+                      <>
+                        <CheckCircle className="h-4 w-4" />
+                        Approve
+                      </>
+                    )}
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteProduct(product.id)}
+                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors"
+                    title="Delete Product"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             </div>
