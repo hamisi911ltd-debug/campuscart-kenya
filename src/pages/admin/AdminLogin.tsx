@@ -4,9 +4,9 @@ import { Eye, EyeOff, Mail, Lock, Shield } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
 
-// Admin credentials - hardcoded for security
-const ADMIN_EMAIL = "campusmart.care@gmail.com";
-const ADMIN_PASSWORD = "LUCYISOKORE@2026";
+// Admin credentials - loaded from environment variables (NEVER hardcode!)
+const ADMIN_EMAIL = import.meta.env.VITE_ADMIN_EMAIL || "";
+const ADMIN_PASSWORD = import.meta.env.VITE_ADMIN_PASSWORD || "";
 
 const AdminLogin = () => {
   const navigate = useNavigate();

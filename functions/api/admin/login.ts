@@ -1,12 +1,9 @@
 // Cloudflare Pages Function for Admin Login
 
 interface Env {
+  ADMIN_EMAIL?: string;
   ADMIN_PASSWORD?: string;
 }
-
-// Hardcoded admin credentials
-const ADMIN_EMAIL = "campusmart.care@gmail.com";
-const ADMIN_PASSWORD = "LUCYISOKORE@2026";
 
 // Enforce admin subdomain access only
 function enforceAdminDomain(request: Request): Response | null {
@@ -40,8 +37,20 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       });
     }
 
+    // Get credentials from environment variables
+    const adminEmail = env.ADMIN_EMAIL;
+    const adminPassword = env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
+      console.error("Admin credentials not configured in environment variables");
+      return new Response(JSON.stringify({ error: "Server configuration error" }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
     // Validate email
-    if (email.toLowerCase() !== ADMIN_EMAIL.toLowerCase()) {
+    if (email.toLowerCase() !== adminEmail.toLowerCase()) {
       return new Response(JSON.stringify({ error: "Invalid email address" }), {
         status: 401,
         headers: { "Content-Type": "application/json" }
@@ -49,7 +58,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     }
 
     // Validate password
-    if (password !== ADMIN_PASSWORD) {
+    if (password !== adminPassword) {
       return new Response(JSON.stringify({ error: "Invalid password" }), {
         status: 401,
         headers: { "Content-Type": "application/json" }
