@@ -5,14 +5,20 @@ Allow: /
 Disallow: /admin/
 Disallow: /api/admin/
 
-# Allow important pages
+# Allow important pages for AdSense
 Allow: /category/
 Allow: /search
 Allow: /sell
 Allow: /auth
+Allow: /ads.txt
+Allow: /google-adsense-verification.html
 
 # Sitemap location
 Sitemap: https://campusmart.co.ke/sitemap.xml
+
+# AdSense crawler specific
+User-agent: Mediapartners-Google
+Allow: /
 
 # Crawl delay (be nice to servers)
 Crawl-delay: 1

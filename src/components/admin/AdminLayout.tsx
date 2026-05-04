@@ -2,7 +2,8 @@ import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Package, ShoppingBag, Image,
-  LogOut, Menu, X, Bell, Search, ChevronDown, Shield
+  LogOut, Menu, X, Bell, Search, ChevronDown, Shield,
+  Activity, Settings, BarChart3, Database
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
@@ -32,6 +33,24 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'Dashboard', 
       path: '/admin',
       description: 'Overview & Analytics'
+    },
+    { 
+      icon: Activity, 
+      label: 'Activity Monitor', 
+      path: '/admin/activity',
+      description: 'Live Activity Feed'
+    },
+    { 
+      icon: Settings, 
+      label: 'System Control', 
+      path: '/admin/control',
+      description: 'Admin Actions'
+    },
+    { 
+      icon: Database, 
+      label: 'Database Viewer', 
+      path: '/admin/database',
+      description: 'Direct DB Access'
     },
     { 
       icon: Users, 

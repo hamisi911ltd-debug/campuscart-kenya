@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
+import { BannerAd, ResponsiveAd } from "@/components/AdSense";
 import { useShop } from "@/store/shop";
 import { categories, getProducts, getProductsSync, getStaticProducts, transformDatabaseProduct } from "@/data/products";
 
@@ -317,6 +318,11 @@ const Index = () => {
           </div>
         </section>
 
+        {/* Ad Banner - After Hero Section */}
+        <div className="my-6">
+          <BannerAd className="mx-auto" />
+        </div>
+
         <Section icon={<Flame className="h-5 w-5 text-accent" />} title="Trending Near You" subtitle="Popular with students this week" link="View All" linkTo="/search?sort=trending">
           <ProductGrid items={trending} />
         </Section>
@@ -324,6 +330,11 @@ const Index = () => {
         <Section icon={<Sparkles className="h-5 w-5 text-accent" />} title="Just Listed" subtitle="Fresh from your fellow students" link="See More" linkTo="/search?sort=newest">
           <ProductGrid items={justListed} />
         </Section>
+
+        {/* Responsive Ad - Between Sections */}
+        <div className="my-8 flex justify-center">
+          <ResponsiveAd />
+        </div>
 
         {/* Post Item CTA Card - Shows at bottom with red color */}
         <div className="mt-8 mb-4">

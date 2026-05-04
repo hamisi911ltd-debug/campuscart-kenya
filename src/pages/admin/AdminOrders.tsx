@@ -1,50 +1,157 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Package, Truck, CheckCircle, Clock } from "lucide-react";
+import { Search, Filter, Package, Truck, CheckCircle, Clock, Edit } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 
 interface Order {
   id: string;
-  customer: string;
-  items: number;
-  total: number;
+  buyer_name: string;
+  buyer_email: string;
+  seller_name: string;
+  seller_email: string;
+  item_count: number;
+  total_amount: number;
   status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
-  orderDate: string;
-  paymentMethod: string;
-  location?: { lat: number; lng: number };
+  created_at: string;
+  updated_at: string;
+  delivery_address: string;
+  payment_method: string;
+  payment_status: string;
+  delivered_at?: string;
 }
 
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchOrders = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const response = await fetch('/api/admin/orders');
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fetch orders');
+      }
+      
+      setOrders(data.orders || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch orders');
+      console.error('Error fetching orders:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Fetch orders from localStorage
-    const savedOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
-    
-    // Map to the internal interface if necessary
-    const formattedOrders = savedOrders.map((ord: any) => ({
-      id: ord.orderNumber || ord.id,
-      customer: ord.customer.name,
-      items: ord.items.length,
-      total: ord.total,
-      status: ord.status,
-      orderDate: ord.createdAt,
-      paymentMethod: 'M-PESA', // Default for now
-      location: ord.location, // Added location
-    }));
-
-    setOrders(formattedOrders);
+    fetchOrders();
   }, []);
+
+  const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
+    try {
+      const response = await fetch('/api/admin/orders', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: orderId,
+          status: newStatus,
+        }),
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update order');
+      }
+      
+      // Update order in local state
+      setOrders(prev => prev.map(o => 
+        o.id === orderId ? { ...o, status: newStatus as any, updated_at: new Date().toISOString() } : o
+      ));
+      
+      alert(data.message);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update order';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error updating order:', err);
+    }
+  };
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         order.customer.toLowerCase().includes(searchQuery.toLowerCase());
+                         order.buyer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         order.seller_name.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = filterStatus === 'all' || order.status === filterStatus;
     return matchesSearch && matchesFilter;
   });
 
-  const getStatusColor = (status: string) => {
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-muted-foreground">Loading orders...</div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="text-red-800">Error: {error}</div>
+            <button 
+              onClick={fetchOrders}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+    return matchesSearch && matchesFilter;
+  });
+
+  if (loading) {
+    return (
+      <AdminLayout>
+        <div className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-muted-foreground">Loading orders...</div>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <AdminLayout>
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+            <div className="text-red-800">Error: {error}</div>
+            <button 
+              onClick={fetchOrders}
+              className="mt-2 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
     switch (status) {
       case 'delivered': return 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200';
       case 'shipped': return 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200';
@@ -151,16 +258,19 @@ const AdminOrders = () => {
                       <span className="font-mono font-semibold text-accent">{order.id}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-medium text-foreground">{order.customer}</span>
+                      <div>
+                        <span className="font-medium text-foreground">{order.buyer_name}</span>
+                        <div className="text-xs text-muted-foreground">{order.buyer_email}</div>
+                      </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-foreground">{order.items} items</span>
+                      <span className="text-sm text-foreground">{order.item_count} items</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="font-bold text-accent">KES {order.total.toLocaleString()}</span>
+                      <span className="font-bold text-accent">KES {order.total_amount.toLocaleString()}</span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-foreground">{order.paymentMethod}</span>
+                      <span className="text-sm text-foreground">{order.payment_method || 'M-PESA'}</span>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
@@ -169,22 +279,27 @@ const AdminOrders = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-sm text-foreground">{new Date(order.orderDate).toLocaleDateString()}</span>
+                      <span className="text-sm text-foreground">{new Date(order.created_at).toLocaleDateString()}</span>
                     </td>
-                    <td className="px-6 py-4 flex flex-col gap-1">
-                      <button className="px-4 py-2 bg-accent hover:bg-accent/90 text-accent-foreground rounded-lg text-sm font-medium transition-colors">
-                        View Details
-                      </button>
-                      {order.location && (
-                        <a 
-                          href={`https://www.google.com/maps?q=${order.location.lat},${order.location.lng}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg text-sm font-medium transition-colors text-center"
+                    <td className="px-6 py-4">
+                      <div className="flex flex-col gap-1">
+                        <select
+                          value={order.status}
+                          onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                          className="px-3 py-1 text-xs border border-border rounded bg-background focus:ring-2 focus:ring-accent/40 outline-none"
                         >
-                          View on Map
-                        </a>
-                      )}
+                          <option value="pending">Pending</option>
+                          <option value="processing">Processing</option>
+                          <option value="shipped">Shipped</option>
+                          <option value="delivered">Delivered</option>
+                          <option value="cancelled">Cancelled</option>
+                        </select>
+                        {order.delivery_address && (
+                          <div className="text-xs text-muted-foreground truncate max-w-32" title={order.delivery_address}>
+                            📍 {order.delivery_address}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
