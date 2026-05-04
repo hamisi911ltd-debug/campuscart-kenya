@@ -188,28 +188,38 @@ const ComprehensiveMonitor = () => {
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
+        {/* Enhanced Header */}
         <div className="mb-8">
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6">
-            <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
-                🚀 CampusMart Control Center
-              </h1>
-              <p className="text-gray-600 dark:text-gray-400">
-                Complete monitoring and control of your marketplace platform
-                {lastUpdate && (
-                  <span className="ml-2 text-green-600 font-semibold">
-                    • Last updated: {lastUpdate}
+          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
+            <div className="flex-1">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl shadow-lg">
+                  <Shield className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                    CampusMart Control Center
+                  </h1>
+                  <p className="text-gray-600 dark:text-gray-400 text-lg">
+                    Complete monitoring and control of your marketplace platform
+                  </p>
+                </div>
+              </div>
+              {lastUpdate && (
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-600 font-semibold">
+                    Live • Last updated: {lastUpdate}
                   </span>
-                )}
-              </p>
+                </div>
+              )}
             </div>
             
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
               <select
                 value={selectedTimeframe}
                 onChange={(e) => setSelectedTimeframe(e.target.value)}
-                className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-purple-500 outline-none font-medium"
               >
                 <option value="1h">Last Hour</option>
                 <option value="24h">Last 24 Hours</option>
@@ -217,30 +227,30 @@ const ComprehensiveMonitor = () => {
                 <option value="30d">Last 30 Days</option>
               </select>
               
-              <label className="flex items-center gap-2">
+              <label className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
                 <input
                   type="checkbox"
                   checked={autoRefresh}
                   onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="rounded"
+                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
                 />
-                <span className="text-sm">Auto-refresh</span>
+                <span className="text-sm font-medium">Auto-refresh</span>
               </label>
               
               <button 
                 onClick={fetchMonitorData}
                 disabled={loading}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 font-semibold"
               >
-                <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
                 Refresh
               </button>
 
               <button 
                 onClick={() => setShowControlPanel(!showControlPanel)}
-                className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold"
               >
-                <Shield className="h-4 w-4" />
+                <Shield className="h-5 w-5" />
                 Control Panel
               </button>
             </div>
@@ -407,94 +417,102 @@ const ComprehensiveMonitor = () => {
           </div>
         )}
 
-        {/* Main Stats Grid */}
+        {/* Enhanced Main Stats Grid */}
         {monitorData?.stats && (
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <Users className="h-8 w-8 text-blue-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6 mb-8">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <Users className="h-10 w-10 opacity-80" />
+                <div className="text-right">
+                  <div className="text-3xl font-bold">
                     {monitorData.stats.totalUsers.toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Total Users</div>
+                  <div className="text-sm opacity-90">Total Users</div>
                 </div>
               </div>
-              <div className="text-xs text-blue-600">
-                +{monitorData.stats.newUsersToday} today
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingUp className="h-4 w-4" />
+                <span>+{monitorData.stats.newUsersToday} today</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <Package className="h-8 w-8 text-green-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <Package className="h-10 w-10 opacity-80" />
+                <div className="text-right">
+                  <div className="text-3xl font-bold">
                     {monitorData.stats.totalProducts.toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Products</div>
+                  <div className="text-sm opacity-90">Products</div>
                 </div>
               </div>
-              <div className="text-xs text-green-600">
-                +{monitorData.stats.newProductsToday} today
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingUp className="h-4 w-4" />
+                <span>+{monitorData.stats.newProductsToday} today</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <ShoppingBag className="h-8 w-8 text-purple-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <ShoppingBag className="h-10 w-10 opacity-80" />
+                <div className="text-right">
+                  <div className="text-3xl font-bold">
                     {monitorData.stats.totalOrders.toLocaleString()}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Orders</div>
+                  <div className="text-sm opacity-90">Orders</div>
                 </div>
               </div>
-              <div className="text-xs text-purple-600">
-                +{monitorData.stats.newOrdersToday} today
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingUp className="h-4 w-4" />
+                <span>+{monitorData.stats.newOrdersToday} today</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <TrendingUp className="h-8 w-8 text-orange-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <TrendingUp className="h-10 w-10 opacity-80" />
+                <div className="text-right">
+                  <div className="text-3xl font-bold">
                     KES {(monitorData.stats.totalRevenue / 1000).toFixed(1)}K
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Revenue</div>
+                  <div className="text-sm opacity-90">Revenue</div>
                 </div>
               </div>
-              <div className="text-xs text-orange-600">
-                +KES {(monitorData.stats.revenueToday / 1000).toFixed(1)}K today
+              <div className="flex items-center gap-2 text-sm">
+                <TrendingUp className="h-4 w-4" />
+                <span>+KES {(monitorData.stats.revenueToday / 1000).toFixed(1)}K today</span>
               </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <AlertTriangle className="h-8 w-8 text-red-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <AlertTriangle className="h-10 w-10 opacity-80" />
+                <div className="text-right">
+                  <div className="text-3xl font-bold">
                     {monitorData.stats.pendingOrders}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Pending</div>
+                  <div className="text-sm opacity-90">Pending</div>
                 </div>
               </div>
-              <div className="text-xs text-red-600">Needs attention</div>
+              <div className="flex items-center gap-2 text-sm">
+                <Clock className="h-4 w-4" />
+                <span>Needs attention</span>
+              </div>
             </div>
 
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 shadow-sm border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center gap-3 mb-2">
-                <Star className="h-8 w-8 text-yellow-600" />
-                <div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">
+            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
+              <div className="flex items-center justify-between mb-4">
+                <Star className="h-10 w-10 opacity-80" />
+                <div className="text-right">
+                  <div className="text-3xl font-bold">
                     {monitorData.stats.averageRating.toFixed(1)}
                   </div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400">Avg Rating</div>
+                  <div className="text-sm opacity-90">Avg Rating</div>
                 </div>
               </div>
-              <div className="text-xs text-yellow-600">
-                {monitorData.stats.totalReviews} reviews
+              <div className="flex items-center gap-2 text-sm">
+                <Star className="h-4 w-4" />
+                <span>{monitorData.stats.totalReviews} reviews</span>
               </div>
             </div>
           </div>
