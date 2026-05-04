@@ -143,22 +143,22 @@ const ComprehensiveMonitor = () => {
 
   const getActivityIcon = (type: string) => {
     switch (type) {
-      case 'user_registered': return <Users className="h-4 w-4 text-blue-600" />;
-      case 'product_listed': return <Package className="h-4 w-4 text-green-600" />;
-      case 'order_placed': return <ShoppingBag className="h-4 w-4 text-purple-600" />;
-      case 'review_posted': return <Star className="h-4 w-4 text-yellow-600" />;
-      case 'message_sent': return <MessageSquare className="h-4 w-4 text-indigo-600" />;
-      default: return <Activity className="h-4 w-4 text-gray-600" />;
+      case 'user_registered': return <Users className="h-3 w-3 md:h-4 md:w-4 text-blue-600" />;
+      case 'product_listed': return <Package className="h-3 w-3 md:h-4 md:w-4 text-green-600" />;
+      case 'order_placed': return <ShoppingBag className="h-3 w-3 md:h-4 md:w-4 text-purple-600" />;
+      case 'review_posted': return <Star className="h-3 w-3 md:h-4 md:w-4 text-yellow-600" />;
+      case 'message_sent': return <MessageSquare className="h-3 w-3 md:h-4 md:w-4 text-indigo-600" />;
+      default: return <Activity className="h-3 w-3 md:h-4 md:w-4 text-gray-600" />;
     }
   };
 
   if (loading && !monitorData) {
     return (
       <AdminLayout>
-        <div className="max-w-7xl mx-auto">
-          <div className="flex items-center justify-center h-64">
-            <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mr-3" />
-            <span className="text-lg">Loading comprehensive monitor...</span>
+        <div className="flex items-center justify-center h-64 px-4">
+          <div className="text-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-3" />
+            <span className="text-sm md:text-base">Loading monitor...</span>
           </div>
         </div>
       </AdminLayout>
@@ -168,14 +168,14 @@ const ComprehensiveMonitor = () => {
   if (error && !monitorData) {
     return (
       <AdminLayout>
-        <div className="max-w-7xl mx-auto">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-8 text-center">
-            <AlertTriangle className="h-12 w-12 text-red-600 mx-auto mb-4" />
-            <h2 className="text-xl font-bold text-red-800 mb-2">Monitoring System Error</h2>
-            <p className="text-red-700 mb-4">{error}</p>
+        <div className="p-4">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-4 md:p-6 text-center">
+            <AlertTriangle className="h-8 md:h-12 w-8 md:w-12 text-red-600 mx-auto mb-4" />
+            <h2 className="text-lg md:text-xl font-bold text-red-800 mb-2">System Error</h2>
+            <p className="text-sm md:text-base text-red-700 mb-4">{error}</p>
             <button 
               onClick={fetchMonitorData}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              className="px-4 md:px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm md:text-base"
             >
               Retry Connection
             </button>
@@ -187,138 +187,267 @@ const ComprehensiveMonitor = () => {
 
   return (
     <AdminLayout>
-      <div className="max-w-7xl mx-auto">
-        {/* Enhanced Header */}
-        <div className="mb-8">
-          <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 mb-8">
-            <div className="flex-1">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-2xl shadow-lg">
-                  <Shield className="h-8 w-8 text-white" />
-                </div>
-                <div>
-                  <h1 className="text-3xl lg:text-4xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                    CampusMart Control Center
-                  </h1>
-                  <p className="text-gray-600 dark:text-gray-400 text-lg">
-                    Complete monitoring and control of your marketplace platform
-                  </p>
-                </div>
-              </div>
+      <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6">
+        {/* Mobile-First Header */}
+        <div className="mb-4 md:mb-6 lg:mb-8">
+          {/* Title Section */}
+          <div className="flex items-start gap-2 md:gap-4 mb-4">
+            <div className="p-2 md:p-3 bg-gradient-to-br from-purple-500 to-blue-500 rounded-xl shadow-lg flex-shrink-0">
+              <Shield className="h-5 md:h-6 lg:h-8 w-5 md:w-6 lg:w-8 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <h1 className="text-lg md:text-2xl lg:text-3xl font-bold bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                Control Center
+              </h1>
+              <p className="text-xs md:text-sm lg:text-base text-gray-600 dark:text-gray-400 mt-1">
+                Complete platform monitoring
+              </p>
               {lastUpdate && (
-                <div className="flex items-center gap-2 text-sm">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                  <span className="text-green-600 font-semibold">
-                    Live • Last updated: {lastUpdate}
-                  </span>
+                <div className="flex items-center gap-1 md:gap-2 text-xs md:text-sm mt-1">
+                  <div className="w-1.5 h-1.5 md:w-2 md:h-2 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-green-600 font-medium">Live • {lastUpdate}</span>
                 </div>
               )}
             </div>
-            
-            <div className="flex flex-wrap items-center gap-4">
-              <select
-                value={selectedTimeframe}
-                onChange={(e) => setSelectedTimeframe(e.target.value)}
-                className="px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-800 focus:ring-2 focus:ring-purple-500 outline-none font-medium"
-              >
-                <option value="1h">Last Hour</option>
-                <option value="24h">Last 24 Hours</option>
-                <option value="7d">Last 7 Days</option>
-                <option value="30d">Last 30 Days</option>
-              </select>
-              
-              <label className="flex items-center gap-3 px-4 py-3 bg-gray-50 dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700">
-                <input
-                  type="checkbox"
-                  checked={autoRefresh}
-                  onChange={(e) => setAutoRefresh(e.target.checked)}
-                  className="w-4 h-4 text-purple-600 rounded focus:ring-purple-500"
-                />
-                <span className="text-sm font-medium">Auto-refresh</span>
-              </label>
-              
-              <button 
-                onClick={fetchMonitorData}
-                disabled={loading}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-xl hover:shadow-lg transition-all disabled:opacity-50 font-semibold"
-              >
-                <RefreshCw className={`h-5 w-5 ${loading ? 'animate-spin' : ''}`} />
-                Refresh
-              </button>
+          </div>
 
-              <button 
-                onClick={() => setShowControlPanel(!showControlPanel)}
-                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:shadow-lg transition-all font-semibold"
-              >
-                <Shield className="h-5 w-5" />
-                Control Panel
-              </button>
+          {/* Mobile Controls */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-2 md:gap-3">
+            <select
+              value={selectedTimeframe}
+              onChange={(e) => setSelectedTimeframe(e.target.value)}
+              className="px-2 md:px-3 py-2 text-xs md:text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 focus:ring-2 focus:ring-purple-500 outline-none"
+            >
+              <option value="1h">1h</option>
+              <option value="24h">24h</option>
+              <option value="7d">7d</option>
+              <option value="30d">30d</option>
+            </select>
+            
+            <label className="flex items-center gap-1 px-2 md:px-3 py-2 bg-gray-50 dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={autoRefresh}
+                onChange={(e) => setAutoRefresh(e.target.checked)}
+                className="w-3 h-3 md:w-4 md:h-4 text-purple-600 rounded"
+              />
+              <span className="text-xs md:text-sm font-medium">Auto</span>
+            </label>
+            
+            <button 
+              onClick={fetchMonitorData}
+              disabled={loading}
+              className="flex items-center justify-center gap-1 px-2 md:px-3 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white text-xs md:text-sm rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 md:h-4 md:w-4 ${loading ? 'animate-spin' : ''}`} />
+              <span className="hidden sm:inline">Refresh</span>
+            </button>
+
+            <button 
+              onClick={() => setShowControlPanel(!showControlPanel)}
+              className="col-span-2 sm:col-span-1 flex items-center justify-center gap-1 px-2 md:px-3 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs md:text-sm rounded-lg hover:shadow-lg transition-all"
+            >
+              <Shield className="h-3 w-3 md:h-4 md:w-4" />
+              <span>Control</span>
+            </button>
+          </div>
+        </div>
+
+        {/* System Health - Mobile First */}
+        {monitorData?.systemHealth && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 md:gap-4 mb-4 md:mb-6">
+            <div className={`p-3 md:p-4 rounded-lg border-2 ${
+              monitorData.systemHealth.database.status === 'online' 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center gap-2 md:gap-3">
+                <Database className="h-4 md:h-5 w-4 md:w-5" />
+                <div>
+                  <div className="text-xs md:text-sm font-bold">Database</div>
+                  <div className="text-xs">
+                    {monitorData.systemHealth.database.status} • {monitorData.systemHealth.database.responseTime}ms
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={`p-3 md:p-4 rounded-lg border-2 ${
+              monitorData.systemHealth.storage.status === 'online' 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center gap-2 md:gap-3">
+                <Package className="h-4 md:h-5 w-4 md:w-5" />
+                <div>
+                  <div className="text-xs md:text-sm font-bold">Storage</div>
+                  <div className="text-xs">
+                    {monitorData.systemHealth.storage.status} • {monitorData.systemHealth.storage.usage}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className={`p-3 md:p-4 rounded-lg border-2 ${
+              monitorData.systemHealth.api.status === 'online' 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-red-50 border-red-200 text-red-800'
+            }`}>
+              <div className="flex items-center gap-2 md:gap-3">
+                <Activity className="h-4 md:h-5 w-4 md:w-5" />
+                <div>
+                  <div className="text-xs md:text-sm font-bold">API</div>
+                  <div className="text-xs">
+                    {monitorData.systemHealth.api.status} • {monitorData.systemHealth.api.uptime}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Stats Grid - Mobile Responsive */}
+        {monitorData?.stats && (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-3 lg:gap-4 mb-4 md:mb-6">
+            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg p-3 md:p-4 shadow-lg text-white">
+              <Users className="h-4 md:h-5 w-4 md:w-5 mb-2 opacity-80" />
+              <div className="text-lg md:text-2xl font-bold">{(monitorData.stats.totalUsers / 1000).toFixed(1)}K</div>
+              <div className="text-xs opacity-90">Users</div>
+              <div className="text-xs mt-1">+{monitorData.stats.newUsersToday}</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg p-3 md:p-4 shadow-lg text-white">
+              <Package className="h-4 md:h-5 w-4 md:w-5 mb-2 opacity-80" />
+              <div className="text-lg md:text-2xl font-bold">{(monitorData.stats.totalProducts / 1000).toFixed(1)}K</div>
+              <div className="text-xs opacity-90">Products</div>
+              <div className="text-xs mt-1">+{monitorData.stats.newProductsToday}</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg p-3 md:p-4 shadow-lg text-white">
+              <ShoppingBag className="h-4 md:h-5 w-4 md:w-5 mb-2 opacity-80" />
+              <div className="text-lg md:text-2xl font-bold">{(monitorData.stats.totalOrders / 1000).toFixed(1)}K</div>
+              <div className="text-xs opacity-90">Orders</div>
+              <div className="text-xs mt-1">+{monitorData.stats.newOrdersToday}</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg p-3 md:p-4 shadow-lg text-white">
+              <TrendingUp className="h-4 md:h-5 w-4 md:w-5 mb-2 opacity-80" />
+              <div className="text-lg md:text-2xl font-bold">{(monitorData.stats.totalRevenue / 1000000).toFixed(1)}M</div>
+              <div className="text-xs opacity-90">Revenue</div>
+              <div className="text-xs mt-1">+{(monitorData.stats.revenueToday / 1000).toFixed(0)}K</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-lg p-3 md:p-4 shadow-lg text-white">
+              <AlertTriangle className="h-4 md:h-5 w-4 md:w-5 mb-2 opacity-80" />
+              <div className="text-lg md:text-2xl font-bold">{monitorData.stats.pendingOrders}</div>
+              <div className="text-xs opacity-90">Pending</div>
+              <div className="text-xs mt-1">Attention</div>
+            </div>
+
+            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-lg p-3 md:p-4 shadow-lg text-white">
+              <Star className="h-4 md:h-5 w-4 md:w-5 mb-2 opacity-80" />
+              <div className="text-lg md:text-2xl font-bold">{monitorData.stats.averageRating.toFixed(1)}</div>
+              <div className="text-xs opacity-90">Rating</div>
+              <div className="text-xs mt-1">{(monitorData.stats.totalReviews / 1000).toFixed(1)}K</div>
+            </div>
+          </div>
+        )}
+
+        {/* Main Content - Mobile Stack */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Activities - Full width on mobile */}
+          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-lg p-3 md:p-4 lg:p-6 shadow-lg border">
+            <div className="flex items-center gap-2 md:gap-3 mb-3 md:mb-4">
+              <Activity className="h-4 md:h-5 w-4 md:w-5 text-blue-600" />
+              <h2 className="text-sm md:text-base lg:text-lg font-bold">Live Feed</h2>
+              <div className="ml-auto flex items-center gap-1 text-xs text-green-600">
+                <div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div>
+                LIVE
+              </div>
+            </div>
+
+            <div className="space-y-2 md:space-y-3 max-h-80 md:max-h-96 overflow-y-auto">
+              {monitorData?.recentActivities?.length > 0 ? (
+                monitorData.recentActivities.map((activity, index) => (
+                  <div key={`${activity.id}-${index}`} className="flex items-start gap-2 md:gap-3 p-2 md:p-3 bg-gray-50 dark:bg-gray-700 rounded-lg">
+                    <div className="p-1 md:p-1.5 rounded bg-white dark:bg-gray-600 shadow-sm flex-shrink-0">
+                      {getActivityIcon(activity.type)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs md:text-sm font-medium line-clamp-2">
+                        <span className="font-semibold">{activity.user}</span> {activity.description}
+                      </p>
+                      <div className="flex items-center gap-1 mt-1 text-xs text-gray-500">
+                        <Clock className="h-3 w-3" />
+                        <span>{new Date(activity.timestamp).toLocaleTimeString()}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs md:text-sm">No activities</p>
+                </div>
+              )}
             </div>
           </div>
 
-          {/* System Health Status */}
-          {monitorData?.systemHealth && (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <div className={`p-4 rounded-lg border-2 ${
-                monitorData.systemHealth.database.status === 'online' 
-                  ? 'bg-green-50 border-green-200 text-green-800' 
-                  : 'bg-red-50 border-red-200 text-red-800'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <Database className="h-6 w-6" />
-                  <div>
-                    <div className="font-bold">Database</div>
-                    <div className="text-sm">
-                      {monitorData.systemHealth.database.status} • {monitorData.systemHealth.database.responseTime}ms
-                    </div>
+          {/* Side Panel */}
+          <div className="space-y-3 md:space-y-4">
+            {/* Performance */}
+            {monitorData?.performance && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 md:p-4 shadow-lg border">
+                <div className="flex items-center gap-2 mb-3">
+                  <BarChart3 className="h-4 md:h-5 w-4 md:w-5 text-purple-600" />
+                  <h3 className="text-sm md:text-base font-bold">Performance</h3>
+                </div>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs md:text-sm">
+                    <span className="text-gray-600">Avg Order</span>
+                    <span className="font-semibold">KES {monitorData.performance.avgOrderValue.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-xs md:text-sm">
+                    <span className="text-gray-600">Conversion</span>
+                    <span className="font-semibold">{monitorData.performance.conversionRate.toFixed(1)}%</span>
+                  </div>
+                  <div className="flex justify-between text-xs md:text-sm">
+                    <span className="text-gray-600">Satisfaction</span>
+                    <span className="font-semibold">{monitorData.performance.customerSatisfaction.toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
+            )}
 
-              <div className={`p-4 rounded-lg border-2 ${
-                monitorData.systemHealth.storage.status === 'online' 
-                  ? 'bg-green-50 border-green-200 text-green-800' 
-                  : 'bg-red-50 border-red-200 text-red-800'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <Package className="h-6 w-6" />
-                  <div>
-                    <div className="font-bold">R2 Storage</div>
-                    <div className="text-sm">
-                      {monitorData.systemHealth.storage.status} • {monitorData.systemHealth.storage.usage}
+            {/* Locations */}
+            {monitorData?.usersByLocation && (
+              <div className="bg-white dark:bg-gray-800 rounded-lg p-3 md:p-4 shadow-lg border">
+                <div className="flex items-center gap-2 mb-3">
+                  <MapPin className="h-4 md:h-5 w-4 md:w-5 text-green-600" />
+                  <h3 className="text-sm md:text-base font-bold">Locations</h3>
+                </div>
+                <div className="space-y-2">
+                  {monitorData.usersByLocation.slice(0, 5).map((location, index) => (
+                    <div key={index} className="flex justify-between text-xs md:text-sm">
+                      <span className="text-gray-600 truncate">{location.location}</span>
+                      <span className="font-semibold">{location.count}</span>
                     </div>
-                  </div>
+                  ))}
                 </div>
               </div>
-
-              <div className={`p-4 rounded-lg border-2 ${
-                monitorData.systemHealth.api.status === 'online' 
-                  ? 'bg-green-50 border-green-200 text-green-800' 
-                  : 'bg-red-50 border-red-200 text-red-800'
-              }`}>
-                <div className="flex items-center gap-3">
-                  <Activity className="h-6 w-6" />
-                  <div>
-                    <div className="font-bold">API Services</div>
-                    <div className="text-sm">
-                      {monitorData.systemHealth.api.status} • {monitorData.systemHealth.api.uptime} uptime
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         {/* Control Panel Modal */}
         {showControlPanel && (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-            <div className="bg-white dark:bg-gray-800 rounded-xl p-6 max-w-md w-full">
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-4 md:p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-bold">Admin Control Panel</h3>
+                <h3 className="text-base md:text-lg font-bold">Control Panel</h3>
                 <button 
                   onClick={() => setShowControlPanel(false)}
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-gray-500 hover:text-gray-700 p-1"
                 >
                   ✕
                 </button>
@@ -330,7 +459,7 @@ const ComprehensiveMonitor = () => {
                   <select
                     value={controlAction}
                     onChange={(e) => setControlAction(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   >
                     <option value="">Select action...</option>
                     <option value="suspend_user">Suspend User</option>
@@ -350,64 +479,21 @@ const ComprehensiveMonitor = () => {
                     type="text"
                     value={controlTarget}
                     onChange={(e) => setControlTarget(e.target.value)}
-                    placeholder="Enter user ID, product ID, order ID..."
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="Enter ID..."
+                    className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                   />
                 </div>
-
-                {controlAction === 'update_order_status' && (
-                  <div>
-                    <label className="block text-sm font-medium mb-1">New Status</label>
-                    <select
-                      value={controlData.status || ''}
-                      onChange={(e) => setControlData({ ...controlData, status: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="">Select status...</option>
-                      <option value="pending">Pending</option>
-                      <option value="processing">Processing</option>
-                      <option value="shipped">Shipped</option>
-                      <option value="delivered">Delivered</option>
-                      <option value="cancelled">Cancelled</option>
-                    </select>
-                  </div>
-                )}
-
-                {controlAction === 'send_notification' && (
-                  <>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Title</label>
-                      <input
-                        type="text"
-                        value={controlData.title || ''}
-                        onChange={(e) => setControlData({ ...controlData, title: e.target.value })}
-                        placeholder="Notification title"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-1">Message</label>
-                      <textarea
-                        value={controlData.message || ''}
-                        onChange={(e) => setControlData({ ...controlData, message: e.target.value })}
-                        placeholder="Notification message"
-                        rows={3}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
-                      />
-                    </div>
-                  </>
-                )}
 
                 <div className="flex gap-3 pt-4">
                   <button
                     onClick={executeControlAction}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                    className="flex-1 px-4 py-2 bg-red-600 text-white text-sm rounded-lg hover:bg-red-700"
                   >
-                    Execute Action
+                    Execute
                   </button>
                   <button
                     onClick={() => setShowControlPanel(false)}
-                    className="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
+                    className="px-4 py-2 bg-gray-600 text-white text-sm rounded-lg hover:bg-gray-700"
                   >
                     Cancel
                   </button>
@@ -416,201 +502,6 @@ const ComprehensiveMonitor = () => {
             </div>
           </div>
         )}
-
-        {/* Enhanced Main Stats Grid */}
-        {monitorData?.stats && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 lg:gap-6 mb-8">
-            <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <Users className="h-10 w-10 opacity-80" />
-                <div className="text-right">
-                  <div className="text-3xl font-bold">
-                    {monitorData.stats.totalUsers.toLocaleString()}
-                  </div>
-                  <div className="text-sm opacity-90">Total Users</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <TrendingUp className="h-4 w-4" />
-                <span>+{monitorData.stats.newUsersToday} today</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <Package className="h-10 w-10 opacity-80" />
-                <div className="text-right">
-                  <div className="text-3xl font-bold">
-                    {monitorData.stats.totalProducts.toLocaleString()}
-                  </div>
-                  <div className="text-sm opacity-90">Products</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <TrendingUp className="h-4 w-4" />
-                <span>+{monitorData.stats.newProductsToday} today</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <ShoppingBag className="h-10 w-10 opacity-80" />
-                <div className="text-right">
-                  <div className="text-3xl font-bold">
-                    {monitorData.stats.totalOrders.toLocaleString()}
-                  </div>
-                  <div className="text-sm opacity-90">Orders</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <TrendingUp className="h-4 w-4" />
-                <span>+{monitorData.stats.newOrdersToday} today</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <TrendingUp className="h-10 w-10 opacity-80" />
-                <div className="text-right">
-                  <div className="text-3xl font-bold">
-                    KES {(monitorData.stats.totalRevenue / 1000).toFixed(1)}K
-                  </div>
-                  <div className="text-sm opacity-90">Revenue</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <TrendingUp className="h-4 w-4" />
-                <span>+KES {(monitorData.stats.revenueToday / 1000).toFixed(1)}K today</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-red-500 to-red-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <AlertTriangle className="h-10 w-10 opacity-80" />
-                <div className="text-right">
-                  <div className="text-3xl font-bold">
-                    {monitorData.stats.pendingOrders}
-                  </div>
-                  <div className="text-sm opacity-90">Pending</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Clock className="h-4 w-4" />
-                <span>Needs attention</span>
-              </div>
-            </div>
-
-            <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 rounded-2xl p-6 shadow-lg text-white transform hover:scale-105 transition-all duration-300">
-              <div className="flex items-center justify-between mb-4">
-                <Star className="h-10 w-10 opacity-80" />
-                <div className="text-right">
-                  <div className="text-3xl font-bold">
-                    {monitorData.stats.averageRating.toFixed(1)}
-                  </div>
-                  <div className="text-sm opacity-90">Avg Rating</div>
-                </div>
-              </div>
-              <div className="flex items-center gap-2 text-sm">
-                <Star className="h-4 w-4" />
-                <span>{monitorData.stats.totalReviews} reviews</span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Recent Activities */}
-          <div className="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-            <div className="flex items-center gap-3 mb-6">
-              <Activity className="h-6 w-6 text-blue-600" />
-              <h2 className="text-xl font-bold text-gray-900 dark:text-white">Live Activity Feed</h2>
-              <div className="ml-auto flex items-center gap-2 text-sm text-green-600">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                LIVE
-              </div>
-            </div>
-
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {monitorData?.recentActivities?.length > 0 ? (
-                monitorData.recentActivities.map((activity, index) => (
-                  <div key={`${activity.id}-${index}`} className="flex items-start gap-4 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg">
-                    <div className="p-2 rounded-lg bg-white dark:bg-gray-600 shadow-sm">
-                      {getActivityIcon(activity.type)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm text-gray-900 dark:text-white font-medium">
-                        <span className="font-semibold">{activity.user}</span> {activity.description}
-                      </p>
-                      <div className="flex items-center gap-4 mt-1 text-xs text-gray-500 dark:text-gray-400">
-                        <span className="flex items-center gap-1">
-                          <Clock className="h-3 w-3" />
-                          {new Date(activity.timestamp).toLocaleString()}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="text-center py-8 text-gray-500">
-                  <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No recent activities</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Side Panel */}
-          <div className="space-y-6">
-            {/* Performance Metrics */}
-            {monitorData?.performance && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-4">
-                  <BarChart3 className="h-6 w-6 text-purple-600" />
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">Performance</h3>
-                </div>
-                
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Avg Order Value</span>
-                    <span className="font-semibold">KES {monitorData.performance.avgOrderValue.toLocaleString()}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Conversion Rate</span>
-                    <span className="font-semibold">{monitorData.performance.conversionRate.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Customer Satisfaction</span>
-                    <span className="font-semibold">{monitorData.performance.customerSatisfaction.toFixed(1)}%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-gray-600 dark:text-gray-400">Response Time</span>
-                    <span className="font-semibold">{monitorData.performance.responseTime}ms</span>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Geographic Distribution */}
-            {monitorData?.usersByLocation && (
-              <div className="bg-white dark:bg-gray-800 rounded-xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-3 mb-4">
-                  <MapPin className="h-6 w-6 text-green-600" />
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white">User Locations</h3>
-                </div>
-                
-                <div className="space-y-3">
-                  {monitorData.usersByLocation.slice(0, 5).map((location, index) => (
-                    <div key={index} className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">{location.location}</span>
-                      <span className="font-semibold">{location.count}</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
       </div>
     </AdminLayout>
   );

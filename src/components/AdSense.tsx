@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import './AdSense.css';
 
 interface AdSenseProps {
@@ -14,10 +14,20 @@ export const AdSense = ({
   style = { display: 'block' },
   className = ""
 }: AdSenseProps) => {
+  const adRef = useRef<HTMLElement>(null);
+  const isLoaded = useRef(false);
+
   useEffect(() => {
+    // Prevent multiple initializations
+    if (isLoaded.current || !adRef.current) return;
+    
     try {
-      // @ts-ignore
-      (window.adsbygoogle = window.adsbygoogle || []).push({});
+      // Only push if the ad element exists and hasn't been initialized
+      if (adRef.current && !adRef.current.hasAttribute('data-adsbygoogle-status')) {
+        // @ts-ignore
+        (window.adsbygoogle = window.adsbygoogle || []).push({});
+        isLoaded.current = true;
+      }
     } catch (err) {
       console.error('AdSense error:', err);
     }
@@ -26,6 +36,7 @@ export const AdSense = ({
   return (
     <div className={`adsense-container ${className}`}>
       <ins
+        ref={adRef}
         className="adsbygoogle"
         style={style}
         data-ad-client="ca-pub-7825089072589278"

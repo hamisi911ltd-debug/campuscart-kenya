@@ -250,7 +250,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           sidebarOpen ? 'lg:pl-64' : 'lg:pl-20'
         }`}
       >
-        <div className="p-3 sm:p-4 md:p-6">
+        <div className="p-1 sm:p-2 md:p-3 lg:p-4 xl:p-6">
           {children}
         </div>
       </main>
