@@ -30,11 +30,10 @@ import ActivityMonitor from "./pages/admin/ActivityMonitor";
 import SystemControl from "./pages/admin/SystemControl";
 import DatabaseViewer from "./pages/admin/DatabaseViewer";
 import DirectApiTest from "./pages/admin/DirectApiTest";
-import AdSenseStatus from "./pages/AdSenseStatus";
+
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
-import AdminAdvertisements from "./pages/admin/AdminAdvertisements";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AuthDebug from "./pages/admin/AuthDebug";
 import ApiTestPage from "./pages/admin/ApiTestPage";
@@ -69,7 +68,7 @@ const App = () => (
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/adsense-status" element={<AdSenseStatus />} />
+
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminRoute><ComprehensiveMonitor /></AdminRoute>} />
@@ -79,7 +78,6 @@ const App = () => (
               <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
               <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-              <Route path="/admin/advertisements" element={<AdminRoute><AdminAdvertisements /></AdminRoute>} />
               <Route path="/admin/test" element={<AdminRoute><DirectApiTest /></AdminRoute>} />
               <Route path="/admin/debug" element={<AdminRoute><AuthDebug /></AdminRoute>} />
               <Route path="/admin/diagnostic" element={<AdminRoute><TempDashboard /></AdminRoute>} />

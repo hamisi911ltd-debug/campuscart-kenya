@@ -8,98 +8,10 @@ import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
 import { categories, getProducts, getProductsSync, getStaticProducts, transformDatabaseProduct } from "@/data/products";
-
-// Import category images for slides
-import catBooks from "@/assets/cat-books.jpg";
-import catElec from "@/assets/cat-electronics.jpg";
-import catFashion from "@/assets/cat-fashion.jpg";
-import catFood from "@/assets/cat-food.jpg";
-import catRooms from "@/assets/cat-rooms.jpg";
-import catStat from "@/assets/cat-stationery.jpg";
-import catFurn from "@/assets/cat-furniture.jpg";
-
-// Gen Z Catchy Product Slides - Replace these URLs with actual Pinterest images
-const getDefaultAdSlides = () => {
-  return [
-    {
-      bg: "transparent",
-      badge: "TRENDING",
-      title: "AirPods Pro 🎧",
-      subtitle: "Wireless Freedom Awaits",
-      categorySlug: "electronics",
-      imageUrl: "https://images.unsplash.com/photo-1606841837239-c5a1a4a07af7?w=1200&h=600&fit=crop", // Replace with Pinterest image
-    },
-    {
-      bg: "transparent",
-      badge: "HOT DEAL",
-      title: "MacBook Air M2 💻",
-      subtitle: "Power Meets Portability",
-      categorySlug: "electronics",
-      imageUrl: "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=1200&h=600&fit=crop", // Replace with Pinterest image
-    },
-    {
-      bg: "transparent",
-      badge: "FASHION",
-      title: "Streetwear Vibes 👟",
-      subtitle: "Fresh Kicks & Fits",
-      categorySlug: "fashion",
-      imageUrl: "https://images.unsplash.com/photo-1460353581641-37baddab0fa2?w=1200&h=600&fit=crop", // Replace with Pinterest image
-    },
-    {
-      bg: "transparent",
-      badge: "FOOD",
-      title: "Campus Eats 🍕",
-      subtitle: "Delivered Hot & Fast",
-      categorySlug: "food",
-      imageUrl: "https://images.unsplash.com/photo-1565299624946-b28f40a0ae38?w=1200&h=600&fit=crop", // Replace with Pinterest image
-    },
-    {
-      bg: "transparent",
-      badge: "BOOKS",
-      title: "Textbooks 50% OFF 📚",
-      subtitle: "Save Big This Semester",
-      categorySlug: "books",
-      imageUrl: "https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=1200&h=600&fit=crop", // Replace with Pinterest image
-    },
-    {
-      bg: "transparent",
-      badge: "GAMING",
-      title: "PS5 & Accessories 🎮",
-      subtitle: "Level Up Your Game",
-      categorySlug: "electronics",
-      imageUrl: "https://images.unsplash.com/photo-1606144042614-b2417e99c4e3?w=1200&h=600&fit=crop", // Replace with Pinterest image
-    },
-    {
-      bg: "transparent",
-      badge: "ROOMS",
-      title: "Cozy Hostels 🏠",
-      subtitle: "Your Home Away From Home",
-      categorySlug: "hostels",
-      imageUrl: "https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=1200&h=600&fit=crop", // Replace with Pinterest image
-    },
-  ];
-};
-
-interface Advertisement {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  link?: string;
-  active: boolean;
-  order: number;
-  frequency: number; // How often this ad should appear (1-10)
-  createdAt: string;
-  clicks?: number;
-  impressions?: number;
-}
-
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useShop();
-  const [currentSlide, setCurrentSlide] = useState(0);
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
-  const [adSlides, setAdSlides] = useState(getDefaultAdSlides()); // Fixed ads, never changes
   const [showSignInModal, setShowSignInModal] = useState(false);
 
   // Ensure products is always an array
@@ -187,6 +99,15 @@ const Index = () => {
     const loadAdminAdvertisements = async () => {
       try {
         const response = await fetch('/api/admin/advertisements/public');
+        
+        // Check if response is actually JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          console.log('API returned non-JSON response, using default slides');
+          setAdSlides(getDefaultAdSlides());
+          return;
+        }
+        
         if (response.ok) {
           const data = await response.json();
           const activeAds = data.advertisements?.filter((ad: Advertisement) => ad.active) || [];
@@ -222,11 +143,12 @@ const Index = () => {
             setAdSlides(getDefaultAdSlides());
           }
         } else {
-          // Fallback to default slides if API fails
+          // API error, fallback to default slides
+          console.log('API error, using default slides');
           setAdSlides(getDefaultAdSlides());
         }
       } catch (error) {
-        console.error('Error loading admin advertisements:', error);
+        console.log('Error loading admin advertisements, using default slides:', error);
         // Fallback to default slides
         setAdSlides(getDefaultAdSlides());
       }
@@ -267,85 +189,6 @@ const Index = () => {
       </div>
 
       <main className="mx-auto max-w-7xl px-4 pb-4">
-        {/* Advertisement Carousel */}
-        <section className="relative overflow-hidden rounded-xl shadow-card h-[160px] md:h-[180px] mb-0">
-          {adSlides.map((slide, idx) => {
-            // Check if this is an admin ad or category slide
-            const isAdminAd = 'isAdminAd' in slide && slide.isAdminAd;
-            const isCategorySlide = 'categorySlug' in slide;
-            const imageUrl = isAdminAd ? slide.imageUrl : (isCategorySlide ? slide.imageUrl : null);
-            const slideTitle = slide.title;
-            const slideSubtitle = slide.subtitle;
-            
-            const handleClick = () => {
-              if (isAdminAd && slide.link) {
-                navigate(slide.link);
-              } else if (isCategorySlide && slide.categorySlug) {
-                navigate(`/category/${slide.categorySlug}`);
-              } else {
-                navigate("/search");
-              }
-            };
-            
-            return (
-              <div
-                key={idx}
-                className={`absolute inset-0 transition-all duration-700 ease-in-out ${
-                  idx === currentSlide ? 'opacity-100 scale-100' : 'opacity-0 scale-95'
-                }`}
-              >
-                <button
-                  onClick={handleClick}
-                  className="relative h-full w-full cursor-pointer hover:scale-[1.01] transition-transform overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100"
-                >
-                  {/* Category/Ad image */}
-                  {imageUrl && (
-                    <img
-                      src={imageUrl}
-                      alt={slideTitle}
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
-                    />
-                  )}
-
-                  {/* Gradient overlay for text readability */}
-                  <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-black/40 to-transparent"></div>
-
-                  {/* Content - Overlaid on image */}
-                  <div className="relative z-10 h-full flex flex-col justify-center px-6 md:px-8">
-                    <span className="inline-block self-start rounded-full bg-white/95 backdrop-blur-sm px-3 py-1 text-[9px] font-bold tracking-wider text-gray-900 md:text-[10px] shadow-lg">
-                      {slide.badge}
-                    </span>
-                    <h2 className="mt-3 text-2xl md:text-4xl font-extrabold text-white leading-tight drop-shadow-2xl">
-                      {slideTitle}
-                    </h2>
-                    <p className="mt-1 text-sm md:text-base text-white font-semibold drop-shadow-lg">
-                      {slideSubtitle}
-                    </p>
-                  </div>
-                </button>
-              </div>
-            );
-          })}
-          
-          {/* Slide indicators */}
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-20 pointer-events-none">
-            {adSlides.map((_, idx) => (
-              <div
-                key={idx}
-                className={`h-1.5 rounded-full transition-all ${
-                  idx === currentSlide 
-                    ? 'w-6 bg-white' 
-                    : 'w-1.5 bg-white/50'
-                }`}
-              />
-            ))}
-          </div>
-        </section>
-
         <Section icon={<Flame className="h-5 w-5 text-accent" />} title="Trending Near You" subtitle="Popular with students this week" link="View All" linkTo="/search?sort=trending">
           <ProductGrid items={trending} />
         </Section>
