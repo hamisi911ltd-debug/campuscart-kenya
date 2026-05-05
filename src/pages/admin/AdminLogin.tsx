@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Shield } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
+import { setAdminSession } from "@/utils/adminAuth";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -45,13 +46,7 @@ const AdminLogin = () => {
       }
       
       // Success - store session and cookie for API authentication
-      sessionStorage.setItem('isAdmin', 'true');
-      sessionStorage.setItem('adminEmail', 'campusmart.care@gmail.com');
-      
-      // Set admin cookie for API authentication (expires in 24 hours)
-      const expires = new Date();
-      expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
-      document.cookie = `admin_session=true; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      setAdminSession();
       
       toast.success('Welcome, Admin!');
       navigate("/admin");

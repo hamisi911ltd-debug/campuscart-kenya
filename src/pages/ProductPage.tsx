@@ -4,7 +4,7 @@ import { findProduct, products } from "@/data/products";
 import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
-import { Heart, MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User } from "lucide-react";
+import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 
@@ -13,7 +13,7 @@ const ProductPage = () => {
   const navigate = useNavigate();
   const [p, setP] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const { addToCart, toggleFavorite, isFavorite, user } = useShop();
+  const { addToCart, user } = useShop();
   const [qty, setQty] = useState(1);
   const [priceCardClicked, setPriceCardClicked] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -22,6 +22,7 @@ const ProductPage = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [reviews, setReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   // Admin WhatsApp number
   const ADMIN_WHATSAPP = "254108254465"; // Format: country code + number without leading 0
@@ -141,39 +142,88 @@ const ProductPage = () => {
     );
   }
 
-  const liked = isFavorite(p.id);
   const discount = p.oldPrice ? Math.round((1 - p.price / p.oldPrice) * 100) : 0;
   const related = products.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 4);
+  
+  // Get all images (main image + additional images if available)
+  const allImages = [p.image, ...(p.images || [])].filter(Boolean);
+  
+  const nextImage = () => {
+    setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
+  };
+  
+  const prevImage = () => {
+    setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
 
   return (
-    <PageShell title="">
-      {/* Sign In Modal */}
-      <SignInModal 
-        isOpen={showSignInModal} 
-        onClose={() => setShowSignInModal(false)}
-        message="Sign in to view product details, add to cart, and place orders."
-      />
+    <div className="min-h-screen bg-background overflow-x-hidden">
+      <PageShell title="">
+        {/* Sign In Modal */}
+        <SignInModal 
+          isOpen={showSignInModal} 
+          onClose={() => setShowSignInModal(false)}
+          message="Sign in to view product details, add to cart, and place orders."
+        />
 
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="overflow-hidden rounded-2xl bg-card shadow-card">
-          <img 
-            src={p.image} 
-            alt={p.title} 
-            className="aspect-square w-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).src = '/placeholder.svg';
-            }}
-          />
-        </div>
-        <div className="flex flex-col gap-4">
-          <div>
-            <h1 className="text-2xl font-extrabold text-foreground">{p.title}</h1>
-            <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground">
-              <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-warning text-warning" /> {p.rating ?? 4.7}</span>
-              <span>· {p.sold ?? 0} sold</span>
-              <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {p.campus}</span>
+        <div className="grid gap-4 md:gap-6 md:grid-cols-2 max-w-full">
+          {/* Image Carousel */}
+          <div className="relative overflow-hidden rounded-2xl bg-card shadow-card">
+            <div className="aspect-square w-full relative">
+              <img 
+                src={allImages[currentImageIndex]} 
+                alt={p.title} 
+                className="w-full h-full object-cover"
+                onError={(e) => {
+                  (e.target as HTMLImageElement).src = '/placeholder.svg';
+                }}
+              />
+              
+              {/* Navigation arrows - only show if multiple images */}
+              {allImages.length > 1 && (
+                <>
+                  <button
+                    onClick={prevImage}
+                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={nextImage}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </button>
+                </>
+              )}
+              
+              {/* Image indicators */}
+              {allImages.length > 1 && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                  {allImages.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => setCurrentImageIndex(idx)}
+                      className={`w-2 h-2 rounded-full transition-colors ${
+                        idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
+          
+          {/* Product Details */}
+          <div className="flex flex-col gap-3 md:gap-4 max-w-full overflow-hidden">
+            <div>
+              <h1 className="text-xl md:text-2xl font-extrabold text-foreground break-words">{p.title}</h1>
+              <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
+                <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-warning text-warning" /> {p.rating ?? 4.7}</span>
+                <span>· {p.sold ?? 0} sold</span>
+                <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {p.campus}</span>
+              </div>
+            </div>
           <div 
             className={`rounded-2xl p-3 text-white transition-all duration-300 cursor-pointer ${
               priceCardClicked 
@@ -192,7 +242,7 @@ const ProductPage = () => {
               {priceCardClicked ? 'Selected for purchase!' : 'Student flash price · ends tonight'}
             </p>
           </div>
-          {p.description && <p className="text-sm text-foreground/90">{p.description}</p>}
+          {p.description && <p className="text-sm text-foreground/90 break-words">{p.description}</p>}
 
           {/* Product Location Map */}
           {p.location && (
@@ -201,7 +251,7 @@ const ProductPage = () => {
                 <MapPin className="h-4 w-4 text-accent" />
                 Pickup Location
               </h3>
-              <div className="rounded-xl overflow-hidden border border-border shadow-sm h-40">
+              <div className="rounded-xl overflow-hidden border border-border shadow-sm h-32 md:h-40">
                 <iframe
                   src={`https://www.google.com/maps?q=${p.location.lat},${p.location.lng}&output=embed&z=17`}
                   width="100%"
@@ -233,32 +283,23 @@ const ProductPage = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3">
+          <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
                 addToCart(p, qty);
                 navigate('/checkout');
               }}
-              className="flex-1 rounded-full gradient-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-105 transition-transform"
+              className="flex-1 rounded-full gradient-accent px-4 py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-105 transition-transform"
             >
               Checkout
             </button>
             <button
               onClick={() => addToCart(p, qty)}
-              className="flex-1 rounded-full bg-primary px-6 py-3 text-sm font-bold text-primary-foreground hover:bg-primary-glow"
+              className="flex-1 rounded-full bg-primary px-4 py-3 text-sm font-bold text-primary-foreground hover:bg-primary-glow"
             >
               Add to cart
             </button>
-            <button
-              onClick={() => toggleFavorite(p.id)}
-              aria-label="favorite"
-              className="flex h-12 w-12 items-center justify-center rounded-full bg-muted hover:bg-secondary"
-            >
-              <Heart className={`h-5 w-5 ${liked ? "fill-accent text-accent" : "text-muted-foreground"}`} />
-            </button>
           </div>
-
-          {/* Removed: Boda delivery, M-PESA, Buyer protection badges */}
         </div>
       </div>
 
@@ -454,7 +495,7 @@ const ProductPage = () => {
       )}
 
       {related.length > 0 && (
-        <section className="mt-10">
+        <section className="mt-6 md:mt-10">
           <h2 className="mb-3 text-lg font-extrabold">You might also like</h2>
           <div className="grid grid-cols-2 gap-1 md:grid-cols-6 md:gap-2">
             {related.map((r) => <ProductCard key={r.id} p={r} />)}
@@ -462,6 +503,7 @@ const ProductPage = () => {
         </section>
       )}
     </PageShell>
+    </div>
   );
 };
 

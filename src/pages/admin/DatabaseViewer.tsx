@@ -4,6 +4,7 @@ import {
   RefreshCw, AlertTriangle, CheckCircle, FileText
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { adminFetch } from "@/utils/adminAuth";
 
 interface TableInfo {
   name: string;
@@ -27,9 +28,7 @@ const DatabaseViewer = () => {
   const fetchTables = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/admin/database-viewer?action=tables', {
-        credentials: 'include'
-      });
+      const response = await adminFetch('/api/admin/database-viewer?action=tables');
       
       if (!response.ok) throw new Error('Failed to fetch tables');
       
@@ -47,9 +46,7 @@ const DatabaseViewer = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch(`/api/admin/database-viewer?action=view&table=${encodeURIComponent(tableName)}`, {
-        credentials: 'include'
-      });
+      const response = await adminFetch(`/api/admin/database-viewer?action=view&table=${encodeURIComponent(tableName)}`);
       
       if (!response.ok) throw new Error('Failed to fetch table data');
       
@@ -70,9 +67,8 @@ const DatabaseViewer = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/admin/database-viewer', {
+      const response = await adminFetch('/api/admin/database-viewer', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ query: customQuery })
       });

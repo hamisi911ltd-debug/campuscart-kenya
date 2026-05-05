@@ -1,13 +1,10 @@
+import { isAdmin } from "./auth";
+
 // Comprehensive Activity Monitoring API for Admin
 
 interface Env {
   DB: D1Database;
   R2: R2Bucket;
-}
-
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  return cookie.includes("admin_session=true");
 }
 
 export async function onRequestGet(context: { env: Env; request: Request }) {

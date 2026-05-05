@@ -11,6 +11,7 @@ import catFurn from "@/assets/cat-furniture.jpg";
 export type ProductWithCategory = Product & { 
   category: string; 
   description?: string;
+  images?: string[];
   seller?: {
     name: string;
     email: string;
@@ -67,6 +68,7 @@ export const transformDatabaseProduct = (dbProduct: any): ProductWithCategory =>
     sold: dbProduct.reviews_count || 0,
     category: dbProduct.category,
     description: dbProduct.description,
+    images,
     totalReviews: dbProduct.reviews_count || 0,
   };
 };

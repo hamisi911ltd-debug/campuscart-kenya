@@ -67,7 +67,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     // Set HTTP-only secure cookie
     response.headers.set("Set-Cookie", 
-      "admin_session=true; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=86400"
+      "admin_session=true; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=86400"
     );
 
     return response;
@@ -91,7 +91,7 @@ export async function onRequestDelete(context: { request: Request }) {
   });
 
   response.headers.set("Set-Cookie", 
-    "admin_session=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0"
+    "admin_session=; Path=/; HttpOnly; Secure; SameSite=None; Max-Age=0"
   );
 
   return response;

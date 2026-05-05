@@ -5,6 +5,7 @@ import {
   RefreshCw, Filter, Calendar, Eye, BarChart3
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { adminFetch } from "@/utils/adminAuth";
 
 interface ActivityStats {
   newUsers: number;
@@ -63,10 +64,7 @@ const ActivityMonitor = () => {
       setLoading(true);
       setError(null);
 
-      const response = await fetch(`/api/admin/activity-monitor?timeframe=${timeframe}`, {
-        credentials: 'include',
-        headers: { 'Cache-Control': 'no-cache' }
-      });
+      const response = await adminFetch(`/api/admin/activity-monitor?timeframe=${timeframe}`);
 
       if (!response.ok) {
         throw new Error(`API Error: ${response.status}`);

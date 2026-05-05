@@ -1,12 +1,9 @@
 // Database Viewer API - Direct D1 database access for admin
 
+import { isAdmin } from "./auth";
+
 interface Env {
   DB: D1Database;
-}
-
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  return cookie.includes("admin_session=true");
 }
 
 export async function onRequestGet(context: { env: Env; request: Request }) {

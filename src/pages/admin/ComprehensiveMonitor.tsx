@@ -6,6 +6,7 @@ import {
   Shield, Settings, Ban, CheckCircle, Trash2, Send
 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { adminFetch } from "@/utils/adminAuth";
 
 interface MonitorData {
   // Real-time stats
@@ -73,10 +74,7 @@ const ComprehensiveMonitor = () => {
       setError(null);
 
       // Fetch comprehensive monitoring data
-      const response = await fetch(`/api/admin/comprehensive-monitor?timeframe=${selectedTimeframe}`, {
-        credentials: 'include',
-        headers: { 'Cache-Control': 'no-cache' }
-      });
+      const response = await adminFetch(`/api/admin/comprehensive-monitor?timeframe=${selectedTimeframe}`);
 
       if (!response.ok) {
         throw new Error(`API Error: ${response.status}`);
@@ -105,9 +103,8 @@ const ComprehensiveMonitor = () => {
     }
 
     try {
-      const response = await fetch('/api/admin/system-control', {
+      const response = await adminFetch('/api/admin/system-control', {
         method: 'POST',
-        credentials: 'include',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: controlAction,

@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
+import { clearAdminSession } from "@/utils/adminAuth";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -21,12 +22,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const adminEmail = sessionStorage.getItem('adminEmail') || 'Admin';
 
   const handleLogout = () => {
-    // Clear sessionStorage
-    sessionStorage.removeItem('isAdmin');
-    sessionStorage.removeItem('adminEmail');
-    
-    // Clear admin cookie
-    document.cookie = 'admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=Lax';
+    // Clear admin session
+    clearAdminSession();
     
     toast.success('Logged out successfully');
     navigate('/admin/login');

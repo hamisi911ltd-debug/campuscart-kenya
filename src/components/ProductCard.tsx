@@ -1,4 +1,4 @@
-import { Heart, MapPin, Star, ShoppingCart } from "lucide-react";
+import { MapPin, Star, ShoppingCart } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useShop } from "@/store/shop";
 
@@ -23,8 +23,7 @@ const badgeStyles: Record<string, string> = {
 };
 
 export const ProductCard = ({ p }: { p: Product }) => {
-  const { toggleFavorite, isFavorite, addToCart } = useShop();
-  const liked = isFavorite(p.id);
+  const { addToCart } = useShop();
   const discount = p.oldPrice && p.oldPrice > p.price 
     ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100) 
     : 0;
@@ -57,13 +56,6 @@ export const ProductCard = ({ p }: { p: Product }) => {
             -{discount}%
           </span>
         )}
-        <button
-          onClick={(e) => { e.preventDefault(); toggleFavorite(p.id); }}
-          aria-label="favorite"
-          className="absolute bottom-1.5 right-1.5 flex h-6 w-6 items-center justify-center rounded-full bg-background/90 backdrop-blur transition hover:scale-110"
-        >
-          <Heart className={`h-3 w-3 transition ${liked ? "fill-accent text-accent" : "text-muted-foreground"}`} />
-        </button>
       </div>
       <div className="flex flex-1 flex-col gap-1 p-1.5">
         <h3 className="line-clamp-2 text-[13px] font-semibold text-foreground leading-tight">{p.title}</h3>

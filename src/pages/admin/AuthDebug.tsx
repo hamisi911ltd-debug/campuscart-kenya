@@ -41,7 +41,7 @@ const AuthDebug = () => {
   const setCookie = () => {
     const expires = new Date();
     expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000));
-    document.cookie = `admin_session=true; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+    document.cookie = `admin_session=true; expires=${expires.toUTCString()}; path=/; SameSite=None; Secure`;
     window.location.reload();
   };
 
