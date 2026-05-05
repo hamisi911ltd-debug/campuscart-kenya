@@ -22,7 +22,10 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
   try {
     // Fetch advertisements from database
     const result = await env.DB.prepare(`
-      SELECT * FROM advertisements 
+      SELECT id, title, description, image_url as imageUrl, link_url as link, 
+             is_active as active, display_order as "order", frequency,
+             clicks, impressions, created_at as createdAt
+      FROM advertisements 
       ORDER BY display_order ASC, created_at DESC
     `).all();
 
@@ -62,8 +65,8 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       // Create new advertisement
       const id = crypto.randomUUID();
       await env.DB.prepare(`
-        INSERT INTO advertisements (id, title, description, image_url, link_url, is_active, display_order, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO advertisements (id, title, description, image_url, link_url, is_active, display_order, frequency, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `).bind(
         id,
         advertisement.title,
@@ -71,7 +74,8 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         advertisement.imageUrl,
         advertisement.link || null,
         advertisement.active ? 1 : 0,
-        advertisement.order || 0
+        advertisement.order || 0,
+        advertisement.frequency || 1
       ).run();
 
       return new Response(JSON.stringify({
@@ -86,7 +90,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       // Update existing advertisement
       await env.DB.prepare(`
         UPDATE advertisements 
-        SET title = ?, description = ?, image_url = ?, link_url = ?, is_active = ?, display_order = ?, updated_at = CURRENT_TIMESTAMP
+        SET title = ?, description = ?, image_url = ?, link_url = ?, is_active = ?, display_order = ?, frequency = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).bind(
         advertisement.title,
@@ -95,6 +99,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         advertisement.link || null,
         advertisement.active ? 1 : 0,
         advertisement.order || 0,
+        advertisement.frequency || 1,
         advertisement.id
       ).run();
 

@@ -36,6 +36,7 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminAdvertisements from "./pages/admin/AdminAdvertisements";
 import AdminLogin from "./pages/admin/AdminLogin";
+import AuthDebug from "./pages/admin/AuthDebug";
 import ApiTestPage from "./pages/admin/ApiTestPage";
 import AdminRoute from "./components/AdminRoute";
 import SettingsPage from "./pages/SettingsPage";
@@ -45,46 +46,49 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <InstallPrompt />
-      <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
-        <ShopProvider>
-          <OfferNotifications />
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/category/:slug" element={<CategoryPage />} />
-            <Route path="/product/:id" element={<ProductPage />} />
-            <Route path="/cart" element={<CartPage />} />
-            <Route path="/checkout" element={<CheckoutPage />} />
-            <Route path="/favorites" element={<FavoritesPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/sell" element={<SellPage />} />
-            <Route path="/my-listings" element={<MyListingsPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/orders" element={<OrdersPage />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route path="/auth/google-callback" element={<GoogleCallback />} />
-            <Route path="/notifications" element={<NotificationsPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/adsense-status" element={<AdSenseStatus />} />
-            {/* Admin Routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminRoute><ComprehensiveMonitor /></AdminRoute>} />
-            <Route path="/admin/activity" element={<AdminRoute><ActivityMonitor /></AdminRoute>} />
-            <Route path="/admin/control" element={<AdminRoute><SystemControl /></AdminRoute>} />
-            <Route path="/admin/database" element={<AdminRoute><DatabaseViewer /></AdminRoute>} />
-            <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
-            <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
-            <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-            <Route path="/admin/advertisements" element={<AdminRoute><AdminAdvertisements /></AdminRoute>} />
-            <Route path="/admin/test" element={<AdminRoute><DirectApiTest /></AdminRoute>} />
-            <Route path="/admin/diagnostic" element={<AdminRoute><TempDashboard /></AdminRoute>} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </ShopProvider>
-      </BrowserRouter>
+      <div className="mobile-container no-horizontal-scroll">
+        <Toaster />
+        <Sonner />
+        <InstallPrompt />
+        <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+          <ShopProvider>
+            <OfferNotifications />
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/category/:slug" element={<CategoryPage />} />
+              <Route path="/product/:id" element={<ProductPage />} />
+              <Route path="/cart" element={<CartPage />} />
+              <Route path="/checkout" element={<CheckoutPage />} />
+              <Route path="/favorites" element={<FavoritesPage />} />
+              <Route path="/search" element={<SearchPage />} />
+              <Route path="/sell" element={<SellPage />} />
+              <Route path="/my-listings" element={<MyListingsPage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/orders" element={<OrdersPage />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route path="/auth/google-callback" element={<GoogleCallback />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/adsense-status" element={<AdSenseStatus />} />
+              {/* Admin Routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminRoute><ComprehensiveMonitor /></AdminRoute>} />
+              <Route path="/admin/activity" element={<AdminRoute><ActivityMonitor /></AdminRoute>} />
+              <Route path="/admin/control" element={<AdminRoute><SystemControl /></AdminRoute>} />
+              <Route path="/admin/database" element={<AdminRoute><DatabaseViewer /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+              <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+              <Route path="/admin/advertisements" element={<AdminRoute><AdminAdvertisements /></AdminRoute>} />
+              <Route path="/admin/test" element={<AdminRoute><DirectApiTest /></AdminRoute>} />
+              <Route path="/admin/debug" element={<AdminRoute><AuthDebug /></AdminRoute>} />
+              <Route path="/admin/diagnostic" element={<AdminRoute><TempDashboard /></AdminRoute>} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </ShopProvider>
+        </BrowserRouter>
+      </div>
     </TooltipProvider>
   </QueryClientProvider>
 );

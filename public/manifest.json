@@ -4,10 +4,15 @@
   "description": "Student marketplace for buying and selling on Kenyan university campuses",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#ffffff",
   "theme_color": "#7CB342",
   "orientation": "portrait-primary",
   "scope": "/",
+  "prefer_related_applications": false,
+  "edge_side_panel": {
+    "preferred_width": 400
+  },
   "icons": [
     {
       "src": "/icon-72x72.png",

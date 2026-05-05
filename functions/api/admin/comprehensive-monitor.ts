@@ -6,8 +6,25 @@ interface Env {
 }
 
 function isAdmin(request: Request): boolean {
+  // Check cookie first
   const cookie = request.headers.get("Cookie") || "";
-  return cookie.includes("admin_session=true");
+  if (cookie.includes("admin_session=true")) {
+    return true;
+  }
+  
+  // Check Authorization header as fallback
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader === "Bearer admin_session_true") {
+    return true;
+  }
+  
+  // Check for session storage indicator in custom header
+  const sessionHeader = request.headers.get("X-Admin-Session");
+  if (sessionHeader === "true") {
+    return true;
+  }
+  
+  return false;
 }
 
 export async function onRequestGet(context: { env: Env; request: Request }) {

@@ -14,8 +14,10 @@ const AdminLogin = () => {
 
   useEffect(() => {
     const hostname = window.location.hostname;
-    const isMainDomain = hostname === "campusmart.co.ke" || hostname === "www.campusmart.co.ke" || hostname.includes("campusmart-kenya.pages.dev");
-    if (isMainDomain) {
+    // Only redirect from main production domain, not from development or mobile environments
+    const isMainProductionDomain = hostname === "campusmart.co.ke" || hostname === "www.campusmart.co.ke";
+    
+    if (isMainProductionDomain) {
       setIsRedirecting(true);
       window.location.href = `https://admin.campusmart.co.ke/admin/login`;
     }
@@ -42,9 +44,15 @@ const AdminLogin = () => {
         return;
       }
       
-      // Success - store session and redirect
+      // Success - store session and cookie for API authentication
       sessionStorage.setItem('isAdmin', 'true');
       sessionStorage.setItem('adminEmail', 'campusmart.care@gmail.com');
+      
+      // Set admin cookie for API authentication (expires in 24 hours)
+      const expires = new Date();
+      expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
+      document.cookie = `admin_session=true; expires=${expires.toUTCString()}; path=/; SameSite=Lax`;
+      
       toast.success('Welcome, Admin!');
       navigate("/admin");
       

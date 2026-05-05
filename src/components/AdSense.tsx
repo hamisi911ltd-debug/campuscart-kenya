@@ -1,6 +1,9 @@
 import { useEffect, useRef } from 'react';
 import './AdSense.css';
 
+// Global flag to prevent multiple AdSense initializations
+let adsenseInitialized = false;
+
 interface AdSenseProps {
   adSlot: string;
   adFormat?: string;
@@ -15,22 +18,28 @@ export const AdSense = ({
   className = ""
 }: AdSenseProps) => {
   const adRef = useRef<HTMLElement>(null);
-  const isLoaded = useRef(false);
 
   useEffect(() => {
-    // Prevent multiple initializations
-    if (isLoaded.current || !adRef.current) return;
+    // Only initialize if not already done and element exists
+    if (!adRef.current || adsenseInitialized) return;
     
     try {
-      // Only push if the ad element exists and hasn't been initialized
-      if (adRef.current && !adRef.current.hasAttribute('data-adsbygoogle-status')) {
-        // @ts-ignore
-        (window.adsbygoogle = window.adsbygoogle || []).push({});
-        isLoaded.current = true;
+      // Check if adsbygoogle is available
+      if (typeof window !== 'undefined' && window.adsbygoogle) {
+        // Only push if the ad element hasn't been processed
+        if (!adRef.current.hasAttribute('data-adsbygoogle-status')) {
+          // @ts-ignore
+          (window.adsbygoogle = window.adsbygoogle || []).push({});
+        }
       }
     } catch (err) {
       console.error('AdSense error:', err);
     }
+  }, []);
+
+  // Mark as initialized on first render
+  useEffect(() => {
+    adsenseInitialized = true;
   }, []);
 
   return (

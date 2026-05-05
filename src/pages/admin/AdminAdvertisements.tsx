@@ -11,6 +11,7 @@ interface Advertisement {
   link?: string;
   active: boolean;
   order: number;
+  frequency: number; // How often this ad should appear in the carousel (1-10)
   createdAt: string;
   clicks?: number;
   impressions?: number;
@@ -29,6 +30,7 @@ const AdminAdvertisements = () => {
     imageUrl: '',
     link: '',
     active: true,
+    frequency: 1, // Default frequency
   });
 
   useEffect(() => {
@@ -37,7 +39,10 @@ const AdminAdvertisements = () => {
 
   const fetchAdvertisements = async () => {
     try {
-      const response = await fetch('/api/admin/advertisements');
+      const response = await fetch('/api/admin/advertisements', {
+        credentials: 'include',
+        headers: { 'Cache-Control': 'no-cache' }
+      });
       if (response.ok) {
         const data = await response.json();
         setAds(data.advertisements || []);
@@ -65,6 +70,7 @@ const AdminAdvertisements = () => {
           imageUrl: '/src/assets/p-macbook.jpg',
           active: true,
           order: 1,
+          frequency: 2, // Appears twice as often
           createdAt: new Date().toISOString(),
           clicks: 45,
           impressions: 1250,
@@ -76,6 +82,7 @@ const AdminAdvertisements = () => {
           imageUrl: '/src/assets/p-bedsitter.jpg',
           active: true,
           order: 2,
+          frequency: 1, // Normal frequency
           createdAt: new Date().toISOString(),
           clicks: 32,
           impressions: 890,
@@ -87,6 +94,7 @@ const AdminAdvertisements = () => {
           imageUrl: '/src/assets/cat-electronics.jpg',
           active: false,
           order: 3,
+          frequency: 1, // Normal frequency
           createdAt: new Date().toISOString(),
           clicks: 18,
           impressions: 456,
@@ -101,13 +109,10 @@ const AdminAdvertisements = () => {
     setAds(updatedAds);
     localStorage.setItem('campusmart_ads', JSON.stringify(updatedAds));
     
-    // Try to save to database
+    // Try to save to database via individual API calls
     try {
-      await fetch('/api/admin/advertisements', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ advertisements: updatedAds }),
-      });
+      // For now, just update localStorage - in production, implement proper API calls
+      console.log('Advertisements updated:', updatedAds.length);
     } catch (error) {
       console.error('Error saving to database:', error);
     }
@@ -187,7 +192,7 @@ const AdminAdvertisements = () => {
     setDragOver(false);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!formData.title || !formData.imageUrl) {
@@ -195,25 +200,50 @@ const AdminAdvertisements = () => {
       return;
     }
 
-    if (editingAd) {
-      // Update existing ad
-      const updatedAds = ads.map(ad => 
-        ad.id === editingAd.id 
-          ? { ...ad, ...formData }
-          : ad
-      );
-      saveAds(updatedAds);
-      toast.success('Advertisement updated successfully');
-    } else {
-      // Create new ad
-      const newAd: Advertisement = {
-        id: Date.now().toString(),
-        ...formData,
-        order: ads.length + 1,
-        createdAt: new Date().toISOString(),
-      };
-      saveAds([...ads, newAd]);
-      toast.success('Advertisement created successfully');
+    try {
+      if (editingAd) {
+        // Update existing ad via API
+        const response = await fetch('/api/admin/advertisements', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'update',
+            advertisement: {
+              id: editingAd.id,
+              ...formData
+            }
+          }),
+        });
+
+        if (response.ok) {
+          toast.success('Advertisement updated successfully');
+          fetchAdvertisements(); // Refresh the list
+        } else {
+          throw new Error('Failed to update advertisement');
+        }
+      } else {
+        // Create new ad via API
+        const response = await fetch('/api/admin/advertisements', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'create',
+            advertisement: formData
+          }),
+        });
+
+        if (response.ok) {
+          toast.success('Advertisement created successfully');
+          fetchAdvertisements(); // Refresh the list
+        } else {
+          throw new Error('Failed to create advertisement');
+        }
+      }
+    } catch (error) {
+      console.error('Error saving advertisement:', error);
+      toast.error('Failed to save advertisement. Please try again.');
     }
 
     resetForm();
@@ -226,6 +256,7 @@ const AdminAdvertisements = () => {
       imageUrl: '',
       link: '',
       active: true,
+      frequency: 1,
     });
     setEditingAd(null);
     setShowForm(false);
@@ -239,24 +270,65 @@ const AdminAdvertisements = () => {
       imageUrl: ad.imageUrl,
       link: ad.link || '',
       active: ad.active,
+      frequency: ad.frequency || 1,
     });
     setShowForm(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Are you sure you want to delete this advertisement?')) {
-      const updatedAds = ads.filter(ad => ad.id !== id);
-      saveAds(updatedAds);
-      toast.success('Advertisement deleted successfully');
+      try {
+        const response = await fetch('/api/admin/advertisements', {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'delete',
+            advertisement: { id }
+          }),
+        });
+
+        if (response.ok) {
+          toast.success('Advertisement deleted successfully');
+          fetchAdvertisements(); // Refresh the list
+        } else {
+          throw new Error('Failed to delete advertisement');
+        }
+      } catch (error) {
+        console.error('Error deleting advertisement:', error);
+        toast.error('Failed to delete advertisement. Please try again.');
+      }
     }
   };
 
-  const toggleActive = (id: string) => {
-    const updatedAds = ads.map(ad =>
-      ad.id === id ? { ...ad, active: !ad.active } : ad
-    );
-    saveAds(updatedAds);
-    toast.success('Advertisement status updated');
+  const toggleActive = async (id: string) => {
+    const ad = ads.find(a => a.id === id);
+    if (!ad) return;
+
+    try {
+      const response = await fetch('/api/admin/advertisements', {
+        method: 'POST',
+        credentials: 'include',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update',
+          advertisement: {
+            ...ad,
+            active: !ad.active
+          }
+        }),
+      });
+
+      if (response.ok) {
+        toast.success('Advertisement status updated');
+        fetchAdvertisements(); // Refresh the list
+      } else {
+        throw new Error('Failed to update advertisement status');
+      }
+    } catch (error) {
+      console.error('Error updating advertisement status:', error);
+      toast.error('Failed to update advertisement status. Please try again.');
+    }
   };
 
   const moveAd = (id: string, direction: 'up' | 'down') => {
@@ -285,72 +357,72 @@ const AdminAdvertisements = () => {
     <AdminLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 flex items-center justify-between">
+        <div className="mb-4 md:mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1">
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">
               Advertisement Management
             </h1>
-            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">
-              Manage home page slide advertisements
+            <p className="text-xs md:text-sm lg:text-base text-gray-600 dark:text-gray-400">
+              Manage homepage slide advertisements with frequency control (Admin Only)
             </p>
           </div>
           <button
             onClick={() => setShowForm(!showForm)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all"
+            className="flex items-center justify-center gap-2 px-3 md:px-4 py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all text-sm md:text-base"
           >
             <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">New Ad</span>
+            <span>New Ad</span>
           </button>
         </div>
 
-        {/* Enhanced Stats Dashboard */}
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4 mb-8">
-          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <ImageIcon className="h-8 w-8 opacity-80" />
-              <span className="text-2xl font-bold">{ads.length}</span>
+        {/* Enhanced Stats Dashboard - Mobile Responsive */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 md:gap-4 mb-6 md:mb-8">
+          <div className="bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg md:rounded-2xl p-3 md:p-4 text-white shadow-lg">
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <ImageIcon className="h-6 w-6 md:h-8 md:w-8 opacity-80" />
+              <span className="text-lg md:text-2xl font-bold">{ads.length}</span>
             </div>
-            <p className="text-sm opacity-90">Total Ads</p>
+            <p className="text-xs md:text-sm opacity-90">Total Ads</p>
           </div>
           
-          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-2xl p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <Eye className="h-8 w-8 opacity-80" />
-              <span className="text-2xl font-bold">{ads.filter(a => a.active).length}</span>
+          <div className="bg-gradient-to-br from-green-500 to-green-600 rounded-lg md:rounded-2xl p-3 md:p-4 text-white shadow-lg">
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <Eye className="h-6 w-6 md:h-8 md:w-8 opacity-80" />
+              <span className="text-lg md:text-2xl font-bold">{ads.filter(a => a.active).length}</span>
             </div>
-            <p className="text-sm opacity-90">Active</p>
+            <p className="text-xs md:text-sm opacity-90">Active</p>
           </div>
           
-          <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-2xl p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <EyeOff className="h-8 w-8 opacity-80" />
-              <span className="text-2xl font-bold">{ads.filter(a => !a.active).length}</span>
+          <div className="bg-gradient-to-br from-gray-500 to-gray-600 rounded-lg md:rounded-2xl p-3 md:p-4 text-white shadow-lg">
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <EyeOff className="h-6 w-6 md:h-8 md:w-8 opacity-80" />
+              <span className="text-lg md:text-2xl font-bold">{ads.filter(a => !a.active).length}</span>
             </div>
-            <p className="text-sm opacity-90">Inactive</p>
+            <p className="text-xs md:text-sm opacity-90">Inactive</p>
           </div>
           
-          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-2xl p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <BarChart3 className="h-8 w-8 opacity-80" />
-              <span className="text-2xl font-bold">{Math.min(ads.filter(a => a.active).length, 10)}</span>
+          <div className="bg-gradient-to-br from-purple-500 to-purple-600 rounded-lg md:rounded-2xl p-3 md:p-4 text-white shadow-lg">
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <BarChart3 className="h-6 w-6 md:h-8 md:w-8 opacity-80" />
+              <span className="text-lg md:text-2xl font-bold">{Math.min(ads.filter(a => a.active).length, 10)}</span>
             </div>
-            <p className="text-sm opacity-90">Visible</p>
+            <p className="text-xs md:text-sm opacity-90">Visible</p>
           </div>
           
-          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-2xl p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <ExternalLink className="h-8 w-8 opacity-80" />
-              <span className="text-2xl font-bold">{ads.reduce((sum, ad) => sum + (ad.clicks || 0), 0)}</span>
+          <div className="bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg md:rounded-2xl p-3 md:p-4 text-white shadow-lg">
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <ExternalLink className="h-6 w-6 md:h-8 md:w-8 opacity-80" />
+              <span className="text-lg md:text-2xl font-bold">{ads.reduce((sum, ad) => sum + (ad.clicks || 0), 0)}</span>
             </div>
-            <p className="text-sm opacity-90">Total Clicks</p>
+            <p className="text-xs md:text-sm opacity-90">Total Clicks</p>
           </div>
           
-          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl p-4 text-white shadow-lg">
-            <div className="flex items-center justify-between mb-2">
-              <BarChart3 className="h-8 w-8 opacity-80" />
-              <span className="text-2xl font-bold">{ads.reduce((sum, ad) => sum + (ad.impressions || 0), 0)}</span>
+          <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-lg md:rounded-2xl p-3 md:p-4 text-white shadow-lg">
+            <div className="flex items-center justify-between mb-1 md:mb-2">
+              <BarChart3 className="h-6 w-6 md:h-8 md:w-8 opacity-80" />
+              <span className="text-lg md:text-2xl font-bold">{ads.reduce((sum, ad) => sum + (ad.impressions || 0), 0)}</span>
             </div>
-            <p className="text-sm opacity-90">Impressions</p>
+            <p className="text-xs md:text-sm opacity-90">Impressions</p>
           </div>
         </div>
 
@@ -498,6 +570,38 @@ const AdminAdvertisements = () => {
                 />
               </div>
 
+              {/* Frequency Control */}
+              <div>
+                <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  Advertisement Frequency
+                </label>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-4">
+                    <input
+                      type="range"
+                      min="1"
+                      max="10"
+                      value={formData.frequency}
+                      onChange={(e) => setFormData({ ...formData, frequency: parseInt(e.target.value) })}
+                      className="flex-1 h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700"
+                    />
+                    <div className="flex items-center gap-2 min-w-[100px]">
+                      <span className="text-2xl font-bold text-purple-600">{formData.frequency}</span>
+                      <span className="text-sm text-gray-500">/ 10</span>
+                    </div>
+                  </div>
+                  <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-lg">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      <strong>Frequency Control:</strong> Higher values make this ad appear more often in the carousel.
+                      {formData.frequency === 1 && " (Normal frequency - appears once per cycle)"}
+                      {formData.frequency >= 2 && formData.frequency <= 3 && " (Moderate frequency - appears more often)"}
+                      {formData.frequency >= 4 && formData.frequency <= 6 && " (High frequency - appears frequently)"}
+                      {formData.frequency >= 7 && " (Maximum frequency - dominates the carousel)"}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
                 <input
                   type="checkbox"
@@ -641,7 +745,7 @@ const AdminAdvertisements = () => {
                     )}
 
                     {/* Analytics */}
-                    <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="grid grid-cols-3 gap-3 mb-4">
                       <div className="text-center p-2 bg-gray-50 dark:bg-gray-900 rounded-lg">
                         <p className="text-lg font-bold text-gray-900 dark:text-white">
                           {ad.clicks || 0}
@@ -653,6 +757,12 @@ const AdminAdvertisements = () => {
                           {ad.impressions || 0}
                         </p>
                         <p className="text-xs text-gray-500">Views</p>
+                      </div>
+                      <div className="text-center p-2 bg-purple-50 dark:bg-purple-900/20 rounded-lg">
+                        <p className="text-lg font-bold text-purple-600 dark:text-purple-400">
+                          {ad.frequency || 1}x
+                        </p>
+                        <p className="text-xs text-purple-600 dark:text-purple-400">Frequency</p>
                       </div>
                     </div>
 

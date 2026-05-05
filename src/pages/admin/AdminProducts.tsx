@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Search, Filter, CheckCircle, XCircle, Eye, Trash2 } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { adminGet, adminPut, adminDelete } from "@/utils/adminApi";
 
 interface Product {
   id: string;
@@ -33,7 +34,7 @@ const AdminProducts = () => {
       setLoading(true);
       setError(null);
       
-      const response = await fetch('/api/admin/products');
+      const response = await adminGet('/api/admin/products');
       const data = await response.json();
       
       if (!response.ok) {
@@ -59,9 +60,7 @@ const AdminProducts = () => {
     }
 
     try {
-      const response = await fetch(`/api/admin/products?id=${productId}`, {
-        method: 'DELETE',
-      });
+      const response = await adminDelete(`/api/admin/products?id=${productId}`);
       
       const data = await response.json();
       
@@ -83,15 +82,9 @@ const AdminProducts = () => {
 
   const handleToggleAvailability = async (productId: string, currentStatus: boolean) => {
     try {
-      const response = await fetch('/api/admin/products', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          id: productId,
-          is_available: !currentStatus,
-        }),
+      const response = await adminPut('/api/admin/products', {
+        id: productId,
+        is_available: !currentStatus,
       });
       
       const data = await response.json();
@@ -166,30 +159,30 @@ const AdminProducts = () => {
     <AdminLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Product Management</h1>
-          <p className="text-gray-600 dark:text-gray-400">Review and moderate product listings</p>
+        <div className="mb-6 md:mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">Product Management</h1>
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Review and moderate product listings</p>
         </div>
 
         {/* Filters */}
-        <div className="bg-card rounded-2xl p-6 shadow-lg border border-border/50 mb-6">
-          <div className="flex flex-col md:flex-row gap-4">
+        <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border border-border/50 mb-4 md:mb-6">
+          <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
               <input
                 type="text"
                 placeholder="Search products..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-accent/40 outline-none"
+                className="w-full pl-9 md:pl-10 pr-3 md:pr-4 py-2 md:py-3 text-sm md:text-base rounded-lg md:rounded-xl border border-border bg-background focus:ring-2 focus:ring-accent/40 outline-none"
               />
             </div>
             <div className="relative">
-              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+              <Filter className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 md:h-5 md:w-5 text-muted-foreground" />
               <select
                 value={filterStatus}
                 onChange={(e) => setFilterStatus(e.target.value)}
-                className="pl-10 pr-8 py-3 rounded-xl border border-border bg-background focus:ring-2 focus:ring-accent/40 outline-none appearance-none cursor-pointer"
+                className="w-full sm:w-auto pl-9 md:pl-10 pr-8 py-2 md:py-3 text-sm md:text-base rounded-lg md:rounded-xl border border-border bg-background focus:ring-2 focus:ring-accent/40 outline-none appearance-none cursor-pointer"
               >
                 <option value="all">All Status</option>
                 <option value="approved">Approved</option>
@@ -199,60 +192,60 @@ const AdminProducts = () => {
             </div>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6 pt-6 border-t border-border/50">
-            <div>
-              <p className="text-sm text-muted-foreground">Total Products</p>
-              <p className="text-2xl font-bold text-foreground">{products.length}</p>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-border/50">
+            <div className="text-center sm:text-left">
+              <p className="text-xs md:text-sm text-muted-foreground">Total Products</p>
+              <p className="text-lg md:text-2xl font-bold text-foreground">{products.length}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Approved</p>
-              <p className="text-2xl font-bold text-green-600">{products.filter(p => p.is_available).length}</p>
+            <div className="text-center sm:text-left">
+              <p className="text-xs md:text-sm text-muted-foreground">Approved</p>
+              <p className="text-lg md:text-2xl font-bold text-green-600">{products.filter(p => p.is_available).length}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Rejected</p>
-              <p className="text-2xl font-bold text-red-600">{products.filter(p => !p.is_available).length}</p>
+            <div className="text-center sm:text-left">
+              <p className="text-xs md:text-sm text-muted-foreground">Rejected</p>
+              <p className="text-lg md:text-2xl font-bold text-red-600">{products.filter(p => !p.is_available).length}</p>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Revenue</p>
-              <p className="text-2xl font-bold text-accent">KES {products.reduce((sum, p) => sum + p.price, 0).toLocaleString()}</p>
+            <div className="text-center sm:text-left">
+              <p className="text-xs md:text-sm text-muted-foreground">Total Revenue</p>
+              <p className="text-lg md:text-2xl font-bold text-accent">KES {products.reduce((sum, p) => sum + p.price, 0).toLocaleString()}</p>
             </div>
           </div>
         </div>
 
-        {/* Products Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {/* Products Grid - Mobile Responsive */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-card rounded-2xl shadow-lg border border-border/50 overflow-hidden hover:shadow-xl transition-all">
-              <div className="h-48 bg-secondary flex items-center justify-center">
+            <div key={product.id} className="bg-card rounded-xl md:rounded-2xl shadow-lg border border-border/50 overflow-hidden hover:shadow-xl transition-all">
+              <div className="h-36 sm:h-40 md:h-48 bg-secondary flex items-center justify-center">
                 {product.image_url ? (
                   <img src={product.image_url} alt={product.title} className="h-full w-full object-cover" />
                 ) : (
-                  <div className="text-6xl text-muted-foreground">📦</div>
+                  <div className="text-4xl md:text-6xl text-muted-foreground">📦</div>
                 )}
               </div>
-              <div className="p-5">
-                <div className="flex items-start justify-between mb-3">
-                  <div className="flex-1">
-                    <h3 className="font-bold text-foreground mb-1">{product.title}</h3>
-                    <p className="text-sm text-muted-foreground">by {product.seller_name}</p>
-                    <p className="text-xs text-muted-foreground">{product.seller_email}</p>
+              <div className="p-3 md:p-5">
+                <div className="flex items-start justify-between mb-2 md:mb-3">
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-bold text-foreground mb-1 text-sm md:text-base line-clamp-2">{product.title}</h3>
+                    <p className="text-xs md:text-sm text-muted-foreground truncate">by {product.seller_name}</p>
+                    <p className="text-xs text-muted-foreground truncate">{product.seller_email}</p>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(product.is_available)}`}>
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ml-2 ${getStatusColor(product.is_available)}`}>
                     {getStatusText(product.is_available)}
                   </span>
                 </div>
-                <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center justify-between mb-3 md:mb-4">
                   <div>
-                    <span className="text-lg font-bold text-accent">KES {product.price.toLocaleString()}</span>
+                    <span className="text-base md:text-lg font-bold text-accent">KES {product.price.toLocaleString()}</span>
                     {product.original_price && product.original_price > product.price && (
-                      <span className="text-sm text-muted-foreground line-through ml-2">
+                      <span className="text-xs md:text-sm text-muted-foreground line-through ml-1 md:ml-2">
                         KES {product.original_price.toLocaleString()}
                       </span>
                     )}
                   </div>
-                  <span className="text-xs text-muted-foreground">{product.category}</span>
+                  <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">{product.category}</span>
                 </div>
-                <div className="flex items-center justify-between text-xs text-muted-foreground mb-4">
+                <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4">
                   <span>{new Date(product.created_at).toLocaleDateString()}</span>
                   <span className="flex items-center gap-1">
                     <Eye className="h-3 w-3" />
@@ -262,7 +255,7 @@ const AdminProducts = () => {
                 <div className="flex gap-2">
                   <button 
                     onClick={() => handleToggleAvailability(product.id, product.is_available)}
-                    className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-xl transition-colors ${
+                    className={`flex-1 flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-2 rounded-lg md:rounded-xl text-xs md:text-sm transition-colors ${
                       product.is_available 
                         ? 'bg-red-500 hover:bg-red-600 text-white' 
                         : 'bg-green-500 hover:bg-green-600 text-white'
@@ -270,22 +263,22 @@ const AdminProducts = () => {
                   >
                     {product.is_available ? (
                       <>
-                        <XCircle className="h-4 w-4" />
-                        Reject
+                        <XCircle className="h-3 w-3 md:h-4 md:w-4" />
+                        <span className="hidden sm:inline">Reject</span>
                       </>
                     ) : (
                       <>
-                        <CheckCircle className="h-4 w-4" />
-                        Approve
+                        <CheckCircle className="h-3 w-3 md:h-4 md:w-4" />
+                        <span className="hidden sm:inline">Approve</span>
                       </>
                     )}
                   </button>
                   <button 
                     onClick={() => handleDeleteProduct(product.id)}
-                    className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl transition-colors"
+                    className="px-2 md:px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg md:rounded-xl transition-colors"
                     title="Delete Product"
                   >
-                    <Trash2 className="h-4 w-4" />
+                    <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
                   </button>
                 </div>
               </div>
@@ -294,8 +287,8 @@ const AdminProducts = () => {
         </div>
 
         {filteredProducts.length === 0 && (
-          <div className="bg-card rounded-2xl p-12 text-center shadow-lg border border-border/50">
-            <p className="text-muted-foreground">No products found matching your criteria</p>
+          <div className="bg-card rounded-xl md:rounded-2xl p-8 md:p-12 text-center shadow-lg border border-border/50">
+            <p className="text-sm md:text-base text-muted-foreground">No products found matching your criteria</p>
           </div>
         )}
       </div>

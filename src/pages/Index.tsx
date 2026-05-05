@@ -89,7 +89,10 @@ interface Advertisement {
   link?: string;
   active: boolean;
   order: number;
+  frequency: number; // How often this ad should appear (1-10)
   createdAt: string;
+  clicks?: number;
+  impressions?: number;
 }
 
 const Index = () => {
@@ -180,31 +183,57 @@ const Index = () => {
     }
   }, [user]);
 
-  // Load advertisements from localStorage
+  // Load admin advertisements from API
   useEffect(() => {
-    const savedAds = localStorage.getItem('campusmart_ads');
-    if (savedAds) {
+    const loadAdminAdvertisements = async () => {
       try {
-        const ads: Advertisement[] = JSON.parse(savedAds);
-        const activeAds = ads.filter(ad => ad.active).sort((a, b) => a.order - b.order);
-        
-        if (activeAds.length > 0) {
-          // Convert admin ads to slide format
-          const adminSlides = activeAds.map(ad => ({
-            bg: "transparent",
-            badge: "FEATURED",
-            title: ad.title,
-            subtitle: ad.description,
-            imageUrl: ad.imageUrl,
-            link: ad.link,
-            isAdminAd: true,
-          }));
-          setAdSlides(adminSlides);
+        const response = await fetch('/api/admin/advertisements/public');
+        if (response.ok) {
+          const data = await response.json();
+          const activeAds = data.advertisements?.filter((ad: Advertisement) => ad.active) || [];
+          
+          if (activeAds.length > 0) {
+            // Convert admin ads to slide format
+            const adminSlides = activeAds.map((ad: Advertisement) => ({
+              bg: "transparent",
+              badge: "FEATURED",
+              title: ad.title,
+              subtitle: ad.description,
+              imageUrl: ad.imageUrl,
+              link: ad.link,
+              isAdminAd: true,
+              frequency: ad.frequency || 1, // Default frequency
+            }));
+            
+            // Apply frequency logic - repeat ads based on their frequency setting
+            const expandedSlides: any[] = [];
+            adminSlides.forEach(slide => {
+              const frequency = slide.frequency || 1;
+              for (let i = 0; i < frequency; i++) {
+                expandedSlides.push(slide);
+              }
+            });
+            
+            // Mix admin ads with default category slides based on frequency
+            const defaultSlides = getDefaultAdSlides();
+            const mixedSlides = [...expandedSlides, ...defaultSlides];
+            setAdSlides(mixedSlides);
+          } else {
+            // No admin ads, use default category slides
+            setAdSlides(getDefaultAdSlides());
+          }
+        } else {
+          // Fallback to default slides if API fails
+          setAdSlides(getDefaultAdSlides());
         }
       } catch (error) {
-        console.error('Error loading advertisements:', error);
+        console.error('Error loading admin advertisements:', error);
+        // Fallback to default slides
+        setAdSlides(getDefaultAdSlides());
       }
-    }
+    };
+
+    loadAdminAdvertisements();
   }, []);
 
   useEffect(() => {

@@ -143,6 +143,9 @@ CREATE TABLE advertisements (
   link_url VARCHAR(500),
   is_active BOOLEAN DEFAULT TRUE,
   display_order INT DEFAULT 0,
+  frequency INT DEFAULT 1 CHECK (frequency >= 1 AND frequency <= 10), -- How often ad appears (1-10)
+  clicks INT DEFAULT 0, -- Track ad clicks
+  impressions INT DEFAULT 0, -- Track ad views
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

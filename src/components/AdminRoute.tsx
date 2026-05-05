@@ -8,24 +8,29 @@ interface AdminRouteProps {
 const AdminRoute = ({ children }: AdminRouteProps) => {
   const [isRedirecting, setIsRedirecting] = useState(false);
   
-  // Check if we're on the admin subdomain
-  const isAdminDomain = window.location.hostname === "admin.campusmart.co.ke" || 
-                        window.location.hostname === "localhost" ||
-                        window.location.hostname === "127.0.0.1";
+  // More flexible domain checking - allow admin access on mobile and development
+  const hostname = window.location.hostname;
+  const isAdminDomain = hostname === "admin.campusmart.co.ke" || 
+                        hostname === "localhost" ||
+                        hostname === "127.0.0.1" ||
+                        hostname.includes("campusmart-kenya.pages.dev") ||
+                        hostname.includes("admin.campusmart") ||
+                        // Allow mobile browsers and development environments
+                        hostname.includes("192.168.") ||
+                        hostname.includes("10.0.") ||
+                        hostname.includes("172.");
   
-  // Redirect to admin subdomain if accessing from main domain
+  // Only redirect to admin subdomain from main production domain
   useEffect(() => {
-    const hostname = window.location.hostname;
-    const isMainDomain = hostname === "campusmart.co.ke" || 
-                        hostname === "www.campusmart.co.ke" ||
-                        hostname.includes("campusmart-kenya.pages.dev");
+    const isMainProductionDomain = hostname === "campusmart.co.ke" || 
+                                  hostname === "www.campusmart.co.ke";
     
-    if (isMainDomain) {
+    if (isMainProductionDomain && !window.location.pathname.startsWith('/admin')) {
       setIsRedirecting(true);
       // Redirect to admin subdomain
       window.location.href = `https://admin.campusmart.co.ke${window.location.pathname}${window.location.search}`;
     }
-  }, []);
+  }, [hostname]);
 
   // Show loading while redirecting
   if (isRedirecting) {
@@ -49,8 +54,16 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     return <Navigate to="/admin/login" replace />;
   }
 
-  // Block access if not on admin domain (except localhost for development)
-  if (!isAdminDomain) {
+  // For development and mobile access, allow admin access even if not on exact admin domain
+  const isDevelopment = hostname === "localhost" || 
+                       hostname === "127.0.0.1" || 
+                       hostname.includes("campusmart-kenya.pages.dev") ||
+                       hostname.includes("192.168.") ||
+                       hostname.includes("10.0.") ||
+                       hostname.includes("172.");
+
+  // Block access only if on main production domain without proper subdomain
+  if (!isAdminDomain && !isDevelopment && (hostname === "campusmart.co.ke" || hostname === "www.campusmart.co.ke")) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-100">
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
