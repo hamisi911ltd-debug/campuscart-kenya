@@ -3,6 +3,7 @@ import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { Gift, Database, User, Wallet } from "lucide-react";
 import { toast } from "sonner";
+import { LuckyCodeTestPanel } from "@/components/LuckyCodeTestPanel";
 
 const TestLuckyCodes = () => {
   const { user } = useShop();
@@ -148,6 +149,9 @@ const TestLuckyCodes = () => {
               </button>
             </div>
           </div>
+
+          {/* Local Test Panel */}
+          <LuckyCodeTestPanel />
 
           {/* Available Test Codes */}
           {testResult?.testCodes && (

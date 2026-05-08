@@ -41,6 +41,7 @@ interface ShopState {
   cartTotal: number;
   loadUserData: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  updateWalletBalance: (newBalance: number) => void;
 }
 
 const ShopCtx = createContext<ShopState | null>(null);
@@ -284,6 +285,10 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
     [notifications]
   );
 
+  const updateWalletBalance = useCallback((newBalance: number) => {
+    setUser(prev => prev ? { ...prev, walletBalance: newBalance } : prev);
+  }, []);
+
   const value = useMemo<ShopState>(
     () => ({
       cart,
@@ -304,8 +309,9 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       cartTotal: cart.reduce((n, i) => n + i.qty * i.product.price, 0),
       loadUserData,
       refreshUser,
+      updateWalletBalance,
     }),
-    [cart, favorites, user, notifications, unreadNotificationCount, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut, markNotificationsAsRead, loadUserData, refreshUser]
+    [cart, favorites, user, notifications, unreadNotificationCount, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut, markNotificationsAsRead, loadUserData, refreshUser, updateWalletBalance]
   );
 
   return <ShopCtx.Provider value={value}>{children}</ShopCtx.Provider>;

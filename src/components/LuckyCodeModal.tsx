@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useShop } from "@/store/shop";
 import { CelebrationModal } from "./CelebrationModal";
 import { notificationService } from "@/services/notificationService";
+import { localLuckyCodesService } from "@/utils/luckyCodesLocal";
 
 interface LuckyCodeModalProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
   const [isRedeeming, setIsRedeeming] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [celebrationData, setCelebrationData] = useState<{ points: number } | null>(null);
-  const { user, refreshUser } = useShop();
+  const { user, refreshUser, updateWalletBalance } = useShop();
 
   if (!isOpen) return null;
 
@@ -33,6 +34,7 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
     setIsRedeeming(true);
     
     try {
+      // First try the API
       const response = await fetch('/api/lucky-codes/redeem', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -42,21 +44,21 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
         }),
       });
 
-      if (!response.ok) {
-        // If API fails, try to parse error message
-        let errorMessage = 'Invalid lucky code';
-        try {
-          const errorData = await response.json();
-          errorMessage = errorData.error || errorMessage;
-        } catch {
-          // If JSON parsing fails, use default message
-          errorMessage = response.status === 405 ? 'Lucky code system is being set up. Please try again later.' : 'Invalid lucky code';
-        }
-        toast.error(errorMessage);
-        return;
-      }
+      let data;
+      let useLocalFallback = false;
 
-      const data = await response.json();
+      if (response.ok) {
+        data = await response.json();
+      } else {
+        // API failed, use local fallback
+        console.log('API not available, using local fallback');
+        useLocalFallback = true;
+        data = await localLuckyCodesService.redeemCode(
+          luckyCode.toUpperCase(), 
+          user.id, 
+          user.walletBalance || 0
+        );
+      }
 
       if (data.success) {
         // Show celebration modal instead of toast
@@ -68,6 +70,12 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
         // Show notification popup
         notificationService.showLuckyCodeSuccess(data.points);
         
+        // Update user wallet balance in the store
+        if (useLocalFallback && data.newBalance !== undefined) {
+          // For local fallback, update the user's wallet balance immediately
+          updateWalletBalance(data.newBalance);
+        }
+        
         // Refresh user data to update wallet balance
         if (refreshUser) refreshUser();
       } else {
@@ -76,7 +84,36 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
 
     } catch (error) {
       console.error('Error redeeming lucky code:', error);
-      toast.error('Failed to redeem lucky code. Please try again.');
+      
+      // If network error, try local fallback
+      try {
+        console.log('Network error, trying local fallback');
+        const localData = await localLuckyCodesService.redeemCode(
+          luckyCode.toUpperCase(), 
+          user.id, 
+          user.walletBalance || 0
+        );
+        
+        if (localData.success) {
+          setCelebrationData({ points: localData.points });
+          setShowCelebration(true);
+          setLuckyCode('');
+          onClose();
+          notificationService.showLuckyCodeSuccess(localData.points!);
+          
+          // Update wallet balance immediately for local fallback
+          if (localData.newBalance !== undefined) {
+            updateWalletBalance(localData.newBalance);
+          }
+          
+          if (refreshUser) refreshUser();
+        } else {
+          toast.error(localData.error || 'Invalid lucky code');
+        }
+      } catch (localError) {
+        console.error('Local fallback also failed:', localError);
+        toast.error('Failed to redeem lucky code. Please try again.');
+      }
     } finally {
       setIsRedeeming(false);
     }
