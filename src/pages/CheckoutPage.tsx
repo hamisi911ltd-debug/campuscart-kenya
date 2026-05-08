@@ -5,6 +5,7 @@ import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { CheckCircle2, MapPin, Loader2 } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
+import { CouponRedemption } from "@/components/CouponRedemption";
 
 interface Order {
   id: string;
@@ -44,6 +45,8 @@ const CheckoutPage = () => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [locationError, setLocationError] = useState<string>("");
+  const [appliedCoupon, setAppliedCoupon] = useState<string>("");
+  const [couponDiscount, setCouponDiscount] = useState<number>(0);
 
   const ADMIN_WHATSAPP = "254108254465";
 
@@ -56,7 +59,18 @@ const CheckoutPage = () => {
   };
 
   const deliveryFee = getDeliveryFee(cartTotal);
-  const orderTotal = cartTotal + deliveryFee;
+  const subtotalAfterDiscount = cartTotal - couponDiscount;
+  const orderTotal = subtotalAfterDiscount + deliveryFee;
+
+  const handleCouponApplied = (discount: number, couponCode: string) => {
+    setCouponDiscount(discount);
+    setAppliedCoupon(couponCode);
+  };
+
+  const handleCouponRemoved = () => {
+    setCouponDiscount(0);
+    setAppliedCoupon("");
+  };
 
   // No longer needed: getCurrentLocation and openLocationSettings are handled by LocationPicker
 
@@ -130,7 +144,9 @@ const CheckoutPage = () => {
       delivery_latitude: location.lat,
       delivery_longitude: location.lng,
       buyer_phone: user.phone || 'Not provided',
-      notes: `Customer: ${user.name} | Email: ${user.email}`,
+      notes: `Customer: ${user.name} | Email: ${user.email}${appliedCoupon ? ` | Coupon: ${appliedCoupon} (KES ${couponDiscount.toLocaleString()} discount)` : ''}`,
+      coupon_code: appliedCoupon || undefined,
+      coupon_discount: couponDiscount || undefined,
     };
 
     try {
@@ -208,6 +224,16 @@ const CheckoutPage = () => {
             initialLocation={location}
           />
 
+          {/* Coupon Section */}
+          <div className="rounded-2xl bg-card p-5 shadow-card">
+            <CouponRedemption
+              onCouponApplied={handleCouponApplied}
+              onCouponRemoved={handleCouponRemoved}
+              appliedCoupon={appliedCoupon}
+              orderTotal={cartTotal}
+            />
+          </div>
+
           {/* Order Confirmation */}
           <div className="rounded-2xl bg-card p-5 shadow-card">
             <h2 className="text-lg font-extrabold mb-4">Confirm Order Details</h2>
@@ -254,6 +280,12 @@ const CheckoutPage = () => {
               <span className="text-muted-foreground">Subtotal</span>
               <span className="font-semibold">KES {cartTotal.toLocaleString()}</span>
             </div>
+            {couponDiscount > 0 && (
+              <div className="flex justify-between text-green-600 dark:text-green-400">
+                <span>Coupon Discount ({appliedCoupon})</span>
+                <span className="font-semibold">-KES {couponDiscount.toLocaleString()}</span>
+              </div>
+            )}
             <div className="flex justify-between">
               <span className="text-muted-foreground">Delivery</span>
               <span className="font-semibold">KES {deliveryFee}</span>
