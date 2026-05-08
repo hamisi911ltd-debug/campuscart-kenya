@@ -84,6 +84,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     `).first();
 
     if (!existingCodes || (existingCodes as any).count === 0) {
+      console.log('Creating default lucky codes...');
       const testCodes = [
         { code: 'WELCOME500', points: 500, description: 'Welcome bonus - Get 500 points (KES 50) in your wallet!' },
         { code: 'STUDENT100', points: 100, description: 'Student discount - Get 100 points (KES 10) in your wallet!' },
@@ -94,24 +95,50 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
       for (const testCode of testCodes) {
         const id = crypto.randomUUID();
-        await env.DB.prepare(`
-          INSERT OR IGNORE INTO lucky_codes (id, code, points, description, usage_limit, is_active, created_at)
-          VALUES (?, ?, ?, ?, 1000, 1, CURRENT_TIMESTAMP)
-        `).bind(id, testCode.code, testCode.points, testCode.description).run();
+        try {
+          await env.DB.prepare(`
+            INSERT OR IGNORE INTO lucky_codes (id, code, points, description, usage_limit, is_active, created_at, updated_at)
+            VALUES (?, ?, ?, ?, 1000, 1, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+          `).bind(id, testCode.code, testCode.points, testCode.description).run();
+          console.log(`Created lucky code: ${testCode.code}`);
+        } catch (error) {
+          console.error(`Failed to create lucky code ${testCode.code}:`, error);
+        }
       }
     }
 
-    // Get lucky code from database
+    // Debug: Check what codes exist
+    const debugCodes = await env.DB.prepare(`
+      SELECT code, points, is_active FROM lucky_codes WHERE is_active = 1
+    `).all();
+    console.log('Active lucky codes in database:', debugCodes.results);
+
+    // Get lucky code from database with detailed logging
+    console.log(`Looking for lucky code: ${code}`);
     const luckyCode = await env.DB.prepare(`
       SELECT id, code, points, description, usage_limit, used_count, expires_at, is_active
       FROM lucky_codes 
       WHERE UPPER(code) = UPPER(?) AND is_active = 1
     `).bind(code).first();
 
+    console.log('Lucky code query result:', luckyCode);
+
     if (!luckyCode) {
+      // Try to find the code without case sensitivity or active check for debugging
+      const debugCode = await env.DB.prepare(`
+        SELECT id, code, points, is_active FROM lucky_codes WHERE UPPER(code) = UPPER(?)
+      `).bind(code).first();
+      
+      console.log('Debug - code exists but inactive or not found:', debugCode);
+      
       return new Response(JSON.stringify({
         success: false,
-        error: 'Invalid lucky code'
+        error: 'Invalid lucky code',
+        debug: {
+          searchedCode: code,
+          foundCode: debugCode,
+          activeCodes: debugCodes.results?.map(c => c.code) || []
+        }
       }), {
         status: 404,
         headers: { 

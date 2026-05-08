@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { X, Bell, CheckCircle, AlertCircle, Info, Gift, ShoppingBag, Package, Star, Zap, Heart, Trophy, Sparkles, BookOpen, Home, UtensilsCrossed } from "lucide-react";
+import { X, Bell, CheckCircle, AlertCircle, Info, Ticket, ShoppingBag, Package, Star, Zap, Heart, Trophy, Sparkles, BookOpen, Home, UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
 
 interface NotificationPopupProps {
@@ -27,10 +27,10 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
       setIsVisible(true);
       generateParticles();
       
-      // Auto close after 6 seconds and move to notification box
+      // Auto close after 4 seconds and move to notification box
       const timer = setTimeout(() => {
         handleClose();
-      }, 6000);
+      }, 4000);
       return () => clearTimeout(timer);
     }
   }, [notification]);
@@ -90,10 +90,12 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
     switch (iconName) {
       case 'trophy':
         return <Trophy className="h-6 w-6 text-white" />;
+      case 'ticket':
+        return <Ticket className="h-6 w-6 text-white" />;
       case 'star':
         return <Star className="h-6 w-6 text-white" />;
       case 'gift':
-        return <Gift className="h-6 w-6 text-white" />;
+        return <Ticket className="h-6 w-6 text-white" />;
       case 'zap':
         return <Zap className="h-6 w-6 text-white" />;
       case 'book-open':
@@ -140,7 +142,7 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
         return {
           bg: 'bg-gradient-to-br from-yellow-500 via-orange-500 to-red-500',
           border: 'border-yellow-200 dark:border-yellow-800',
-          icon: <Gift className="h-6 w-6 text-white" />,
+          icon: <Ticket className="h-6 w-6 text-white" />,
           accent: 'text-yellow-600 dark:text-yellow-400'
         };
       case 'success':
@@ -189,7 +191,7 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
   const style = getNotificationStyle();
 
   return (
-    <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 max-w-sm sm:w-full">
+    <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 max-w-xs sm:w-full">
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {particles.map((particle) => (
@@ -209,24 +211,23 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
       </div>
 
       <div
-        className={`relative overflow-hidden rounded-2xl shadow-2xl transform transition-all duration-500 ${
+        className={`relative overflow-hidden rounded-xl shadow-xl transform transition-all duration-500 ${
           isVisible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-95'
         }`}
       >
         {/* Main Content */}
         <div className="bg-white dark:bg-gray-800 relative">
           {/* Gradient Background Header */}
-          <div className={`${style.bg} p-3 sm:p-4 relative`}>
-            {/* Decorative elements */}
-            <div className="absolute top-2 right-2 w-6 h-6 sm:w-8 sm:h-8 bg-white/10 rounded-full animate-pulse"></div>
-            <div className="absolute bottom-2 left-2 w-4 h-4 sm:w-6 sm:h-6 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-            <div className="absolute top-1/2 left-1/2 w-3 h-3 sm:w-4 sm:h-4 bg-white/5 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
+          <div className={`${style.bg} p-2 sm:p-3 relative`}>
+            {/* Decorative elements - smaller */}
+            <div className="absolute top-1 right-1 w-4 h-4 sm:w-6 sm:h-6 bg-white/10 rounded-full animate-pulse"></div>
+            <div className="absolute bottom-1 left-1 w-3 h-3 sm:w-4 sm:h-4 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
             
-            <div className="flex items-start gap-2 sm:gap-3 relative z-10">
-              {/* Product Image or Icon */}
+            <div className="flex items-start gap-2 relative z-10">
+              {/* Product Image or Icon - smaller */}
               <div className="flex-shrink-0">
                 {notification.productImage ? (
-                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-white/20 backdrop-blur-sm border-2 border-white/30">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg overflow-hidden bg-white/20 backdrop-blur-sm border border-white/30">
                     <img 
                       src={notification.productImage} 
                       alt={notification.productName || 'Product'}
@@ -242,38 +243,38 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
                     </div>
                   </div>
                 ) : (
-                  <div className="p-1.5 sm:p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                  <div className="p-1 sm:p-1.5 bg-white/20 rounded-lg backdrop-blur-sm">
                     {getIconFromName(notification.iconName) || style.icon}
                   </div>
                 )}
               </div>
               
               <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                <div className="flex items-center gap-1 mb-1">
                   <h4 className="text-xs sm:text-sm font-bold text-white truncate">
                     {notification.title}
                   </h4>
                   {notification.category && (
-                    <div className="flex-shrink-0 p-0.5 sm:p-1 bg-white/20 rounded-full">
+                    <div className="flex-shrink-0 p-0.5 bg-white/20 rounded-full">
                       <div className="text-white/80">
                         {getCategoryIcon()}
                       </div>
                     </div>
                   )}
                 </div>
-                <p className="text-xs text-white/90 leading-relaxed mb-2">
+                <p className="text-xs text-white/90 leading-tight mb-1">
                   {notification.message}
                 </p>
                 
-                {/* Product Details */}
+                {/* Product Details - more compact */}
                 {notification.productName && (
-                  <div className="bg-white/10 rounded-lg p-1.5 sm:p-2 backdrop-blur-sm">
+                  <div className="bg-white/10 rounded-md p-1.5 backdrop-blur-sm">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-medium text-white/90 truncate">
                         {notification.productName}
                       </span>
                       {notification.productPrice && (
-                        <span className="text-xs font-bold text-white bg-white/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ml-1 sm:ml-2">
+                        <span className="text-xs font-bold text-white bg-white/20 px-1.5 py-0.5 rounded-full ml-1">
                           KES {notification.productPrice.toLocaleString()}
                         </span>
                       )}
@@ -284,18 +285,18 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
               
               <button
                 onClick={handleClose}
-                className="flex-shrink-0 p-1 sm:p-1.5 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-all duration-200"
+                className="flex-shrink-0 p-1 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-all duration-200"
               >
-                <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                <X className="h-3 w-3" />
               </button>
             </div>
           </div>
 
-          {/* Bottom accent bar */}
-          <div className="bg-white dark:bg-gray-800 px-3 sm:px-4 py-2 sm:py-3">
+          {/* Bottom accent bar - more compact */}
+          <div className="bg-white dark:bg-gray-800 px-2 sm:px-3 py-1.5 sm:py-2">
             <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
+              <div className="flex items-center gap-1.5">
+                <div className="w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
                 <span className="text-xs font-medium text-gray-600 dark:text-gray-300">CampusMart</span>
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
@@ -303,10 +304,10 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
               </div>
             </div>
             
-            {/* Action Button for Product Notifications */}
+            {/* Action Button for Product Notifications - smaller */}
             {notification.productImage && (
-              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
-                <button className="w-full text-xs font-medium text-center py-1.5 sm:py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all">
+              <div className="mt-1.5 pt-1.5 border-t border-gray-200 dark:border-gray-700">
+                <button className="w-full text-xs font-medium text-center py-1.5 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-md hover:shadow-lg transition-all">
                   View Product
                 </button>
               </div>

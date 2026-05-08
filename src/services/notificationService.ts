@@ -138,22 +138,32 @@ export class NotificationService {
     return products[Math.floor(Math.random() * products.length)];
   }
 
-  // Welcome notifications
+  // Welcome notifications - now product-focused
   showWelcomeNotification(userName: string) {
+    const product = this.getRandomProduct();
+    
     this.notify({
       type: 'welcome',
       title: `Welcome back, ${userName}!`,
-      message: 'Ready to discover amazing deals from fellow students?',
-      iconName: 'trophy'
+      message: `Check out ${product.name} and other amazing deals from fellow students`,
+      productImage: product.image,
+      productName: product.name,
+      productPrice: product.price,
+      category: product.category as any
     });
   }
 
   showFirstTimeWelcome(userName: string) {
+    const product = this.getRandomProduct();
+    
     this.notify({
       type: 'welcome',
       title: `Welcome to CampusMart, ${userName}!`,
-      message: 'Your campus marketplace for textbooks, food, electronics & more!',
-      iconName: 'star'
+      message: `Start with ${product.name} - your campus marketplace for everything!`,
+      productImage: product.image,
+      productName: product.name,
+      productPrice: product.price,
+      category: product.category as any
     });
   }
 
@@ -163,7 +173,7 @@ export class NotificationService {
       type: 'lucky',
       title: 'Lucky Code Redeemed!',
       message: `You earned ${points} points (KES ${(points / 10).toLocaleString()}) in your wallet!`,
-      iconName: 'gift'
+      iconName: 'ticket'
     });
   }
 
@@ -228,22 +238,32 @@ export class NotificationService {
     });
   }
 
-  // Order notifications
+  // Order notifications - now product-focused
   showOrderConfirmation(orderNumber: string) {
+    const product = this.getRandomProduct();
+    
     this.notify({
       type: 'order',
       title: 'Order Confirmed!',
-      message: `Order #${orderNumber} has been placed. You'll receive updates via WhatsApp.`,
-      iconName: 'package'
+      message: `Your order for ${product.name} has been placed. You'll receive updates via WhatsApp.`,
+      productImage: product.image,
+      productName: product.name,
+      productPrice: product.price,
+      category: product.category as any
     });
   }
 
   showOrderDelivered(orderNumber: string) {
+    const product = this.getRandomProduct();
+    
     this.notify({
       type: 'success',
       title: 'Order Delivered!',
-      message: `Order #${orderNumber} has been delivered successfully. Enjoy your purchase!`,
-      iconName: 'package'
+      message: `Your ${product.name} has been delivered successfully. Enjoy your purchase!`,
+      productImage: product.image,
+      productName: product.name,
+      productPrice: product.price,
+      category: product.category as any
     });
   }
 

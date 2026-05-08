@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet, Gift } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet, Ticket } from "lucide-react";
 import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, type FormEvent } from "react";
@@ -79,19 +79,31 @@ export const TopBar = () => {
           </div>
         )}
         
-        {/* Mobile Lucky Code Button - Only show for logged in users */}
+        {/* Desktop Lucky Code Button - Only show for logged in users */}
         {user && (
           <button
             onClick={() => setShowLuckyCodeModal(true)}
-            className="sm:hidden relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all"
+            className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-lg transition-all"
             aria-label="Lucky Code"
           >
-            <Gift className="h-4 w-4" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+            <Ticket className="h-4 w-4" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
           </button>
         )}
         
-        <Link to="/notifications" className="relative ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Notifications">
+        {/* Mobile Lucky Code Button - Only show for logged in users, next to notifications */}
+        {user && (
+          <button
+            onClick={() => setShowLuckyCodeModal(true)}
+            className="sm:hidden relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-lg transition-all mr-2"
+            aria-label="Lucky Code"
+          >
+            <Ticket className="h-4 w-4" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+          </button>
+        )}
+        
+        <Link to="/notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Notifications">
           <Bell className="h-4 w-4" />
           {unreadNotificationCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
@@ -99,7 +111,7 @@ export const TopBar = () => {
             </span>
           )}
         </Link>
-        <Link to="/cart" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Cart">
+        <Link to="/cart" className="relative ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Cart">
           <ShoppingCart className="h-4 w-4" />
           {cartCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
