@@ -34,6 +34,7 @@ import DirectApiTest from "./pages/admin/DirectApiTest";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminOrders from "./pages/admin/AdminOrders";
+import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AuthDebug from "./pages/admin/AuthDebug";
 import ApiTestPage from "./pages/admin/ApiTestPage";
@@ -78,6 +79,7 @@ const App = () => (
               <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
               <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+              <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
               <Route path="/admin/test" element={<AdminRoute><DirectApiTest /></AdminRoute>} />
               <Route path="/admin/debug" element={<AdminRoute><AuthDebug /></AdminRoute>} />
               <Route path="/admin/diagnostic" element={<AdminRoute><TempDashboard /></AdminRoute>} />

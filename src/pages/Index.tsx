@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
-import { categories, getProducts, getProductsSync, getStaticProducts, transformDatabaseProduct } from "@/data/products";
+import { categories, getProducts, getProductsSync, transformDatabaseProduct } from "@/data/products";
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useShop();
@@ -54,7 +54,6 @@ const Index = () => {
       const refreshedProducts = await getProducts();
       // Ensure we always set an array
       setProducts(Array.isArray(refreshedProducts) ? refreshedProducts : []);
-      // Don't update ad slides when products change - keep them fixed
     };
     
     // Initial load
@@ -119,9 +118,11 @@ const Index = () => {
       </div>
 
       <main className="mx-auto max-w-7xl px-4 pb-4">
-        <Section icon={<Flame className="h-5 w-5 text-accent" />} title="Trending Near You" subtitle="Popular with students this week" link="View All" linkTo="/search?sort=trending">
-          <ProductGrid items={trending} />
-        </Section>
+        <div className="py-3">
+          <Section icon={<Flame className="h-5 w-5 text-accent" />} title="Trending Near You" subtitle="Popular with students this week" link="View All" linkTo="/search?sort=trending">
+            <ProductGrid items={trending} />
+          </Section>
+        </div>
 
         <Section icon={<Sparkles className="h-5 w-5 text-accent" />} title="Just Listed" subtitle="Fresh from your fellow students" link="See More" linkTo="/search?sort=newest">
           <ProductGrid items={justListed} />

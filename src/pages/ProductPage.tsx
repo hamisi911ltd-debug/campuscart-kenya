@@ -166,10 +166,13 @@ const ProductPage = () => {
           message="Sign in to view product details, add to cart, and place orders."
         />
 
-        <div className="grid gap-4 md:gap-6 md:grid-cols-2 max-w-full">
+        <div className="grid gap-4 md:gap-6 md:grid-cols-2 max-w-full min-w-0">
           {/* Image Carousel */}
-          <div className="relative overflow-hidden rounded-2xl bg-card shadow-card">
-            <div className="aspect-square w-full relative">
+          <div className="relative overflow-hidden rounded-2xl bg-card shadow-card min-w-0">
+            <div
+              className={"aspect-square w-full relative " + (allImages.length > 1 ? 'cursor-pointer' : '')}
+              onClick={allImages.length > 1 ? nextImage : undefined}
+            >
               <img 
                 src={allImages[currentImageIndex]} 
                 alt={p.title} 
@@ -215,8 +218,8 @@ const ProductPage = () => {
           </div>
           
           {/* Product Details */}
-          <div className="flex flex-col gap-3 md:gap-4 max-w-full overflow-hidden">
-            <div>
+          <div className="flex flex-col gap-3 md:gap-4 max-w-full overflow-hidden min-w-0">
+            <div className="min-w-0">
               <h1 className="text-xl md:text-2xl font-extrabold text-foreground break-words">{p.title}</h1>
               <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
                 <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-warning text-warning" /> {p.rating ?? 4.7}</span>

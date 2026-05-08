@@ -133,19 +133,20 @@ CREATE TABLE favorites (
 );
 
 -- ============================================
--- ADVERTISEMENTS TABLE
+-- COUPONS TABLE
 -- ============================================
-CREATE TABLE advertisements (
+CREATE TABLE coupons (
   id VARCHAR(36) PRIMARY KEY,
-  title VARCHAR(255) NOT NULL,
-  description TEXT,
-  image_url VARCHAR(500) NOT NULL,
-  link_url VARCHAR(500),
+  code VARCHAR(50) UNIQUE NOT NULL,
+  type VARCHAR(20) NOT NULL CHECK (type IN ('percentage', 'fixed')),
+  value DECIMAL(10, 2) NOT NULL,
+  description TEXT NOT NULL,
+  min_order_amount DECIMAL(10, 2),
+  max_discount DECIMAL(10, 2),
+  usage_limit INT,
+  used_count INT DEFAULT 0,
+  expires_at TIMESTAMP,
   is_active BOOLEAN DEFAULT TRUE,
-  display_order INT DEFAULT 0,
-  frequency INT DEFAULT 1 CHECK (frequency >= 1 AND frequency <= 10), -- How often ad appears (1-10)
-  clicks INT DEFAULT 0, -- Track ad clicks
-  impressions INT DEFAULT 0, -- Track ad views
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );

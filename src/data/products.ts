@@ -106,7 +106,7 @@ export const getProductsSync = (): ProductWithCategory[] => {
   return [];
 };
 
-// Export empty array for advertisement slides
+// Export empty array for static products (no longer used)
 export const getStaticProducts = (): ProductWithCategory[] => {
   return [];
 };

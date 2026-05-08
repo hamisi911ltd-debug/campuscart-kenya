@@ -1,4 +1,4 @@
-// Advertisement Management API
+// Coupon Management API
 
 interface Env {
   DB: D1Database;
@@ -20,26 +20,26 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
   }
 
   try {
-    // Fetch advertisements from database
+    // Fetch coupons from database
     const result = await env.DB.prepare(`
-      SELECT id, title, description, image_url as imageUrl, link_url as link, 
-             is_active as active, display_order as "order", frequency,
-             clicks, impressions, created_at as createdAt
-      FROM advertisements 
-      ORDER BY display_order ASC, created_at DESC
+      SELECT id, code, type, value, description, min_order_amount as minOrderAmount,
+             max_discount as maxDiscount, usage_limit as usageLimit, used_count as usedCount,
+             expires_at as expiresAt, is_active as active, created_at as createdAt
+      FROM coupons 
+      ORDER BY created_at DESC
     `).all();
 
     return new Response(JSON.stringify({
       success: true,
-      advertisements: result.results || []
+      coupons: result.results || []
     }), {
       headers: { "Content-Type": "application/json" }
     });
 
   } catch (error) {
-    console.error("Error fetching advertisements:", error);
+    console.error("Error fetching coupons:", error);
     return new Response(JSON.stringify({ 
-      error: "Failed to fetch advertisements" 
+      error: "Failed to fetch coupons" 
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
@@ -59,76 +59,86 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
   try {
     const body = await request.json();
-    const { action, advertisement, advertisements } = body;
+    const { action, coupon } = body;
 
     if (action === 'create') {
-      // Create new advertisement
+      // Create new coupon
       const id = crypto.randomUUID();
       await env.DB.prepare(`
-        INSERT INTO advertisements (id, title, description, image_url, link_url, is_active, display_order, frequency, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        INSERT INTO coupons (id, code, type, value, description, min_order_amount, max_discount, usage_limit, expires_at, is_active, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
       `).bind(
         id,
-        advertisement.title,
-        advertisement.description || '',
-        advertisement.imageUrl,
-        advertisement.link || null,
-        advertisement.active ? 1 : 0,
-        advertisement.order || 0,
-        advertisement.frequency || 1
+        coupon.code.toUpperCase(),
+        coupon.type,
+        coupon.value,
+        coupon.description,
+        coupon.minOrderAmount || null,
+        coupon.maxDiscount || null,
+        coupon.usageLimit || null,
+        coupon.expiresAt || null,
+        coupon.active ? 1 : 0
       ).run();
 
       return new Response(JSON.stringify({
         success: true,
-        message: 'Advertisement created successfully',
+        message: 'Coupon created successfully',
         id
       }), {
         headers: { "Content-Type": "application/json" }
       });
 
     } else if (action === 'update') {
-      // Update existing advertisement
+      // Update existing coupon
       await env.DB.prepare(`
-        UPDATE advertisements 
-        SET title = ?, description = ?, image_url = ?, link_url = ?, is_active = ?, display_order = ?, frequency = ?, updated_at = CURRENT_TIMESTAMP
+        UPDATE coupons 
+        SET code = ?, type = ?, value = ?, description = ?, min_order_amount = ?, 
+            max_discount = ?, usage_limit = ?, expires_at = ?, is_active = ?, updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).bind(
-        advertisement.title,
-        advertisement.description || '',
-        advertisement.imageUrl,
-        advertisement.link || null,
-        advertisement.active ? 1 : 0,
-        advertisement.order || 0,
-        advertisement.frequency || 1,
-        advertisement.id
+        coupon.code.toUpperCase(),
+        coupon.type,
+        coupon.value,
+        coupon.description,
+        coupon.minOrderAmount || null,
+        coupon.maxDiscount || null,
+        coupon.usageLimit || null,
+        coupon.expiresAt || null,
+        coupon.active ? 1 : 0,
+        coupon.id
       ).run();
 
       return new Response(JSON.stringify({
         success: true,
-        message: 'Advertisement updated successfully'
+        message: 'Coupon updated successfully'
       }), {
         headers: { "Content-Type": "application/json" }
       });
 
     } else if (action === 'delete') {
-      // Delete advertisement
+      // Delete coupon
       await env.DB.prepare(`
-        DELETE FROM advertisements WHERE id = ?
-      `).bind(advertisement.id).run();
+        DELETE FROM coupons WHERE id = ?
+      `).bind(coupon.id).run();
 
       return new Response(JSON.stringify({
         success: true,
-        message: 'Advertisement deleted successfully'
+        message: 'Coupon deleted successfully'
       }), {
         headers: { "Content-Type": "application/json" }
       });
 
-    } else if (advertisements) {
-      // Bulk update (for localStorage sync)
-      // This is a fallback for development - in production, use individual operations
+    } else if (action === 'increment_usage') {
+      // Increment usage count when coupon is used
+      await env.DB.prepare(`
+        UPDATE coupons 
+        SET used_count = used_count + 1, updated_at = CURRENT_TIMESTAMP
+        WHERE id = ?
+      `).bind(coupon.id).run();
+
       return new Response(JSON.stringify({
         success: true,
-        message: 'Advertisements synced (development mode)'
+        message: 'Coupon usage updated'
       }), {
         headers: { "Content-Type": "application/json" }
       });
@@ -140,9 +150,9 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     });
 
   } catch (error) {
-    console.error("Error managing advertisements:", error);
+    console.error("Error managing coupons:", error);
     return new Response(JSON.stringify({ 
-      error: "Failed to manage advertisements" 
+      error: "Failed to manage coupons" 
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
@@ -169,27 +179,27 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
     const id = url.searchParams.get('id');
 
     if (!id) {
-      return new Response(JSON.stringify({ error: 'Advertisement ID required' }), {
+      return new Response(JSON.stringify({ error: 'Coupon ID required' }), {
         status: 400,
         headers: { "Content-Type": "application/json" }
       });
     }
 
     await env.DB.prepare(`
-      DELETE FROM advertisements WHERE id = ?
+      DELETE FROM coupons WHERE id = ?
     `).bind(id).run();
 
     return new Response(JSON.stringify({
       success: true,
-      message: 'Advertisement deleted successfully'
+      message: 'Coupon deleted successfully'
     }), {
       headers: { "Content-Type": "application/json" }
     });
 
   } catch (error) {
-    console.error("Error deleting advertisement:", error);
+    console.error("Error deleting coupon:", error);
     return new Response(JSON.stringify({ 
-      error: "Failed to delete advertisement" 
+      error: "Failed to delete coupon" 
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
