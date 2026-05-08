@@ -191,6 +191,7 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
           </div>
         </div>
       </div>
+        </div>
       )}
     </>
   );
