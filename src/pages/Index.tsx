@@ -130,6 +130,8 @@ const Index = () => {
         return () => clearTimeout(timer);
       }
     }
+  }, [user]);
+
   // Demo notifications for showcase
   useEffect(() => {
     if (user) {
