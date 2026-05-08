@@ -7,6 +7,10 @@ import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { LuckyCodeModal } from "@/components/LuckyCodeModal";
+import { CelebrationModal } from "@/components/CelebrationModal";
+import { NotificationPopup } from "@/components/NotificationPopup";
+import { useNotifications } from "@/hooks/useNotifications";
+import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
 import { categories, getProducts, getProductsSync, transformDatabaseProduct } from "@/data/products";
 const Index = () => {
@@ -15,6 +19,10 @@ const Index = () => {
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
+  const [showLoginCelebration, setShowLoginCelebration] = useState(false);
+  
+  // Notification system
+  const { popupNotification, moveToNotificationBox, closePopup } = useNotifications();
 
   // Ensure products is always an array
   const safeProducts = Array.isArray(products) ? products : [];
@@ -93,6 +101,20 @@ const Index = () => {
         return () => clearTimeout(timer);
       }
     } else {
+      // Check if user just logged in
+      const justLoggedIn = sessionStorage.getItem('campusmart_just_logged_in');
+      if (justLoggedIn) {
+        sessionStorage.removeItem('campusmart_just_logged_in');
+        // Show login celebration
+        const timer = setTimeout(() => {
+          setShowLoginCelebration(true);
+          // Also show welcome notification
+          const firstName = user.name?.split(' ')[0] || 'friend';
+          notificationService.showWelcomeNotification(firstName);
+        }, 500); // Small delay to let page load
+        return () => clearTimeout(timer);
+      }
+      
       // Show lucky code modal for logged in users occasionally
       const hasSeenLuckyModal = sessionStorage.getItem('hasSeenLuckyModal');
       const lastShown = localStorage.getItem('lastLuckyModalShown');
@@ -108,10 +130,45 @@ const Index = () => {
         return () => clearTimeout(timer);
       }
     }
+  // Demo notifications for showcase
+  useEffect(() => {
+    if (user) {
+      // Show various demo notifications after login
+      const timers = [
+        setTimeout(() => {
+          notificationService.showNewItemNotification('electronics', 'iPhone 13 Pro Max');
+        }, 8000),
+        
+        setTimeout(() => {
+          notificationService.showFlashSaleNotification(25, 'books');
+        }, 15000),
+        
+        setTimeout(() => {
+          notificationService.showFoodOrderReady('Campus Cafeteria');
+        }, 22000),
+        
+        setTimeout(() => {
+          notificationService.showRoomAvailableNotification('Kikuyu Campus', 8000);
+        }, 30000),
+        
+        setTimeout(() => {
+          notificationService.showStudentDiscountNotification(15);
+        }, 38000)
+      ];
+      
+      return () => timers.forEach(clearTimeout);
+    }
   }, [user]);
 
   return (
     <div className="min-h-screen bg-background pb-24">
+      {/* Notification Popup */}
+      <NotificationPopup
+        notification={popupNotification}
+        onClose={closePopup}
+        onMoveToBox={moveToNotificationBox}
+      />
+
       {/* Sign In Modal */}
       <SignInModal 
         isOpen={showSignInModal} 
@@ -123,6 +180,15 @@ const Index = () => {
       <LuckyCodeModal 
         isOpen={showLuckyCodeModal} 
         onClose={() => setShowLuckyCodeModal(false)}
+      />
+
+      {/* Login Celebration Modal */}
+      <CelebrationModal
+        isOpen={showLoginCelebration}
+        onClose={() => setShowLoginCelebration(false)}
+        type="login"
+        title="Welcome Back!"
+        message={`Great to see you again, ${user?.name?.split(' ')[0] || 'friend'}! 🎉`}
       />
 
       <div className="sticky top-0 z-30">

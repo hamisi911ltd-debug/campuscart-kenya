@@ -2,6 +2,8 @@ import { useState } from "react";
 import { Gift, Sparkles, X, Wallet, Star } from "lucide-react";
 import { toast } from "sonner";
 import { useShop } from "@/store/shop";
+import { CelebrationModal } from "./CelebrationModal";
+import { notificationService } from "@/services/notificationService";
 
 interface LuckyCodeModalProps {
   isOpen: boolean;
@@ -11,6 +13,8 @@ interface LuckyCodeModalProps {
 export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
   const [luckyCode, setLuckyCode] = useState('');
   const [isRedeeming, setIsRedeeming] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
+  const [celebrationData, setCelebrationData] = useState<{ points: number } | null>(null);
   const { user, refreshUser } = useShop();
 
   if (!isOpen) return null;
@@ -55,9 +59,15 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
       const data = await response.json();
 
       if (data.success) {
-        toast.success(`🎉 Lucky! You earned ${data.points.toLocaleString()} points (KES ${(data.points / 10).toLocaleString()}) in your wallet!`);
+        // Show celebration modal instead of toast
+        setCelebrationData({ points: data.points });
+        setShowCelebration(true);
         setLuckyCode('');
-        onClose();
+        onClose(); // Close the lucky code modal
+        
+        // Show notification popup
+        notificationService.showLuckyCodeSuccess(data.points);
+        
         // Refresh user data to update wallet balance
         if (refreshUser) refreshUser();
       } else {
@@ -73,7 +83,18 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+    <>
+      <CelebrationModal
+        isOpen={showCelebration}
+        onClose={() => setShowCelebration(false)}
+        type="lucky_code"
+        title="🎉 Congratulations!"
+        message="You've successfully redeemed your lucky code!"
+        points={celebrationData?.points || 0}
+      />
+      
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
       <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-md w-full mx-4 overflow-hidden">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-purple-500 to-pink-500 p-6 text-white">
@@ -170,6 +191,7 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
           </div>
         </div>
       </div>
-    </div>
+      )}
+    </>
   );
 };

@@ -1,32 +1,19 @@
-import { useState, useCallback } from "react";
-
-interface Notification {
-  id: string;
-  type: 'success' | 'error' | 'info' | 'warning';
-  title: string;
-  message: string;
-  icon?: React.ReactNode;
-  timestamp: number;
-  read: boolean;
-}
+import { useState, useCallback, useEffect } from "react";
+import { notificationService, CampusNotification } from "@/services/notificationService";
 
 export const useNotifications = () => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [popupNotification, setPopupNotification] = useState<Notification | null>(null);
+  const [notifications, setNotifications] = useState<CampusNotification[]>([]);
+  const [popupNotification, setPopupNotification] = useState<CampusNotification | null>(null);
 
-  const addNotification = useCallback((notification: Omit<Notification, 'id' | 'timestamp' | 'read'>) => {
-    const newNotification: Notification = {
-      ...notification,
-      id: Date.now().toString(),
-      timestamp: Date.now(),
-      read: false,
-    };
+  useEffect(() => {
+    const unsubscribe = notificationService.subscribe((notification) => {
+      setPopupNotification(notification);
+    });
 
-    // Show as popup first
-    setPopupNotification(newNotification);
+    return unsubscribe;
   }, []);
 
-  const moveToNotificationBox = useCallback((notification: Notification) => {
+  const moveToNotificationBox = useCallback((notification: CampusNotification) => {
     setNotifications(prev => [notification, ...prev]);
     setPopupNotification(null);
   }, []);
@@ -51,13 +38,12 @@ export const useNotifications = () => {
     setPopupNotification(null);
   }, []);
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n: any) => !n.read).length;
 
   return {
     notifications,
     popupNotification,
     unreadCount,
-    addNotification,
     moveToNotificationBox,
     markAsRead,
     clearNotification,

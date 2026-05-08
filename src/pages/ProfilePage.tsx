@@ -4,6 +4,7 @@ import { useShop } from "@/store/shop";
 import { Heart, LogOut, Package, Settings, ShoppingBag, Store, Wallet, Download, MessageCircle, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { CelebrationModal } from "@/components/CelebrationModal";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -16,8 +17,20 @@ const ProfilePage = () => {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const [showLoginCelebration, setShowLoginCelebration] = useState(false);
 
   useEffect(() => {
+    // Check if user just logged in
+    const justLoggedIn = sessionStorage.getItem('campusmart_just_logged_in');
+    if (justLoggedIn && user) {
+      sessionStorage.removeItem('campusmart_just_logged_in');
+      // Show login celebration
+      const timer = setTimeout(() => {
+        setShowLoginCelebration(true);
+      }, 800); // Small delay to let page load
+      return () => clearTimeout(timer);
+    }
+
     // Check if already installed
     const standalone = window.matchMedia('(display-mode: standalone)').matches;
     setIsInstalled(standalone);
@@ -37,7 +50,7 @@ const ProfilePage = () => {
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
-  }, []);
+  }, [user]);
 
   const handleInstallApp = async () => {
     if (isIOS) {
@@ -104,7 +117,16 @@ const ProfilePage = () => {
   } : null;
 
   return (
-    <PageShell title="Profile">
+    <>
+      <CelebrationModal
+        isOpen={showLoginCelebration}
+        onClose={() => setShowLoginCelebration(false)}
+        type="login"
+        title="Welcome Back!"
+        message={`Great to see you again, ${user?.name?.split(' ')[0] || 'friend'}! 🎉`}
+      />
+      
+      <PageShell title="Profile">
       <div className="rounded-2xl gradient-hero p-5 text-primary-foreground shadow-elevated">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-background/20 text-xl font-extrabold overflow-hidden">
@@ -219,6 +241,7 @@ const ProfilePage = () => {
         <LogOut className="h-4 w-4" /> Sign out
       </button>
     </PageShell>
+    </>
   );
 };
 
