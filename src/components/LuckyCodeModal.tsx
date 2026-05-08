@@ -38,10 +38,24 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
         }),
       });
 
+      if (!response.ok) {
+        // If API fails, try to parse error message
+        let errorMessage = 'Invalid lucky code';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.error || errorMessage;
+        } catch {
+          // If JSON parsing fails, use default message
+          errorMessage = response.status === 405 ? 'Lucky code system is being set up. Please try again later.' : 'Invalid lucky code';
+        }
+        toast.error(errorMessage);
+        return;
+      }
+
       const data = await response.json();
 
-      if (response.ok && data.success) {
-        toast.success(`🎉 Lucky! You earned KES ${data.points.toLocaleString()} in your wallet!`);
+      if (data.success) {
+        toast.success(`🎉 Lucky! You earned ${data.points.toLocaleString()} points (KES ${(data.points / 10).toLocaleString()}) in your wallet!`);
         setLuckyCode('');
         onClose();
         // Refresh user data to update wallet balance
@@ -97,7 +111,10 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
                 <span className="text-sm font-medium text-green-800 dark:text-green-200">Your Wallet</span>
               </div>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                KES {(user.walletBalance || 0).toLocaleString()}
+                KES {((user.walletBalance || 0) / 10).toLocaleString()}
+              </p>
+              <p className="text-xs text-green-600 dark:text-green-400 opacity-75">
+                {(user.walletBalance || 0).toLocaleString()} points (10 points = KES 1)
               </p>
             </div>
           )}
@@ -147,7 +164,7 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
             <ul className="text-sm text-gray-600 dark:text-gray-400 space-y-1">
               <li>• Get lucky codes from CampusMart promotions</li>
               <li>• Enter the code to earn wallet points</li>
-              <li>• Use wallet points for future purchases</li>
+              <li>• 10 points = KES 1 for purchases</li>
               <li>• Each code can only be used once per account</li>
             </ul>
           </div>

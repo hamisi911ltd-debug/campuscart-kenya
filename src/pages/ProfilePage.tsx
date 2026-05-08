@@ -124,6 +124,36 @@ const ProfilePage = () => {
         </div>
       </div>
 
+      {/* Wallet Section - Mobile Priority */}
+      <div className="mt-5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 p-5 text-white shadow-elevated">
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Wallet className="h-5 w-5" />
+            <h3 className="font-bold">My Wallet</h3>
+          </div>
+          <div className="text-right">
+            <div className="text-2xl font-extrabold">
+              KES {((user.walletBalance || 0) / 10).toLocaleString()}
+            </div>
+            <div className="text-xs opacity-90">
+              {(user.walletBalance || 0).toLocaleString()} points
+            </div>
+          </div>
+        </div>
+        <div className="flex items-center justify-between text-sm">
+          <span className="opacity-90">Conversion Rate:</span>
+          <span className="font-semibold">10 points = KES 1</span>
+        </div>
+        <div className="mt-3 p-3 bg-white/10 rounded-lg">
+          <div className="text-xs opacity-90 mb-1">How to earn points:</div>
+          <div className="text-xs">
+            • Redeem lucky codes from promotions<br/>
+            • Complete purchases and reviews<br/>
+            • Refer friends to CampusMart
+          </div>
+        </div>
+      </div>
+
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {items.map((x) => (
           <Link key={x.t} to={x.to} className="flex items-center gap-3 rounded-xl bg-card p-4 shadow-card hover:shadow-elevated transition">

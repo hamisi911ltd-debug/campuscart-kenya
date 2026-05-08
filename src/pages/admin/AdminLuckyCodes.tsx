@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Plus, Edit, Trash2, Eye, EyeOff, Gift, Calendar, Users, Copy, X, Sparkles } from "lucide-react";
+import { Plus, Edit, Trash2, Eye, EyeOff, Gift, Calendar, Users, Copy, X, Sparkles, Database } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { toast } from "sonner";
 import { adminFetch } from "@/utils/adminAuth";
@@ -28,6 +28,7 @@ const AdminLuckyCodes = () => {
     expiresAt: '',
     active: true,
   });
+  const [isSettingUp, setIsSettingUp] = useState(false);
 
   useEffect(() => {
     fetchLuckyCodes();
@@ -238,6 +239,30 @@ const AdminLuckyCodes = () => {
     toast.success('Lucky code copied to clipboard!');
   };
 
+  const setupWalletTables = async () => {
+    setIsSettingUp(true);
+    try {
+      const response = await adminFetch('/api/admin/setup-wallet-tables', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({}),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(`Database setup complete! ${data.sampleCode ? `Try sample code: ${data.sampleCode}` : ''}`);
+        fetchLuckyCodes();
+      } else {
+        throw new Error('Failed to setup database');
+      }
+    } catch (error) {
+      console.error('Error setting up database:', error);
+      toast.error('Failed to setup database tables');
+    } finally {
+      setIsSettingUp(false);
+    }
+  };
+
   return (
     <AdminLayout>
       <div className="max-w-7xl mx-auto">
@@ -251,13 +276,27 @@ const AdminLuckyCodes = () => {
               Create and manage lucky codes that give customers wallet points
             </p>
           </div>
-          <button
-            onClick={() => setShowForm(!showForm)}
-            className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all"
-          >
-            <Plus className="h-4 w-4" />
-            <span>New Lucky Code</span>
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowForm(!showForm)}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all"
+            >
+              <Plus className="h-4 w-4" />
+              <span>New Lucky Code</span>
+            </button>
+            <button
+              onClick={setupWalletTables}
+              disabled={isSettingUp}
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+            >
+              {isSettingUp ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <Database className="h-4 w-4" />
+              )}
+              <span>{isSettingUp ? 'Setting up...' : 'Setup Database'}</span>
+            </button>
+          </div>
         </div>
 
         {/* Stats Dashboard */}
@@ -289,9 +328,12 @@ const AdminLuckyCodes = () => {
           <div className="bg-gradient-to-br from-pink-500 to-pink-600 rounded-xl p-4 text-white shadow-lg">
             <div className="flex items-center justify-between mb-2">
               <Gift className="h-8 w-8 opacity-80" />
-              <span className="text-2xl font-bold">KES {luckyCodes.reduce((sum, c) => sum + (c.points * c.usedCount), 0).toLocaleString()}</span>
+              <span className="text-2xl font-bold">{luckyCodes.reduce((sum, c) => sum + (c.points * c.usedCount), 0).toLocaleString()}</span>
             </div>
             <p className="text-sm opacity-90">Points Given</p>
+            <p className="text-xs opacity-75">
+              (KES {(luckyCodes.reduce((sum, c) => sum + (c.points * c.usedCount), 0) / 10).toLocaleString()})
+            </p>
           </div>
         </div>
 
@@ -337,18 +379,21 @@ const AdminLuckyCodes = () => {
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Wallet Points (KES) *
+                    Points Value *
                   </label>
                   <input
                     type="number"
                     value={formData.points}
                     onChange={(e) => setFormData({ ...formData, points: parseFloat(e.target.value) || 0 })}
                     className="w-full px-4 py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 focus:ring-2 focus:ring-purple-500 outline-none"
-                    placeholder="50"
+                    placeholder="500"
                     min="1"
-                    step="0.01"
+                    step="1"
                     required
                   />
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                    10 points = KES 1 (e.g., 500 points = KES 50)
+                  </p>
                 </div>
               </div>
 
@@ -487,9 +532,12 @@ const AdminLuckyCodes = () => {
                     <div className="grid grid-cols-2 gap-4 mb-4">
                       <div className="text-center p-3 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20 rounded-lg">
                         <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                          KES {code.points.toLocaleString()}
+                          {code.points.toLocaleString()}
                         </p>
                         <p className="text-xs text-purple-600 dark:text-purple-400">Points</p>
+                        <p className="text-xs text-purple-600 dark:text-purple-400 opacity-75">
+                          (KES {(code.points / 10).toLocaleString()})
+                        </p>
                       </div>
                       <div className="text-center p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
                         <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">

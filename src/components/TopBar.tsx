@@ -1,8 +1,9 @@
-import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet, Gift } from "lucide-react";
 import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, type FormEvent } from "react";
 import { useShop } from "@/store/shop";
+import { LuckyCodeModal } from "./LuckyCodeModal";
 
 const campuses = ["UoN Main Campus", "JKUAT Juja", "Kenyatta U.", "Strathmore", "Daystar", "UoN Kikuyu", "Moi University", "Egerton"];
 
@@ -12,6 +13,7 @@ export const TopBar = () => {
   const [q, setQ] = useState("");
   const [campus, setCampus] = useState(campuses[0]);
   const [openCampus, setOpenCampus] = useState(false);
+  const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -20,7 +22,13 @@ export const TopBar = () => {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-lg">
+    <>
+      <LuckyCodeModal 
+        isOpen={showLuckyCodeModal} 
+        onClose={() => setShowLuckyCodeModal(false)}
+      />
+      
+      <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-lg">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
         <Link to="/" aria-label="CampusMart home">
           <Logo />
@@ -66,9 +74,21 @@ export const TopBar = () => {
           <div className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full border border-green-200 dark:border-green-800">
             <Wallet className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
             <span className="text-xs font-bold text-green-600 dark:text-green-400">
-              KES {(user.walletBalance || 0).toLocaleString()}
+              KES {((user.walletBalance || 0) / 10).toLocaleString()}
             </span>
           </div>
+        )}
+        
+        {/* Mobile Lucky Code Button - Only show for logged in users */}
+        {user && (
+          <button
+            onClick={() => setShowLuckyCodeModal(true)}
+            className="sm:hidden relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg transition-all"
+            aria-label="Lucky Code"
+          >
+            <Gift className="h-4 w-4" />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse"></div>
+          </button>
         )}
         
         <Link to="/notifications" className="relative ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Notifications">
@@ -101,5 +121,6 @@ export const TopBar = () => {
         </div>
       </form>
     </header>
+    </>
   );
 };
