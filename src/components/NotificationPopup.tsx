@@ -9,6 +9,9 @@ interface NotificationPopupProps {
     title: string;
     message: string;
     iconName?: string;
+    productImage?: string;
+    productName?: string;
+    productPrice?: number;
     category?: 'electronics' | 'fashion' | 'books' | 'food' | 'furniture' | 'stationery' | 'rooms';
   } | null;
   onClose: () => void;
@@ -186,7 +189,7 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
   const style = getNotificationStyle();
 
   return (
-    <div className="fixed top-4 right-4 z-50 max-w-sm w-full">
+    <div className="fixed top-4 right-4 left-4 sm:left-auto z-50 max-w-sm sm:w-full">
       {/* Floating particles */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         {particles.map((particle) => (
@@ -210,53 +213,104 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
           isVisible ? 'translate-x-0 opacity-100 scale-100' : 'translate-x-full opacity-0 scale-95'
         }`}
       >
-        {/* Gradient Background Header */}
-        <div className={`${style.bg} p-4 relative`}>
-          {/* Decorative elements */}
-          <div className="absolute top-2 right-2 w-8 h-8 bg-white/10 rounded-full animate-pulse"></div>
-          <div className="absolute bottom-2 left-2 w-6 h-6 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
-          <div className="absolute top-1/2 left-1/2 w-4 h-4 bg-white/5 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
-          
-          <div className="flex items-start gap-3 relative z-10">
-            <div className="flex-shrink-0 p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              {getIconFromName(notification.iconName) || style.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1">
-                <h4 className="text-sm font-bold text-white truncate">
-                  {notification.title}
-                </h4>
-                {notification.category && (
-                  <div className="flex-shrink-0 p-1 bg-white/20 rounded-full">
-                    <div className="text-white/80">
-                      {getCategoryIcon()}
+        {/* Main Content */}
+        <div className="bg-white dark:bg-gray-800 relative">
+          {/* Gradient Background Header */}
+          <div className={`${style.bg} p-3 sm:p-4 relative`}>
+            {/* Decorative elements */}
+            <div className="absolute top-2 right-2 w-6 h-6 sm:w-8 sm:h-8 bg-white/10 rounded-full animate-pulse"></div>
+            <div className="absolute bottom-2 left-2 w-4 h-4 sm:w-6 sm:h-6 bg-white/10 rounded-full animate-pulse" style={{ animationDelay: '1s' }}></div>
+            <div className="absolute top-1/2 left-1/2 w-3 h-3 sm:w-4 sm:h-4 bg-white/5 rounded-full animate-ping" style={{ animationDelay: '0.5s' }}></div>
+            
+            <div className="flex items-start gap-2 sm:gap-3 relative z-10">
+              {/* Product Image or Icon */}
+              <div className="flex-shrink-0">
+                {notification.productImage ? (
+                  <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl overflow-hidden bg-white/20 backdrop-blur-sm border-2 border-white/30">
+                    <img 
+                      src={notification.productImage} 
+                      alt={notification.productName || 'Product'}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        // Fallback to icon if image fails to load
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="hidden w-full h-full flex items-center justify-center">
+                      {getIconFromName(notification.iconName) || style.icon}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-1.5 sm:p-2 bg-white/20 rounded-xl backdrop-blur-sm">
+                    {getIconFromName(notification.iconName) || style.icon}
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1 sm:gap-2 mb-1">
+                  <h4 className="text-xs sm:text-sm font-bold text-white truncate">
+                    {notification.title}
+                  </h4>
+                  {notification.category && (
+                    <div className="flex-shrink-0 p-0.5 sm:p-1 bg-white/20 rounded-full">
+                      <div className="text-white/80">
+                        {getCategoryIcon()}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                <p className="text-xs text-white/90 leading-relaxed mb-2">
+                  {notification.message}
+                </p>
+                
+                {/* Product Details */}
+                {notification.productName && (
+                  <div className="bg-white/10 rounded-lg p-1.5 sm:p-2 backdrop-blur-sm">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-medium text-white/90 truncate">
+                        {notification.productName}
+                      </span>
+                      {notification.productPrice && (
+                        <span className="text-xs font-bold text-white bg-white/20 px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-full ml-1 sm:ml-2">
+                          KES {notification.productPrice.toLocaleString()}
+                        </span>
+                      )}
                     </div>
                   </div>
                 )}
               </div>
-              <p className="text-xs text-white/90 leading-relaxed">
-                {notification.message}
-              </p>
+              
+              <button
+                onClick={handleClose}
+                className="flex-shrink-0 p-1 sm:p-1.5 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-all duration-200"
+              >
+                <X className="h-3 w-3 sm:h-4 sm:w-4" />
+              </button>
             </div>
-            <button
-              onClick={handleClose}
-              className="flex-shrink-0 p-1.5 text-white/70 hover:text-white hover:bg-white/20 rounded-full transition-all duration-200"
-            >
-              <X className="h-4 w-4" />
-            </button>
           </div>
-        </div>
 
-        {/* Bottom accent bar */}
-        <div className="bg-white dark:bg-gray-800 px-4 py-2">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
-              <span className="text-xs font-medium text-gray-600 dark:text-gray-300">CampusMart</span>
+          {/* Bottom accent bar */}
+          <div className="bg-white dark:bg-gray-800 px-3 sm:px-4 py-2 sm:py-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">CampusMart</span>
+              </div>
+              <div className="text-xs text-gray-500 dark:text-gray-400">
+                Just now
+              </div>
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
-              Just now
-            </div>
+            
+            {/* Action Button for Product Notifications */}
+            {notification.productImage && (
+              <div className="mt-2 pt-2 border-t border-gray-200 dark:border-gray-700">
+                <button className="w-full text-xs font-medium text-center py-1.5 sm:py-2 bg-gradient-to-r from-purple-500 to-blue-500 text-white rounded-lg hover:shadow-lg transition-all">
+                  View Product
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

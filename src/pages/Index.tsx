@@ -138,24 +138,28 @@ const Index = () => {
       // Show various demo notifications after login
       const timers = [
         setTimeout(() => {
-          notificationService.showNewItemNotification('electronics', 'iPhone 13 Pro Max');
+          notificationService.showNewItemNotification('electronics');
         }, 8000),
         
         setTimeout(() => {
-          notificationService.showFlashSaleNotification(25, 'books');
+          notificationService.showFlashSaleNotification();
         }, 15000),
         
         setTimeout(() => {
-          notificationService.showFoodOrderReady('Campus Cafeteria');
+          notificationService.showPriceDropNotification();
         }, 22000),
         
         setTimeout(() => {
-          notificationService.showRoomAvailableNotification('Kikuyu Campus', 8000);
+          notificationService.showRoomAvailableNotification();
         }, 30000),
         
         setTimeout(() => {
-          notificationService.showStudentDiscountNotification(15);
-        }, 38000)
+          notificationService.showStudentDiscountNotification();
+        }, 38000),
+        
+        setTimeout(() => {
+          notificationService.showSimilarItemNotification();
+        }, 45000)
       ];
       
       return () => timers.forEach(clearTimeout);

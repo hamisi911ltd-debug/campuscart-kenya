@@ -1,0 +1,59 @@
+# Cloudflare Pages Headers Configuration
+# Reduce cache times for faster deployment updates
+
+# Main HTML files - Short cache for quick updates
+/*.html
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# JavaScript and CSS - Medium cache with versioning
+/assets/*.js
+  Cache-Control: public, max-age=1800, immutable
+  X-Content-Type-Options: nosniff
+
+/assets/*.css
+  Cache-Control: public, max-age=1800, immutable
+  X-Content-Type-Options: nosniff
+
+# API endpoints - No cache for dynamic content
+/api/*
+  Cache-Control: no-cache, no-store, must-revalidate
+  Pragma: no-cache
+  Expires: 0
+  Access-Control-Allow-Origin: *
+  Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS
+  Access-Control-Allow-Headers: Content-Type, Authorization
+
+# Images - Longer cache but with revalidation
+/*.png
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/*.jpg
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/*.jpeg
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/*.webp
+  Cache-Control: public, max-age=3600, must-revalidate
+
+/*.svg
+  Cache-Control: public, max-age=3600, must-revalidate
+
+# PWA files - Short cache for updates
+/manifest.json
+  Cache-Control: public, max-age=300, must-revalidate
+  Content-Type: application/manifest+json
+
+/sw.js
+  Cache-Control: no-cache, no-store, must-revalidate
+
+# Root files
+/
+  Cache-Control: public, max-age=300, must-revalidate
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: DENY
+  X-XSS-Protection: 1; mode=block

@@ -6,6 +6,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ShopProvider } from "@/store/shop";
 import InstallPrompt from "@/components/InstallPrompt";
 import { OfferNotifications } from "@/components/OfferNotifications";
+import { initializeCacheManagement } from "@/utils/cacheUtils";
+import { useEffect } from "react";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import CategoryPage from "./pages/CategoryPage";
@@ -46,7 +48,13 @@ import TestLuckyCodes from "./pages/TestLuckyCodes";
 
 const queryClient = new QueryClient();
 
-const App = () => (
+const App = () => {
+  // Initialize cache management on app start
+  useEffect(() => {
+    initializeCacheManagement();
+  }, []);
+
+  return (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <div className="mobile-container no-horizontal-scroll">
@@ -96,6 +104,7 @@ const App = () => (
       </div>
     </TooltipProvider>
   </QueryClientProvider>
-);
+  );
+};
 
 export default App;

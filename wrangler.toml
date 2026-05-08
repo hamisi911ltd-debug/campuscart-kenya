@@ -1,16 +1,54 @@
-# Cloudflare Pages configuration for CampusMart
-
+# Cloudflare Pages Configuration
 name = "campusmart-kenya"
-pages_build_output_dir = "dist"
-compatibility_date = "2026-04-30"
+compatibility_date = "2024-01-01"
 
-# D1 Database binding (if using Cloudflare D1)
-[[d1_databases]]
-binding = "DB"
-database_name = "campusmart"
-database_id = "55923843-deae-48c4-b8db-99b244dd5005"
+[build]
+command = "npm run build"
+cwd = "."
+watch_dir = "src"
 
-# R2 Bucket binding (for image storage)
-[[r2_buckets]]
-binding = "STORAGE"
-bucket_name = "campusmart-storage"
+[build.upload]
+format = "directory"
+dir = "dist"
+
+# Environment variables for cache busting
+[env.production.vars]
+CACHE_VERSION = "v3.1-mobile-lucky-codes"
+BUILD_TIMESTAMP = "2026-05-08-mobile-update"
+
+# Custom headers for cache control
+[[headers]]
+for = "/*"
+[headers.values]
+X-Frame-Options = "DENY"
+X-Content-Type-Options = "nosniff"
+X-XSS-Protection = "1; mode=block"
+Referrer-Policy = "strict-origin-when-cross-origin"
+
+[[headers]]
+for = "/*.html"
+[headers.values]
+Cache-Control = "public, max-age=300, must-revalidate"
+
+[[headers]]
+for = "/assets/*"
+[headers.values]
+Cache-Control = "public, max-age=1800, immutable"
+
+[[headers]]
+for = "/api/*"
+[headers.values]
+Cache-Control = "no-cache, no-store, must-revalidate"
+Access-Control-Allow-Origin = "*"
+Access-Control-Allow-Methods = "GET, POST, PUT, DELETE, OPTIONS"
+Access-Control-Allow-Headers = "Content-Type, Authorization"
+
+[[headers]]
+for = "/manifest.json"
+[headers.values]
+Cache-Control = "public, max-age=300, must-revalidate"
+
+[[headers]]
+for = "/sw.js"
+[headers.values]
+Cache-Control = "no-cache, no-store, must-revalidate"

@@ -1,153 +1,89 @@
-// Service Worker for CampusMart PWA
-const CACHE_NAME = 'campusmart-v4';  // Incremented to force cache refresh
-const CACHE_VERSION = 4;
-const urlsToCache = [
-  '/',
-  '/index.html',
-  '/manifest.json',
-  '/icon-192x192.png',
-  '/icon-512x512.png'
-];
+// Service Worker for CampusMart - Mobile Lucky Codes Update
+const CACHE_NAME = 'campusmart-v3.1-mobile-lucky-codes';
+const CACHE_VERSION = '2026-05-08-mobile-update';
 
-// Install event - cache essential files
+// Force update on version change
 self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('✅ Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-      .catch((error) => {
-        console.log('❌ Cache install failed:', error);
-      })
-  );
+  console.log('Service Worker installing - Mobile Lucky Codes Update');
+  // Skip waiting to activate immediately
   self.skipWaiting();
 });
 
-// Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  console.log('Service Worker activating - Clearing old caches');
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames.map((cacheName) => {
-          // Delete ALL old caches
           if (cacheName !== CACHE_NAME) {
-            console.log('🗑️ Deleting old cache:', cacheName);
+            console.log('Deleting old cache:', cacheName);
             return caches.delete(cacheName);
           }
         })
       );
     }).then(() => {
-      // Force all clients to use the new service worker immediately
+      // Take control of all clients immediately
       return self.clients.claim();
     })
   );
 });
 
-// Fetch event - serve from cache, fallback to network
+// Network-first strategy for API calls, cache-first for static assets
 self.addEventListener('fetch', (event) => {
-  // Skip navigation requests - let the browser handle them for SPA routing
-  if (event.request.mode === 'navigate') {
-    return;
-  }
-
-  // Skip non-GET requests
-  if (event.request.method !== 'GET') {
-    return;
-  }
-
   const url = new URL(event.request.url);
-
-  // NEVER cache API calls - always fetch fresh
+  
+  // API calls - always fetch fresh
   if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  // For static assets (JS, CSS, images), use cache-first strategy
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-
-        return fetch(event.request).then(
-          (response) => {
-            // Check if valid response
-            if (!response || response.status !== 200) {
-              return response;
-            }
-
-            // Only cache static assets (images, JS, CSS)
-            if (url.pathname.match(/\.(js|css|png|jpg|jpeg|gif|svg|woff|woff2|ttf|eot|ico)$/)) {
-              const responseToCache = response.clone();
-              caches.open(CACHE_NAME)
-                .then((cache) => {
-                  cache.put(event.request, responseToCache);
-                });
-            }
-
-            return response;
-          }
-        ).catch(() => {
-          // Network failed for static assets
-          return new Response('Offline', { status: 503 });
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return new Response(JSON.stringify({
+          error: 'Network unavailable',
+          offline: true
+        }), {
+          headers: { 'Content-Type': 'application/json' }
         });
       })
-  );
-});
-
-// Background sync for offline orders
-self.addEventListener('sync', (event) => {
-  if (event.tag === 'sync-orders') {
-    event.waitUntil(syncOrders());
-  }
-});
-
-async function syncOrders() {
-  // Sync pending orders when back online
-  console.log('📦 Syncing orders...');
-}
-
-// Push notifications
-self.addEventListener('push', (event) => {
-  const options = {
-    body: event.data ? event.data.text() : 'New notification from CampusMart',
-    icon: '/icon-192x192.png',
-    badge: '/icon-72x72.png',
-    vibrate: [200, 100, 200],
-    data: {
-      dateOfArrival: Date.now(),
-      primaryKey: 1
-    },
-    actions: [
-      {
-        action: 'explore',
-        title: 'View',
-        icon: '/icon-96x96.png'
-      },
-      {
-        action: 'close',
-        title: 'Close',
-        icon: '/icon-96x96.png'
-      }
-    ]
-  };
-
-  event.waitUntil(
-    self.registration.showNotification('CampusMart', options)
-  );
-});
-
-// Notification click
-self.addEventListener('notificationclick', (event) => {
-  event.notification.close();
-
-  if (event.action === 'explore') {
-    event.waitUntil(
-      clients.openWindow('/')
     );
+    return;
+  }
+  
+  // Static assets - cache with network fallback
+  event.respondWith(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.match(event.request).then((response) => {
+        if (response) {
+          // Serve from cache but update in background
+          fetch(event.request).then((fetchResponse) => {
+            if (fetchResponse.ok) {
+              cache.put(event.request, fetchResponse.clone());
+            }
+          }).catch(() => {
+            // Network error, keep using cache
+          });
+          return response;
+        }
+        
+        // Not in cache, fetch from network
+        return fetch(event.request).then((fetchResponse) => {
+          if (fetchResponse.ok) {
+            cache.put(event.request, fetchResponse.clone());
+          }
+          return fetchResponse;
+        });
+      });
+    })
+  );
+});
+
+// Handle messages from main thread
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  
+  if (event.data && event.data.type === 'CLEAR_CACHE') {
+    caches.delete(CACHE_NAME).then(() => {
+      event.ports[0].postMessage({ success: true });
+    });
   }
 });
