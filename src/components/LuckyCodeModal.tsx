@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Ticket, Sparkles, X, Wallet, Star } from "lucide-react";
+import { Ticket, X } from "lucide-react";
 import { toast } from "sonner";
 import { useShop } from "@/store/shop";
 import { CelebrationModal } from "./CelebrationModal";
@@ -155,39 +155,18 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
               {/* Decorative elements */}
               <div className="absolute -top-2 -right-2 w-12 h-12 sm:w-16 sm:h-16 bg-white/10 rounded-full blur-xl"></div>
               <div className="absolute -bottom-2 -left-2 w-16 h-16 sm:w-20 sm:h-20 bg-white/10 rounded-full blur-xl"></div>
-              <Sparkles className="absolute top-2 right-10 sm:right-12 h-3 w-3 sm:h-4 sm:w-4 text-white/60" />
-              <Star className="absolute bottom-2 left-10 sm:left-12 h-2 w-2 sm:h-3 sm:w-3 text-white/60" />
             </div>
 
             {/* Content */}
             <div className="p-4 sm:p-6">
-              {/* Wallet Balance Display */}
-              {user && (
-                <div className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-lg p-3 sm:p-4 mb-4 sm:mb-6 border border-green-200 dark:border-green-800">
-                  <div className="flex items-center gap-2 mb-1">
-                    <Wallet className="h-3 w-3 sm:h-4 sm:w-4 text-green-600 dark:text-green-400" />
-                    <span className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-200">Your Wallet</span>
-                  </div>
-                  <p className="text-xl sm:text-2xl font-bold text-green-600 dark:text-green-400">
-                    KES {((user.walletBalance || 0) / 10).toLocaleString()}
-                  </p>
-                  <p className="text-xs text-green-600 dark:text-green-400 opacity-75">
-                    {(user.walletBalance || 0).toLocaleString()} points (10 points = KES 1)
-                  </p>
-                </div>
-              )}
-
               {/* Input Section */}
               <div className="space-y-3 sm:space-y-4">
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-                    Enter Lucky Code
-                  </label>
                   <input
                     type="text"
                     value={luckyCode}
                     onChange={(e) => setLuckyCode(e.target.value.toUpperCase())}
-                    placeholder="e.g., LUCKY123"
+                    placeholder="Enter Lucky Code"
                     className="w-full px-3 sm:px-4 py-2.5 sm:py-3 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-900 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:ring-2 focus:ring-purple-500 focus:border-transparent outline-none text-center text-base sm:text-lg font-mono tracking-wider"
                     onKeyPress={(e) => e.key === 'Enter' && redeemLuckyCode()}
                     maxLength={20}
@@ -211,20 +190,6 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
                     </>
                   )}
                 </button>
-              </div>
-
-              {/* Info */}
-              <div className="mt-4 sm:mt-6 p-3 sm:p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
-                <h3 className="font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2 text-sm sm:text-base">
-                  <Sparkles className="h-3 w-3 sm:h-4 sm:w-4 text-purple-500" />
-                  How it works
-                </h3>
-                <ul className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 space-y-1">
-                  <li>• Get lucky codes from CampusMart promotions</li>
-                  <li>• Enter the code to earn wallet points</li>
-                  <li>• 10 points = KES 1 for purchases</li>
-                  <li>• Each code can only be used once per account</li>
-                </ul>
               </div>
             </div>
           </div>

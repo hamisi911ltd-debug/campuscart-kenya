@@ -60,11 +60,7 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
   const [favorites, setFavorites] = useState<string[]>(() => load("cm:favs", []));
   const [user, setUser] = useState<ShopState["user"]>(() => load("cm:user", null));
   const [notifications, setNotifications] = useState<ShopState["notifications"]>(() => 
-    load("cm:notifications", [
-      { id: "1", title: "Flash deal alert!", message: "MacBook Pro is 25% off — ends tonight 🔥", time: "2m", read: false },
-      { id: "2", title: "Your order is on the way", message: "Boda rider Kevin is 5 min from your hostel.", time: "1h", read: false },
-      { id: "3", title: "New message from seller", message: "About 'CLRS Algorithms 4th Ed'", time: "3h", read: false },
-    ])
+    load("cm:notifications", [])
   );
 
   useEffect(() => localStorage.setItem("cm:cart", JSON.stringify(cart)), [cart]);
