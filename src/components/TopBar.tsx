@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, MapPin, Search, ShoppingCart } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet } from "lucide-react";
 import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, type FormEvent } from "react";
@@ -60,6 +60,17 @@ export const TopBar = () => {
             Search
           </button>
         </form>
+        
+        {/* Wallet Balance - Only show for logged in users */}
+        {user && (
+          <div className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full border border-green-200 dark:border-green-800">
+            <Wallet className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+            <span className="text-xs font-bold text-green-600 dark:text-green-400">
+              KES {(user.walletBalance || 0).toLocaleString()}
+            </span>
+          </div>
+        )}
+        
         <Link to="/notifications" className="relative ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Notifications">
           <Bell className="h-4 w-4" />
           {unreadNotificationCount > 0 && (

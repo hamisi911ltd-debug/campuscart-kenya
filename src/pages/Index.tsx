@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
+import { LuckyCodeModal } from "@/components/LuckyCodeModal";
 import { useShop } from "@/store/shop";
 import { categories, getProducts, getProductsSync, transformDatabaseProduct } from "@/data/products";
 const Index = () => {
@@ -13,6 +14,7 @@ const Index = () => {
   const { user } = useShop();
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [showSignInModal, setShowSignInModal] = useState(false);
+  const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
 
   // Ensure products is always an array
   const safeProducts = Array.isArray(products) ? products : [];
@@ -90,6 +92,21 @@ const Index = () => {
         }, 2000); // 2 seconds delay
         return () => clearTimeout(timer);
       }
+    } else {
+      // Show lucky code modal for logged in users occasionally
+      const hasSeenLuckyModal = sessionStorage.getItem('hasSeenLuckyModal');
+      const lastShown = localStorage.getItem('lastLuckyModalShown');
+      const now = Date.now();
+      const oneDayAgo = now - (24 * 60 * 60 * 1000);
+      
+      if (!hasSeenLuckyModal || (lastShown && parseInt(lastShown) < oneDayAgo)) {
+        const timer = setTimeout(() => {
+          setShowLuckyCodeModal(true);
+          sessionStorage.setItem('hasSeenLuckyModal', 'true');
+          localStorage.setItem('lastLuckyModalShown', now.toString());
+        }, 5000); // 5 seconds delay
+        return () => clearTimeout(timer);
+      }
     }
   }, [user]);
 
@@ -100,6 +117,12 @@ const Index = () => {
         isOpen={showSignInModal} 
         onClose={() => setShowSignInModal(false)}
         message="Welcome to CampusMart! Sign in to start shopping and selling."
+      />
+
+      {/* Lucky Code Modal */}
+      <LuckyCodeModal 
+        isOpen={showLuckyCodeModal} 
+        onClose={() => setShowLuckyCodeModal(false)}
       />
 
       <div className="sticky top-0 z-30">
