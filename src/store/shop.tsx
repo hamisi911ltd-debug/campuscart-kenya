@@ -17,7 +17,15 @@ type CartItem = {
 interface ShopState {
   cart: CartItem[];
   favorites: string[];
-  user: { id?: string; name: string; email: string; phone?: string; picture?: string; campus?: string } | null;
+  user: { 
+    id?: string; 
+    name: string; 
+    email: string; 
+    phone?: string; 
+    picture?: string; 
+    campus?: string;
+    walletBalance?: number;
+  } | null;
   notifications: Array<{ id: string; title: string; message: string; time: string; read: boolean }>;
   unreadNotificationCount: number;
   addToCart: (p: Product, qty?: number) => Promise<void>;
@@ -32,6 +40,7 @@ interface ShopState {
   cartCount: number;
   cartTotal: number;
   loadUserData: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 }
 
 const ShopCtx = createContext<ShopState | null>(null);
@@ -73,6 +82,13 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
     if (!user?.id) return;
 
     try {
+      // Load wallet balance
+      const walletResponse = await fetch(`/api/wallet?user_id=${user.id}`);
+      if (walletResponse.ok) {
+        const walletData = await walletResponse.json();
+        setUser(prev => prev ? { ...prev, walletBalance: walletData.balance || 0 } : prev);
+      }
+
       const cartResponse = await fetch(`/api/cart?user_id=${user.id}`);
       if (cartResponse.ok) {
         const cartItems = await cartResponse.json();
@@ -104,6 +120,21 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Error loading user data:', error);
       // Keep localStorage data as fallback
+    }
+  }, [user?.id]);
+
+  const refreshUser = useCallback(async () => {
+    if (!user?.id) return;
+    
+    try {
+      // Refresh wallet balance specifically
+      const walletResponse = await fetch(`/api/wallet?user_id=${user.id}`);
+      if (walletResponse.ok) {
+        const walletData = await walletResponse.json();
+        setUser(prev => prev ? { ...prev, walletBalance: walletData.balance || 0 } : prev);
+      }
+    } catch (error) {
+      console.error('Error refreshing user data:', error);
     }
   }, [user?.id]);
 
@@ -272,8 +303,9 @@ export const ShopProvider = ({ children }: { children: ReactNode }) => {
       cartCount: cart.reduce((n, i) => n + i.qty, 0),
       cartTotal: cart.reduce((n, i) => n + i.qty * i.product.price, 0),
       loadUserData,
+      refreshUser,
     }),
-    [cart, favorites, user, notifications, unreadNotificationCount, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut, markNotificationsAsRead, loadUserData]
+    [cart, favorites, user, notifications, unreadNotificationCount, addToCart, removeFromCart, setQty, clearCart, toggleFavorite, isFavorite, signIn, signOut, markNotificationsAsRead, loadUserData, refreshUser]
   );
 
   return <ShopCtx.Provider value={value}>{children}</ShopCtx.Provider>;

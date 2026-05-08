@@ -42,6 +42,8 @@ import ApiTestPage from "./pages/admin/ApiTestPage";
 import AdminRoute from "./components/AdminRoute";
 import SettingsPage from "./pages/SettingsPage";
 
+import TestLuckyCodes from "./pages/TestLuckyCodes";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -70,6 +72,7 @@ const App = () => (
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/test-lucky-codes" element={<TestLuckyCodes />} />
 
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />

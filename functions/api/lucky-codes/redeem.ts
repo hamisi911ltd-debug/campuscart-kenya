@@ -16,7 +16,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         error: 'Code and user ID are required'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
 
@@ -33,7 +36,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         error: 'Invalid lucky code'
       }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
 
@@ -46,7 +52,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         error: 'This lucky code has expired'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
 
@@ -56,7 +65,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         error: 'This lucky code has reached its usage limit'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
 
@@ -72,7 +84,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         error: 'You have already redeemed this lucky code'
       }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
 
@@ -140,9 +155,12 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         success: true,
         points: parseFloat(luckyCode.points.toString()),
         newBalance: newBalance,
-        message: `You earned KES ${luckyCode.points} in your wallet!`
+        message: `You earned ${luckyCode.points} points (KES ${(luckyCode.points / 10).toFixed(2)}) in your wallet!`
       }), {
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
 
     } catch (transactionError) {
@@ -152,7 +170,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         error: 'Failed to process redemption'
       }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          'Access-Control-Allow-Origin': '*'
+        }
       });
     }
 
@@ -163,7 +184,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       error: 'Internal server error'
     }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        'Access-Control-Allow-Origin': '*'
+      }
     });
   }
 }
