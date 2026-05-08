@@ -8,7 +8,7 @@ interface NotificationPopupProps {
     type: 'success' | 'error' | 'info' | 'warning' | 'welcome' | 'sale' | 'order' | 'lucky';
     title: string;
     message: string;
-    icon?: React.ReactNode;
+    iconName?: string;
     category?: 'electronics' | 'fashion' | 'books' | 'food' | 'furniture' | 'stationery' | 'rooms';
   } | null;
   onClose: () => void;
@@ -82,6 +82,33 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
   };
 
   if (!notification) return null;
+
+  const getIconFromName = (iconName?: string) => {
+    switch (iconName) {
+      case 'trophy':
+        return <Trophy className="h-6 w-6 text-white" />;
+      case 'star':
+        return <Star className="h-6 w-6 text-white" />;
+      case 'gift':
+        return <Gift className="h-6 w-6 text-white" />;
+      case 'zap':
+        return <Zap className="h-6 w-6 text-white" />;
+      case 'book-open':
+        return <BookOpen className="h-6 w-6 text-white" />;
+      case 'utensils-crossed':
+        return <UtensilsCrossed className="h-6 w-6 text-white" />;
+      case 'heart':
+        return <Heart className="h-6 w-6 text-white" />;
+      case 'home':
+        return <Home className="h-6 w-6 text-white" />;
+      case 'shopping-bag':
+        return <ShoppingBag className="h-6 w-6 text-white" />;
+      case 'package':
+        return <Package className="h-6 w-6 text-white" />;
+      default:
+        return null;
+    }
+  };
 
   const getNotificationStyle = () => {
     switch (notification.type) {
@@ -192,7 +219,7 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
           
           <div className="flex items-start gap-3 relative z-10">
             <div className="flex-shrink-0 p-2 bg-white/20 rounded-xl backdrop-blur-sm">
-              {notification.icon || style.icon}
+              {getIconFromName(notification.iconName) || style.icon}
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">

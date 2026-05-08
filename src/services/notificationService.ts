@@ -1,11 +1,9 @@
-import { BookOpen, ShoppingBag, UtensilsCrossed, Home, Package, Zap, Heart, Gift, Trophy, Star } from "lucide-react";
-
 export interface CampusNotification {
   id: string;
   type: 'success' | 'error' | 'info' | 'warning' | 'welcome' | 'sale' | 'order' | 'lucky';
   title: string;
   message: string;
-  icon?: React.ReactNode;
+  iconName?: string;
   category?: 'electronics' | 'fashion' | 'books' | 'food' | 'furniture' | 'stationery' | 'rooms';
 }
 
@@ -42,7 +40,7 @@ export class NotificationService {
       type: 'welcome',
       title: `Welcome back, ${userName}! 🎉`,
       message: 'Ready to discover amazing deals from fellow students?',
-      icon: <Trophy className="h-6 w-6 text-white" />
+      iconName: 'trophy'
     });
   }
 
@@ -51,7 +49,7 @@ export class NotificationService {
       type: 'welcome',
       title: `Welcome to CampusMart, ${userName}! 🚀`,
       message: 'Your campus marketplace for textbooks, food, electronics & more!',
-      icon: <Star className="h-6 w-6 text-white" />
+      iconName: 'star'
     });
   }
 
@@ -61,28 +59,28 @@ export class NotificationService {
       type: 'lucky',
       title: '🎉 Lucky Code Redeemed!',
       message: `You earned ${points} points (KES ${(points / 10).toLocaleString()}) in your wallet!`,
-      icon: <Gift className="h-6 w-6 text-white" />
+      iconName: 'gift'
     });
   }
 
   // Sale notifications
   showNewItemNotification(category: string, itemName: string) {
-    const categoryMap: Record<string, { icon: React.ReactNode; cat: any }> = {
-      'electronics': { icon: <Zap className="h-6 w-6 text-white" />, cat: 'electronics' },
-      'books': { icon: <BookOpen className="h-6 w-6 text-white" />, cat: 'books' },
-      'food': { icon: <UtensilsCrossed className="h-6 w-6 text-white" />, cat: 'food' },
-      'fashion': { icon: <Heart className="h-6 w-6 text-white" />, cat: 'fashion' },
-      'furniture': { icon: <Home className="h-6 w-6 text-white" />, cat: 'furniture' },
-      'rooms': { icon: <Home className="h-6 w-6 text-white" />, cat: 'rooms' }
+    const categoryMap: Record<string, { iconName: string; cat: any }> = {
+      'electronics': { iconName: 'zap', cat: 'electronics' },
+      'books': { iconName: 'book-open', cat: 'books' },
+      'food': { iconName: 'utensils-crossed', cat: 'food' },
+      'fashion': { iconName: 'heart', cat: 'fashion' },
+      'furniture': { iconName: 'home', cat: 'furniture' },
+      'rooms': { iconName: 'home', cat: 'rooms' }
     };
 
-    const categoryInfo = categoryMap[category] || { icon: <ShoppingBag className="h-6 w-6 text-white" />, cat: undefined };
+    const categoryInfo = categoryMap[category] || { iconName: 'shopping-bag', cat: undefined };
 
     this.notify({
       type: 'sale',
       title: `New ${category} available! 📦`,
       message: `${itemName} just got listed by a fellow student. Check it out!`,
-      icon: categoryInfo.icon,
+      iconName: categoryInfo.iconName,
       category: categoryInfo.cat
     });
   }
@@ -92,7 +90,7 @@ export class NotificationService {
       type: 'sale',
       title: `⚡ Flash Sale Alert!`,
       message: `${discount}% off ${category || 'selected items'}! Limited time only.`,
-      icon: <Zap className="h-6 w-6 text-white" />,
+      iconName: 'zap',
       category: category as any
     });
   }
@@ -103,7 +101,7 @@ export class NotificationService {
       type: 'order',
       title: '✅ Order Confirmed!',
       message: `Order #${orderNumber} has been placed. You'll receive updates via WhatsApp.`,
-      icon: <Package className="h-6 w-6 text-white" />
+      iconName: 'package'
     });
   }
 
@@ -112,7 +110,7 @@ export class NotificationService {
       type: 'success',
       title: '🎉 Order Delivered!',
       message: `Order #${orderNumber} has been delivered successfully. Enjoy your purchase!`,
-      icon: <Package className="h-6 w-6 text-white" />
+      iconName: 'package'
     });
   }
 
@@ -122,7 +120,7 @@ export class NotificationService {
       type: 'info',
       title: `📅 ${campus} Event`,
       message: `${eventName} is happening soon! Check out related items on CampusMart.`,
-      icon: <Star className="h-6 w-6 text-white" />
+      iconName: 'star'
     });
   }
 
@@ -131,7 +129,7 @@ export class NotificationService {
       type: 'sale',
       title: `🎓 Student Discount Active!`,
       message: `Get ${percentage}% off with your student ID. Valid for textbooks & stationery.`,
-      icon: <BookOpen className="h-6 w-6 text-white" />,
+      iconName: 'book-open',
       category: 'books'
     });
   }
@@ -142,7 +140,7 @@ export class NotificationService {
       type: 'success',
       title: '🍕 Food Order Ready!',
       message: `Your order from ${restaurantName} is ready for pickup/delivery.`,
-      icon: <UtensilsCrossed className="h-6 w-6 text-white" />,
+      iconName: 'utensils-crossed',
       category: 'food'
     });
   }
@@ -153,7 +151,7 @@ export class NotificationService {
       type: 'info',
       title: '🏠 Room Available!',
       message: `New accommodation in ${location} for KES ${price.toLocaleString()}/month.`,
-      icon: <Home className="h-6 w-6 text-white" />,
+      iconName: 'home',
       category: 'rooms'
     });
   }
