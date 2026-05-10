@@ -70,13 +70,12 @@ export const LuckyCodeModal = ({ isOpen, onClose }: LuckyCodeModalProps) => {
         // Show notification popup
         notificationService.showLuckyCodeSuccess(data.points);
         
-        // Update user wallet balance in the store
-        if (useLocalFallback && data.newBalance !== undefined) {
-          // For local fallback, update the user's wallet balance immediately
+        // Update user wallet balance in the store immediately if new balance is provided
+        if (data.newBalance !== undefined) {
           updateWalletBalance(data.newBalance);
         }
         
-        // Refresh user data to update wallet balance
+        // Also refresh user data to ensure everything is in sync
         if (refreshUser) refreshUser();
       } else {
         toast.error(data.error || 'Invalid lucky code');

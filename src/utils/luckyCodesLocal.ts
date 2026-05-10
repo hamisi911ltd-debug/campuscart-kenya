@@ -8,7 +8,7 @@ interface LuckyCode {
   description: string;
   usageLimit: number;
   usedCount: number;
-  isActive: boolean;
+  active: boolean;
 }
 
 interface UserRedemption {
@@ -25,7 +25,7 @@ const DEFAULT_LUCKY_CODES: LuckyCode[] = [
     description: 'Welcome bonus - Get 500 points (KES 50) in your wallet!',
     usageLimit: 1000,
     usedCount: 0,
-    isActive: true
+    active: true
   },
   {
     id: '2',
@@ -34,7 +34,7 @@ const DEFAULT_LUCKY_CODES: LuckyCode[] = [
     description: 'Student discount - Get 100 points (KES 10) in your wallet!',
     usageLimit: 1000,
     usedCount: 0,
-    isActive: true
+    active: true
   },
   {
     id: '3',
@@ -43,7 +43,7 @@ const DEFAULT_LUCKY_CODES: LuckyCode[] = [
     description: 'Lucky draw winner - Get 250 points (KES 25) in your wallet!',
     usageLimit: 1000,
     usedCount: 0,
-    isActive: true
+    active: true
   },
   {
     id: '4',
@@ -52,7 +52,7 @@ const DEFAULT_LUCKY_CODES: LuckyCode[] = [
     description: 'Campus special - Get 200 points (KES 20) in your wallet!',
     usageLimit: 1000,
     usedCount: 0,
-    isActive: true
+    active: true
   },
   {
     id: '5',
@@ -61,7 +61,7 @@ const DEFAULT_LUCKY_CODES: LuckyCode[] = [
     description: 'Flash sale bonus - Get 300 points (KES 30) in your wallet!',
     usageLimit: 1000,
     usedCount: 0,
-    isActive: true
+    active: true
   }
 ];
 
@@ -127,7 +127,7 @@ class LocalLuckyCodesService {
 
       // Find the code
       const luckyCode = codes.find(c => 
-        c.code.toUpperCase() === code.toUpperCase() && c.isActive
+        c.code.toUpperCase() === code.toUpperCase() && c.active
       );
 
       if (!luckyCode) {
@@ -196,7 +196,7 @@ class LocalLuckyCodesService {
   }
 
   async getAvailableCodes(): Promise<LuckyCode[]> {
-    return this.getLuckyCodes().filter(code => code.isActive);
+    return this.getLuckyCodes().filter(code => code.active);
   }
 
   getUserWallet(userId: string): { balance: number } {

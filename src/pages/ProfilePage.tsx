@@ -5,6 +5,7 @@ import { Heart, LogOut, Package, Settings, ShoppingBag, Store, Wallet, Download,
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { CelebrationModal } from "@/components/CelebrationModal";
+import { LuckyCodeModal } from "@/components/LuckyCodeModal";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -18,6 +19,7 @@ const ProfilePage = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
+  const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
 
   useEffect(() => {
     // Check if user just logged in
@@ -118,6 +120,11 @@ const ProfilePage = () => {
 
   return (
     <>
+      <LuckyCodeModal
+        isOpen={showLuckyCodeModal}
+        onClose={() => setShowLuckyCodeModal(false)}
+      />
+      
       <CelebrationModal
         isOpen={showLoginCelebration}
         onClose={() => setShowLoginCelebration(false)}
@@ -174,6 +181,12 @@ const ProfilePage = () => {
             • Refer friends to CampusMart
           </div>
         </div>
+        <button 
+          onClick={() => setShowLuckyCodeModal(true)}
+          className="mt-4 w-full py-2.5 bg-white text-green-600 rounded-xl font-bold text-sm shadow-lg hover:bg-green-50 transition-colors"
+        >
+          Redeem Lucky Code
+        </button>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
