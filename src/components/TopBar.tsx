@@ -1,10 +1,11 @@
-import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet, Star } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Star } from "lucide-react";
 import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, type FormEvent } from "react";
 import { useShop } from "@/store/shop";
 import { LuckyCodeModal } from "./LuckyCodeModal";
 import { LuckyCodeWelcomePopup } from "./LuckyCodeWelcomePopup";
+import { SignInModal } from "./SignInModal";
 
 const campuses = ["UoN Main Campus", "JKUAT Juja", "Kenyatta U.", "Strathmore", "Daystar", "UoN Kikuyu", "Moi University", "Egerton"];
 
@@ -15,6 +16,7 @@ export const TopBar = () => {
   const [campus, setCampus] = useState(campuses[0]);
   const [openCampus, setOpenCampus] = useState(false);
   const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
+  const [showSignInModal, setShowSignInModal] = useState(false);
 
   useEffect(() => {
     // Listen for custom event to open lucky code modal
@@ -29,6 +31,28 @@ export const TopBar = () => {
     };
   }, []);
 
+  const handleLuckyCodeClick = () => {
+    if (!user) {
+      setShowSignInModal(true);
+    } else {
+      setShowLuckyCodeModal(true);
+    }
+  };
+
+  const handleNotificationClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      setShowSignInModal(true);
+    }
+  };
+
+  const handleCartClick = (e: React.MouseEvent) => {
+    if (!user) {
+      e.preventDefault();
+      setShowSignInModal(true);
+    }
+  };
+
   const submit = (e: FormEvent) => {
     e.preventDefault();
     const term = q.trim();
@@ -42,6 +66,11 @@ export const TopBar = () => {
         onClose={() => setShowLuckyCodeModal(false)}
       />
       <LuckyCodeWelcomePopup />
+      <SignInModal 
+        isOpen={showSignInModal} 
+        onClose={() => setShowSignInModal(false)}
+        message="Sign in to access this feature and enjoy all CampusMart benefits."
+      />
       
       <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-lg">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
@@ -84,44 +113,25 @@ export const TopBar = () => {
           </button>
         </form>
         
-        {/* Wallet Balance - Only show for logged in users */}
-        {user && (
-          <Link to="/profile" className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full border border-green-200 dark:border-green-800 ml-1 sm:ml-0 hover:shadow-md transition-all active:scale-95">
-            <Wallet className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-green-600 dark:text-green-400" />
-            <span className="text-xs font-bold text-green-600 dark:text-green-400">
-              {(user.walletBalance || 0).toLocaleString()}
-            </span>
-          </Link>
-        )}
-        
-        {/* Desktop Lucky Code Button - Only show for logged in users */}
-        {user && (
+        {/* Desktop Layout: Lucky Code + Notifications + Cart */}
+        <div className="hidden sm:flex items-center gap-2 ml-auto">
+          {/* Desktop Lucky Code Button */}
           <button
-            onClick={() => setShowLuckyCodeModal(true)}
-            className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all animate-pulse"
+            onClick={handleLuckyCodeClick}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
             aria-label="Lucky Code"
           >
             <Star className="h-4 w-4 fill-current" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </button>
-        )}
-        
-        {/* Mobile Layout: Lucky Code + Notifications + Cart */}
-        <div className="sm:hidden flex items-center gap-2 ml-auto">
-          {/* Mobile Lucky Code Button */}
-          {user && (
-            <button
-              onClick={() => setShowLuckyCodeModal(true)}
-              className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all animate-pulse"
-              aria-label="Lucky Code"
-            >
-              <Star className="h-4 w-4 fill-current" />
-              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
-            </button>
-          )}
           
-          {/* Notifications */}
-          <Link to="/notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Notifications">
+          {/* Desktop Notifications */}
+          <Link 
+            to="/notifications" 
+            onClick={handleNotificationClick}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" 
+            aria-label="Notifications"
+          >
             <Bell className="h-4 w-4" />
             {unreadNotificationCount > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
@@ -130,8 +140,13 @@ export const TopBar = () => {
             )}
           </Link>
           
-          {/* Cart */}
-          <Link to="/cart" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Cart">
+          {/* Desktop Cart */}
+          <Link 
+            to="/cart" 
+            onClick={handleCartClick}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" 
+            aria-label="Cart"
+          >
             <ShoppingCart className="h-4 w-4" />
             {cartCount > 0 && (
               <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
@@ -141,23 +156,48 @@ export const TopBar = () => {
           </Link>
         </div>
         
-        {/* Desktop Notifications and Cart */}
-        <Link to="/notifications" className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Notifications">
-          <Bell className="h-4 w-4" />
-          {unreadNotificationCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
-              {unreadNotificationCount}
-            </span>
-          )}
-        </Link>
-        <Link to="/cart" className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Cart">
-          <ShoppingCart className="h-4 w-4" />
-          {cartCount > 0 && (
-            <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
-              {cartCount}
-            </span>
-          )}
-        </Link>
+        {/* Mobile Layout: Lucky Code + Notifications + Cart */}
+        <div className="sm:hidden flex items-center gap-2 ml-auto">
+          {/* Mobile Lucky Code Button */}
+          <button
+            onClick={handleLuckyCodeClick}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
+            aria-label="Lucky Code"
+          >
+            <Star className="h-4 w-4 fill-current" />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+          </button>
+          
+          {/* Mobile Notifications */}
+          <Link 
+            to="/notifications" 
+            onClick={handleNotificationClick}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" 
+            aria-label="Notifications"
+          >
+            <Bell className="h-4 w-4" />
+            {unreadNotificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
+                {unreadNotificationCount}
+              </span>
+            )}
+          </Link>
+          
+          {/* Mobile Cart */}
+          <Link 
+            to="/cart" 
+            onClick={handleCartClick}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" 
+            aria-label="Cart"
+          >
+            <ShoppingCart className="h-4 w-4" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+        </div>
       </div>
       {/* Mobile search */}
       <form onSubmit={submit} className="px-4 pb-3 md:hidden">

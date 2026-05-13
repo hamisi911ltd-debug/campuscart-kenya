@@ -7,27 +7,23 @@ export const LuckyCodeWelcomePopup = () => {
   const { user } = useShop();
 
   useEffect(() => {
-    if (user?.id) {
-      // Check if user has seen the welcome popup before
-      const hasSeenPopup = localStorage.getItem(`luckycode_welcome_${user.id}`);
+    // Check if user has seen the welcome popup before (use a general key, not user-specific)
+    const hasSeenPopup = localStorage.getItem('luckycode_welcome_shown');
+    
+    if (!hasSeenPopup) {
+      // Show popup after a short delay for all users
+      const timer = setTimeout(() => {
+        setIsVisible(true);
+      }, 2000);
       
-      if (!hasSeenPopup) {
-        // Show popup after a short delay
-        const timer = setTimeout(() => {
-          setIsVisible(true);
-        }, 2000);
-        
-        return () => clearTimeout(timer);
-      }
+      return () => clearTimeout(timer);
     }
-  }, [user?.id]);
+  }, []);
 
   const handleClose = () => {
     setIsVisible(false);
-    if (user?.id) {
-      // Mark as seen for this user
-      localStorage.setItem(`luckycode_welcome_${user.id}`, 'true');
-    }
+    // Mark as seen globally
+    localStorage.setItem('luckycode_welcome_shown', 'true');
   };
 
   const handleTryNow = () => {
@@ -37,7 +33,7 @@ export const LuckyCodeWelcomePopup = () => {
     window.dispatchEvent(event);
   };
 
-  if (!isVisible || !user) return null;
+  if (!isVisible) return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
@@ -56,7 +52,7 @@ export const LuckyCodeWelcomePopup = () => {
               <Star className="h-8 w-8 fill-current animate-pulse" />
             </div>
             <h2 className="text-xl font-bold mb-1">Welcome to CampusMart!</h2>
-            <p className="text-white/90 text-sm">You've got lucky codes waiting!</p>
+            <p className="text-white/90 text-sm">{user ? "You've got lucky codes waiting!" : "Sign up and get lucky codes!"}</p>
           </div>
           
           {/* Decorative elements */}
@@ -73,7 +69,10 @@ export const LuckyCodeWelcomePopup = () => {
               🎉 Free Points Awaiting!
             </h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-              Redeem lucky codes to earn wallet points and save money on your purchases!
+              {user 
+                ? "Redeem lucky codes to earn wallet points and save money on your purchases!"
+                : "Sign up now to redeem lucky codes, earn wallet points, and save money on your purchases!"
+              }
             </p>
             
             {/* Sample codes preview */}
@@ -101,7 +100,7 @@ export const LuckyCodeWelcomePopup = () => {
               onClick={handleTryNow}
               className="flex-1 py-2.5 px-4 bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white rounded-lg text-sm font-bold hover:shadow-lg transition-all"
             >
-              Try Now!
+              {user ? "Try Now!" : "Sign Up & Try!"}
             </button>
           </div>
         </div>
