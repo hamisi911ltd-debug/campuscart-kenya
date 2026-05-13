@@ -86,12 +86,12 @@ export const TopBar = () => {
         
         {/* Wallet Balance - Only show for logged in users */}
         {user && (
-          <div className="hidden sm:flex items-center gap-1 px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full border border-green-200 dark:border-green-800">
-            <Wallet className="h-3.5 w-3.5 text-green-600 dark:text-green-400" />
+          <Link to="/profile" className="flex items-center gap-1 px-2.5 sm:px-3 py-1.5 bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20 rounded-full border border-green-200 dark:border-green-800 ml-1 sm:ml-0 hover:shadow-md transition-all active:scale-95">
+            <Wallet className="h-4 w-4 sm:h-3.5 sm:w-3.5 text-green-600 dark:text-green-400" />
             <span className="text-xs font-bold text-green-600 dark:text-green-400">
-              KES {((user.walletBalance || 0) / 10).toLocaleString()}
+              {(user.walletBalance || 0).toLocaleString()}
             </span>
-          </div>
+          </Link>
         )}
         
         {/* Desktop Lucky Code Button - Only show for logged in users */}

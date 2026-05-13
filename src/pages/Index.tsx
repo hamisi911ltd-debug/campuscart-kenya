@@ -7,10 +7,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
 import { LuckyCodeModal } from "@/components/LuckyCodeModal";
-import { LuckyCodeWelcomePopup } from "@/components/LuckyCodeWelcomePopup";
 import { CelebrationModal } from "@/components/CelebrationModal";
-import { NotificationPopup } from "@/components/NotificationPopup";
-import { useNotifications } from "@/hooks/useNotifications";
 import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
 import { categories, getProducts, getProductsSync, transformDatabaseProduct } from "@/data/products";
@@ -20,39 +17,8 @@ const Index = () => {
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
-  const [showLuckyCodeWelcome, setShowLuckyCodeWelcome] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
   
-  // Notification system
-  const { popupNotification, moveToNotificationBox, closePopup } = useNotifications();
-
-  // Show lucky code welcome popup for new visitors
-  useEffect(() => {
-    const hasSeenWelcome = localStorage.getItem('campusmart_seen_lucky_welcome');
-    const isFirstVisit = !hasSeenWelcome;
-    
-    if (isFirstVisit) {
-      // Show welcome popup after a short delay
-      const timer = setTimeout(() => {
-        setShowLuckyCodeWelcome(true);
-      }, 2000); // 2 second delay to let page load
-      
-      return () => clearTimeout(timer);
-    }
-  }, []);
-
-  // Handle lucky code welcome popup close
-  const handleLuckyWelcomeClose = () => {
-    setShowLuckyCodeWelcome(false);
-    localStorage.setItem('campusmart_seen_lucky_welcome', 'true');
-  };
-
-  // Handle sign in requirement from lucky code popup
-  const handleSignInRequired = () => {
-    setShowLuckyCodeWelcome(false);
-    setShowSignInModal(true);
-    localStorage.setItem('campusmart_seen_lucky_welcome', 'true');
-  };
   const [trending, setTrending] = useState<ProductWithCategory[]>([]);
   const [justListed, setJustListed] = useState<ProductWithCategory[]>([]);
 
@@ -141,62 +107,11 @@ const Index = () => {
         }, 500); // Small delay to let page load
         return () => clearTimeout(timer);
       }
-      
-      // Show lucky code modal for logged in users occasionally
-      const hasSeenLuckyModal = sessionStorage.getItem('hasSeenLuckyModal');
-      const lastShown = localStorage.getItem('lastLuckyModalShown');
-      const now = Date.now();
-      const oneDayAgo = now - (24 * 60 * 60 * 1000);
-      
-      if (!hasSeenLuckyModal || (lastShown && parseInt(lastShown) < oneDayAgo)) {
-        const timer = setTimeout(() => {
-          setShowLuckyCodeModal(true);
-          sessionStorage.setItem('hasSeenLuckyModal', 'true');
-          localStorage.setItem('lastLuckyModalShown', now.toString());
-        }, 5000); // 5 seconds delay
-        return () => clearTimeout(timer);
-      }
-    }
-  }, [user]);
-
-  // Demo notifications for showcase - Limited to 3 product notifications over 10 seconds
-  useEffect(() => {
-    if (user) {
-      // Show only 3 product-based notifications over 10 seconds
-      const timers = [
-        setTimeout(() => {
-          notificationService.showNewItemNotification('electronics');
-        }, 3000), // 3 seconds
-        
-        setTimeout(() => {
-          notificationService.showFlashSaleNotification();
-        }, 6000), // 6 seconds
-        
-        setTimeout(() => {
-          notificationService.showPriceDropNotification();
-        }, 10000) // 10 seconds - final notification
-      ];
-      
-      return () => timers.forEach(clearTimeout);
     }
   }, [user]);
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Lucky Code Welcome Popup - Shows first */}
-      <LuckyCodeWelcomePopup
-        isOpen={showLuckyCodeWelcome}
-        onClose={handleLuckyWelcomeClose}
-        onSignInRequired={handleSignInRequired}
-      />
-
-      {/* Notification Popup */}
-      <NotificationPopup
-        notification={popupNotification}
-        onClose={closePopup}
-        onMoveToBox={moveToNotificationBox}
-      />
-
       {/* Sign In Modal */}
       <SignInModal 
         isOpen={showSignInModal} 
