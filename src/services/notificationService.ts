@@ -167,14 +167,10 @@ export class NotificationService {
     });
   }
 
-  // Lucky code notifications
+  // Lucky code notifications - simplified, no popup
   showLuckyCodeSuccess(points: number) {
-    this.notify({
-      type: 'lucky',
-      title: 'Lucky Code Redeemed!',
-      message: `You earned ${points} points (KES ${(points / 10).toLocaleString()}) in your wallet!`,
-      iconName: 'ticket'
-    });
+    // Just log success, no popup notification
+    console.log(`Lucky code redeemed: ${points} points earned`);
   }
 
   // Product-based notifications with real images

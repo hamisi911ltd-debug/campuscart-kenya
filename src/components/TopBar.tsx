@@ -1,9 +1,10 @@
-import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet, Ticket } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Wallet, Star } from "lucide-react";
 import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
-import { useState, type FormEvent } from "react";
+import { useState, useEffect, type FormEvent } from "react";
 import { useShop } from "@/store/shop";
 import { LuckyCodeModal } from "./LuckyCodeModal";
+import { LuckyCodeWelcomePopup } from "./LuckyCodeWelcomePopup";
 
 const campuses = ["UoN Main Campus", "JKUAT Juja", "Kenyatta U.", "Strathmore", "Daystar", "UoN Kikuyu", "Moi University", "Egerton"];
 
@@ -14,6 +15,19 @@ export const TopBar = () => {
   const [campus, setCampus] = useState(campuses[0]);
   const [openCampus, setOpenCampus] = useState(false);
   const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
+
+  useEffect(() => {
+    // Listen for custom event to open lucky code modal
+    const handleOpenLuckyCodeModal = () => {
+      setShowLuckyCodeModal(true);
+    };
+
+    window.addEventListener('openLuckyCodeModal', handleOpenLuckyCodeModal);
+    
+    return () => {
+      window.removeEventListener('openLuckyCodeModal', handleOpenLuckyCodeModal);
+    };
+  }, []);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -27,6 +41,7 @@ export const TopBar = () => {
         isOpen={showLuckyCodeModal} 
         onClose={() => setShowLuckyCodeModal(false)}
       />
+      <LuckyCodeWelcomePopup />
       
       <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-lg">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
@@ -83,27 +98,51 @@ export const TopBar = () => {
         {user && (
           <button
             onClick={() => setShowLuckyCodeModal(true)}
-            className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-lg transition-all"
+            className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all animate-pulse"
             aria-label="Lucky Code"
           >
-            <Ticket className="h-4 w-4" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+            <Star className="h-4 w-4 fill-current" />
+            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
           </button>
         )}
         
-        {/* Mobile Lucky Code Button - Only show for logged in users, next to notifications */}
-        {user && (
-          <button
-            onClick={() => setShowLuckyCodeModal(true)}
-            className="sm:hidden relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-500 to-orange-500 text-white hover:shadow-lg transition-all mr-2"
-            aria-label="Lucky Code"
-          >
-            <Ticket className="h-4 w-4" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
-          </button>
-        )}
+        {/* Mobile Layout: Lucky Code + Notifications + Cart */}
+        <div className="sm:hidden flex items-center gap-2 ml-auto">
+          {/* Mobile Lucky Code Button */}
+          {user && (
+            <button
+              onClick={() => setShowLuckyCodeModal(true)}
+              className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all animate-pulse"
+              aria-label="Lucky Code"
+            >
+              <Star className="h-4 w-4 fill-current" />
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+            </button>
+          )}
+          
+          {/* Notifications */}
+          <Link to="/notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Notifications">
+            <Bell className="h-4 w-4" />
+            {unreadNotificationCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
+                {unreadNotificationCount}
+              </span>
+            )}
+          </Link>
+          
+          {/* Cart */}
+          <Link to="/cart" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Cart">
+            <ShoppingCart className="h-4 w-4" />
+            {cartCount > 0 && (
+              <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
+                {cartCount}
+              </span>
+            )}
+          </Link>
+        </div>
         
-        <Link to="/notifications" className="relative flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Notifications">
+        {/* Desktop Notifications and Cart */}
+        <Link to="/notifications" className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Notifications">
           <Bell className="h-4 w-4" />
           {unreadNotificationCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">
@@ -111,7 +150,7 @@ export const TopBar = () => {
             </span>
           )}
         </Link>
-        <Link to="/cart" className="relative ml-auto flex h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary md:ml-0" aria-label="Cart">
+        <Link to="/cart" className="hidden sm:flex relative h-9 w-9 items-center justify-center rounded-full bg-muted text-foreground hover:bg-secondary" aria-label="Cart">
           <ShoppingCart className="h-4 w-4" />
           {cartCount > 0 && (
             <span className="absolute -top-1 -right-1 flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white shadow-lg">

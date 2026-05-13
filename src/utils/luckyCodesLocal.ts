@@ -106,11 +106,13 @@ class LocalLuckyCodesService {
   }
 
   private getUserWalletBalance(userId: string): number {
+    // Try to get from localStorage as backup, but prefer the value passed from the store
     const stored = localStorage.getItem(this.getStorageKey(`wallet_${userId}`));
     return stored ? parseFloat(stored) : 0;
   }
 
   private setUserWalletBalance(userId: string, balance: number): void {
+    // Store in localStorage as backup
     localStorage.setItem(this.getStorageKey(`wallet_${userId}`), balance.toString());
   }
 

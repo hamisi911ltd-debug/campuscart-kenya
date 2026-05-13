@@ -198,17 +198,17 @@ const CheckoutPage = () => {
 
   return (
     <PageShell title="Checkout">
-      <form onSubmit={submit} className="grid gap-6 lg:grid-cols-[1fr_360px]">
+      <form onSubmit={submit} className="grid gap-4 lg:gap-6 lg:grid-cols-[1fr_360px]">
         <div className="space-y-4">
           {/* Delivery Address */}
-          <div className="rounded-2xl bg-card p-5 shadow-card">
-            <h2 className="text-lg font-extrabold mb-4">Delivery Address</h2>
+          <div className="rounded-xl lg:rounded-2xl bg-card p-4 lg:p-5 shadow-card">
+            <h2 className="text-base lg:text-lg font-extrabold mb-3 lg:mb-4">Delivery Address</h2>
             <input 
               value={address} 
               onChange={(e) => setAddress(e.target.value)} 
               required 
               placeholder="Hostel block / room number / nearest landmark" 
-              className="w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
+              className="w-full rounded-lg lg:rounded-xl border border-border bg-background px-3 lg:px-4 py-2 lg:py-2.5 text-sm outline-none focus:ring-2 focus:ring-primary/40"
             />
             <p className="text-xs text-muted-foreground mt-2">
               Provide detailed delivery instructions for the rider
@@ -225,7 +225,7 @@ const CheckoutPage = () => {
           />
 
           {/* Coupon Section */}
-          <div className="rounded-2xl bg-card p-5 shadow-card">
+          <div className="rounded-xl lg:rounded-2xl bg-card p-4 lg:p-5 shadow-card">
             <CouponRedemption
               onCouponApplied={handleCouponApplied}
               onCouponRemoved={handleCouponRemoved}
@@ -235,16 +235,16 @@ const CheckoutPage = () => {
           </div>
 
           {/* Order Confirmation */}
-          <div className="rounded-2xl bg-card p-5 shadow-card">
-            <h2 className="text-lg font-extrabold mb-4">Confirm Order Details</h2>
-            <div className="space-y-3 text-sm">
+          <div className="rounded-xl lg:rounded-2xl bg-card p-4 lg:p-5 shadow-card">
+            <h2 className="text-base lg:text-lg font-extrabold mb-3 lg:mb-4">Confirm Order Details</h2>
+            <div className="space-y-2 lg:space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Customer:</span>
-                <span className="font-semibold">{user?.name}</span>
+                <span className="font-semibold truncate ml-2">{user?.name}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Email:</span>
-                <span className="font-semibold">{user?.email}</span>
+                <span className="font-semibold truncate ml-2">{user?.email}</span>
               </div>
               {user?.phone && (
                 <div className="flex justify-between">
@@ -265,13 +265,13 @@ const CheckoutPage = () => {
         </div>
 
         {/* Order Summary Sidebar */}
-        <aside className="h-fit rounded-2xl bg-card p-5 shadow-elevated">
-          <h2 className="text-lg font-extrabold">Order Summary</h2>
-          <ul className="mt-3 space-y-2 text-sm">
+        <aside className="h-fit rounded-xl lg:rounded-2xl bg-card p-4 lg:p-5 shadow-elevated">
+          <h2 className="text-base lg:text-lg font-extrabold">Order Summary</h2>
+          <ul className="mt-3 space-y-2 text-sm max-h-48 lg:max-h-none overflow-y-auto">
             {cart.map(({ product, qty }) => (
               <li key={product.id} className="flex justify-between gap-2">
-                <span className="line-clamp-1">{product.title} × {qty}</span>
-                <span className="shrink-0 font-bold">KES {(product.price * qty).toLocaleString()}</span>
+                <span className="line-clamp-2 lg:line-clamp-1 text-xs lg:text-sm">{product.title} × {qty}</span>
+                <span className="shrink-0 font-bold text-xs lg:text-sm">KES {(product.price * qty).toLocaleString()}</span>
               </li>
             ))}
           </ul>
@@ -282,7 +282,7 @@ const CheckoutPage = () => {
             </div>
             {couponDiscount > 0 && (
               <div className="flex justify-between text-green-600 dark:text-green-400">
-                <span>Coupon Discount ({appliedCoupon})</span>
+                <span className="text-xs lg:text-sm">Coupon Discount ({appliedCoupon})</span>
                 <span className="font-semibold">-KES {couponDiscount.toLocaleString()}</span>
               </div>
             )}
@@ -297,14 +297,14 @@ const CheckoutPage = () => {
               {cartTotal > 400 && "KES 400+ → KES 100"}
             </div>
           </div>
-          <div className="mt-3 flex justify-between border-t border-border pt-3 text-base font-extrabold">
+          <div className="mt-3 flex justify-between border-t border-border pt-3 text-sm lg:text-base font-extrabold">
             <span>Total</span>
             <span className="text-accent">KES {orderTotal.toLocaleString()}</span>
           </div>
           <button 
             type="submit"
             disabled={!location}
-            className="mt-4 w-full rounded-full gradient-accent py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-4 w-full rounded-full gradient-accent py-2.5 lg:py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {location ? 'Complete Order Placement' : 'Share Location to Continue'}
           </button>
