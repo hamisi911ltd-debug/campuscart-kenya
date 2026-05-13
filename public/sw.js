@@ -1,10 +1,10 @@
 // Service Worker for CampusMart - Mobile Lucky Codes Update
-const CACHE_NAME = 'campusmart-v3.1-mobile-lucky-codes';
-const CACHE_VERSION = '2026-05-08-mobile-update';
+const CACHE_NAME = 'campusmart-v3.2-sw-fix';
+const CACHE_VERSION = '2026-05-13-sw-fix';
 
 // Force update on version change
 self.addEventListener('install', (event) => {
-  console.log('Service Worker installing - Mobile Lucky Codes Update');
+  console.log('Service Worker installing - SW Fix Update');
   // Skip waiting to activate immediately
   self.skipWaiting();
 });
@@ -32,6 +32,12 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
   
+  // Only handle GET requests for caching (Cache API doesn't support POST, PUT, etc.)
+  if (event.request.method !== 'GET') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+  
   // API calls - always fetch fresh
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
@@ -54,7 +60,7 @@ self.addEventListener('fetch', (event) => {
         if (response) {
           // Serve from cache but update in background
           fetch(event.request).then((fetchResponse) => {
-            if (fetchResponse.ok) {
+            if (fetchResponse.ok && fetchResponse.status < 400) {
               cache.put(event.request, fetchResponse.clone());
             }
           }).catch(() => {
@@ -65,7 +71,7 @@ self.addEventListener('fetch', (event) => {
         
         // Not in cache, fetch from network
         return fetch(event.request).then((fetchResponse) => {
-          if (fetchResponse.ok) {
+          if (fetchResponse.ok && fetchResponse.status < 400) {
             cache.put(event.request, fetchResponse.clone());
           }
           return fetchResponse;

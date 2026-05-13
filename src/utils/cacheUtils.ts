@@ -1,7 +1,7 @@
 // Cache busting utilities for immediate updates
 
-export const CACHE_VERSION = 'v3.1-mobile-lucky-codes';
-export const BUILD_TIMESTAMP = '2026-05-08-mobile-update';
+export const CACHE_VERSION = 'v3.2-sw-fix';
+export const BUILD_TIMESTAMP = '2026-05-13-sw-fix';
 
 // Force clear all caches
 export const clearAllCaches = async (): Promise<void> => {
