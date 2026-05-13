@@ -121,7 +121,7 @@ export const TopBar = () => {
             className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
             aria-label="Lucky Code"
           >
-            <Star className="h-4 w-4 fill-current" />
+            <Star className="h-4 w-4" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </button>
           
@@ -164,7 +164,7 @@ export const TopBar = () => {
             className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
             aria-label="Lucky Code"
           >
-            <Star className="h-4 w-4 fill-current" />
+            <Star className="h-4 w-4" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
           </button>
           
