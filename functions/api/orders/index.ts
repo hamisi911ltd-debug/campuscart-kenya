@@ -48,7 +48,15 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       }) : []
     }));
 
-    return new Response(JSON.stringify(ordersWithItems), {
+    // Attach the real status timeline for each order
+    const ordersWithHistory = await Promise.all(ordersWithItems.map(async (order) => {
+      const { results: history } = await context.env.DB.prepare(
+        "SELECT status, note, created_at FROM order_status_history WHERE order_id = ? ORDER BY created_at ASC"
+      ).bind(order.id).all();
+      return { ...order, history: history || [] };
+    }));
+
+    return new Response(JSON.stringify(ordersWithHistory), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (err: any) {

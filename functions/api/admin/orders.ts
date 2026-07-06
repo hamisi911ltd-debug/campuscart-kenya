@@ -102,9 +102,14 @@ export async function onRequestPut(context: { env: Env; request: Request }) {
       "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP, delivered_at = ? WHERE id = ?"
     ).bind(status, status === 'delivered' ? new Date().toISOString() : null, id).run();
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Order status updated to ${status}` 
+    await env.DB.prepare(`
+      INSERT INTO order_status_history (id, order_id, status, note)
+      VALUES (?, ?, ?, 'Status updated by admin')
+    `).bind(crypto.randomUUID(), id, status).run();
+
+    return new Response(JSON.stringify({
+      success: true,
+      message: `Order status updated to ${status}`
     }), {
       headers: { "Content-Type": "application/json" }
     });

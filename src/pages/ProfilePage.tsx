@@ -1,7 +1,7 @@
 import { Link, useNavigate } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { Heart, LogOut, Package, Settings, ShoppingBag, Store, Wallet, Download, MessageCircle, HelpCircle } from "lucide-react";
+import { Heart, LogOut, Package, Settings, ShoppingBag, Store, Wallet, Banknote, Download, MessageCircle, HelpCircle } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { CelebrationModal } from "@/components/CelebrationModal";
@@ -108,6 +108,7 @@ const ProfilePage = () => {
     { i: Heart, t: "Favorites", s: `${favorites.length} saved`, to: "/favorites" },
     { i: Package, t: "My Orders", s: "Track deliveries", to: "/orders" },
     { i: Store, t: "My Listings", s: "Manage what you sell", to: "/my-listings" },
+    { i: Banknote, t: "Seller Earnings", s: "Track sales & cash out to M-Pesa", to: "/wallet" },
   ];
 
   // Add Install App option if not installed

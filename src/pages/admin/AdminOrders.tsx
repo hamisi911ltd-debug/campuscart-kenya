@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, Package, Truck, CheckCircle, Clock, Edit } from "lucide-react";
+import { Search, Filter, Package, Truck, CheckCircle, Clock, Edit, ShieldCheck, RefreshCw } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { adminGet, adminPut } from "@/utils/adminApi";
+import { adminGet, adminPost, adminPut } from "@/utils/adminApi";
+import { toast } from "sonner";
 
 interface Order {
   id: string;
@@ -11,12 +12,12 @@ interface Order {
   seller_email: string;
   item_count: number;
   total_amount: number;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'pending_confirmation' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'payment_failed';
   created_at: string;
   updated_at: string;
   delivery_address: string;
   payment_method: string;
-  payment_status: string;
+  payment_status: 'unpaid' | 'requested' | 'paid' | 'failed';
   delivered_at?: string;
 }
 
@@ -26,6 +27,18 @@ const AdminOrders = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [revenue, setRevenue] = useState<{ total_revenue: number; total_delivery_fees: number; total_commission: number } | null>(null);
+
+  const fetchRevenue = async () => {
+    try {
+      const response = await adminGet('/api/admin/platform-revenue');
+      const data = await response.json();
+      if (response.ok) setRevenue(data);
+    } catch (err) {
+      console.error('Error fetching platform revenue:', err);
+    }
+  };
 
   const fetchOrders = async () => {
     try {
@@ -50,6 +63,7 @@ const AdminOrders = () => {
 
   useEffect(() => {
     fetchOrders();
+    fetchRevenue();
   }, []);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -78,6 +92,62 @@ const AdminOrders = () => {
     }
   };
 
+  const [actionLoading, setActionLoading] = useState<string | null>(null);
+
+  const handleConfirmAndRequestPayment = async (orderId: string) => {
+    setActionLoading(orderId);
+    try {
+      const response = await adminPost('/api/admin/orders/confirm', { order_id: orderId });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to request payment');
+      }
+
+      toast.success('M-Pesa payment prompt sent to the customer');
+      fetchOrders();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to request payment');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const handleRecheckPayment = async (orderId: string) => {
+    setActionLoading(orderId);
+    try {
+      const response = await adminGet(`/api/payhero/status?order_id=${orderId}`);
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to check payment status');
+      }
+
+      if (data.order_updated) {
+        toast.success(`Payment ${data.payhero_status === 'success' ? 'confirmed' : 'marked failed'}`);
+        fetchOrders();
+      } else {
+        toast.info(`PayHero status: ${data.payhero_status}`);
+      }
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to check payment status');
+    } finally {
+      setActionLoading(null);
+    }
+  };
+
+  const formatStatusLabel = (status: string) =>
+    status.split('_').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+
+  const getPaymentStatusColor = (status: string) => {
+    switch (status) {
+      case 'paid': return 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200';
+      case 'requested': return 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200';
+      case 'failed': return 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200';
+      default: return 'bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-200';
+    }
+  };
+
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          order.buyer_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,8 +161,9 @@ const AdminOrders = () => {
       case 'delivered': return 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200';
       case 'shipped': return 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200';
       case 'processing': return 'bg-purple-100 text-purple-800 dark:bg-purple-950 dark:text-purple-200';
-      case 'pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200';
+      case 'confirmed': return 'bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200';
+      case 'pending': case 'pending_confirmation': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200';
+      case 'cancelled': case 'payment_failed': return 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200';
       default: return 'bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-200';
     }
   };
@@ -102,7 +173,8 @@ const AdminOrders = () => {
       case 'delivered': return <CheckCircle className="h-4 w-4" />;
       case 'shipped': return <Truck className="h-4 w-4" />;
       case 'processing': return <Package className="h-4 w-4" />;
-      case 'pending': return <Clock className="h-4 w-4" />;
+      case 'confirmed': return <ShieldCheck className="h-4 w-4" />;
+      case 'pending': case 'pending_confirmation': return <Clock className="h-4 w-4" />;
       default: return <Package className="h-4 w-4" />;
     }
   };
@@ -146,6 +218,26 @@ const AdminOrders = () => {
           <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Track and manage all platform orders</p>
         </div>
 
+        {revenue && (
+          <div className="bg-gradient-to-r from-emerald-600 to-teal-600 rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg mb-4 md:mb-6 text-white">
+            <p className="text-xs md:text-sm opacity-90 mb-1">Platform Revenue (delivery fees + commission, never shared with sellers)</p>
+            <div className="flex flex-wrap gap-x-8 gap-y-2">
+              <div>
+                <p className="text-xl md:text-2xl font-extrabold">KES {revenue.total_revenue.toLocaleString()}</p>
+                <p className="text-xs opacity-80">Total kept</p>
+              </div>
+              <div>
+                <p className="text-lg md:text-xl font-bold">KES {revenue.total_delivery_fees.toLocaleString()}</p>
+                <p className="text-xs opacity-80">Delivery fees</p>
+              </div>
+              <div>
+                <p className="text-lg md:text-xl font-bold">KES {revenue.total_commission.toLocaleString()}</p>
+                <p className="text-xs opacity-80">Commission (10%)</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Filters */}
         <div className="bg-card rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg border border-border/50 mb-4 md:mb-6">
           <div className="flex flex-col sm:flex-row gap-3 md:gap-4">
@@ -167,10 +259,12 @@ const AdminOrders = () => {
                 className="w-full sm:w-auto pl-9 md:pl-10 pr-8 py-2 md:py-3 text-sm md:text-base rounded-lg md:rounded-xl border border-border bg-background focus:ring-2 focus:ring-accent/40 outline-none appearance-none cursor-pointer"
               >
                 <option value="all">All Status</option>
-                <option value="pending">Pending</option>
+                <option value="pending_confirmation">Pending Confirmation</option>
+                <option value="confirmed">Confirmed</option>
                 <option value="processing">Processing</option>
                 <option value="shipped">Shipped</option>
                 <option value="delivered">Delivered</option>
+                <option value="payment_failed">Payment Failed</option>
                 <option value="cancelled">Cancelled</option>
               </select>
             </div>
@@ -183,7 +277,7 @@ const AdminOrders = () => {
             </div>
             <div className="text-center sm:text-left">
               <p className="text-xs md:text-sm text-muted-foreground">Pending</p>
-              <p className="text-lg md:text-2xl font-bold text-yellow-600">{orders.filter(o => o.status === 'pending').length}</p>
+              <p className="text-lg md:text-2xl font-bold text-yellow-600">{orders.filter(o => o.status === 'pending' || o.status === 'pending_confirmation').length}</p>
             </div>
             <div className="text-center sm:text-left">
               <p className="text-xs md:text-sm text-muted-foreground">Processing</p>
@@ -237,12 +331,17 @@ const AdminOrders = () => {
                         <span className="font-bold text-accent text-sm">KES {order.total_amount.toLocaleString()}</span>
                       </td>
                       <td className="px-4 py-3">
-                        <span className="text-sm text-foreground">{order.payment_method || 'M-PESA'}</span>
+                        <div className="flex flex-col gap-1">
+                          <span className="text-sm text-foreground">{order.payment_method || 'M-PESA'}</span>
+                          <span className={`inline-block w-fit px-2 py-0.5 rounded-full text-xs font-semibold ${getPaymentStatusColor(order.payment_status)}`}>
+                            {formatStatusLabel(order.payment_status || 'unpaid')}
+                          </span>
+                        </div>
                       </td>
                       <td className="px-4 py-3">
                         <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
                           {getStatusIcon(order.status)}
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                          {formatStatusLabel(order.status)}
                         </span>
                       </td>
                       <td className="px-4 py-3">
@@ -250,15 +349,35 @@ const AdminOrders = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
+                          {(order.status === 'pending' || order.status === 'pending_confirmation') && (
+                            <button
+                              onClick={() => handleConfirmAndRequestPayment(order.id)}
+                              disabled={actionLoading === order.id}
+                              className="flex items-center justify-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                            >
+                              <ShieldCheck className="h-3 w-3" /> Confirm & Request Payment
+                            </button>
+                          )}
+                          {order.payment_status === 'requested' && (
+                            <button
+                              onClick={() => handleRecheckPayment(order.id)}
+                              disabled={actionLoading === order.id}
+                              className="flex items-center justify-center gap-1 px-2 py-1 text-xs font-semibold rounded border border-border hover:bg-secondary disabled:opacity-50"
+                            >
+                              <RefreshCw className="h-3 w-3" /> Recheck Payment
+                            </button>
+                          )}
                           <select
                             value={order.status}
                             onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
                             className="px-2 py-1 text-xs border border-border rounded bg-background focus:ring-2 focus:ring-accent/40 outline-none"
                           >
-                            <option value="pending">Pending</option>
+                            <option value="pending_confirmation">Pending Confirmation</option>
+                            <option value="confirmed">Confirmed</option>
                             <option value="processing">Processing</option>
                             <option value="shipped">Shipped</option>
                             <option value="delivered">Delivered</option>
+                            <option value="payment_failed">Payment Failed</option>
                             <option value="cancelled">Cancelled</option>
                           </select>
                           {order.delivery_address && (
@@ -293,7 +412,7 @@ const AdminOrders = () => {
                   </div>
                   <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${getStatusColor(order.status)}`}>
                     {getStatusIcon(order.status)}
-                    {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
+                    {formatStatusLabel(order.status)}
                   </span>
                 </div>
 
@@ -309,8 +428,11 @@ const AdminOrders = () => {
                 </div>
 
                 <div className="space-y-2 mb-3">
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground flex items-center gap-2">
                     <strong>Payment:</strong> {order.payment_method || 'M-PESA'}
+                    <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ${getPaymentStatusColor(order.payment_status)}`}>
+                      {formatStatusLabel(order.payment_status || 'unpaid')}
+                    </span>
                   </div>
                   <div className="text-xs text-muted-foreground">
                     <strong>Date:</strong> {new Date(order.created_at).toLocaleDateString()}
@@ -322,17 +444,39 @@ const AdminOrders = () => {
                   )}
                 </div>
 
-                <select
-                  value={order.status}
-                  onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
-                  className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:ring-2 focus:ring-accent/40 outline-none"
-                >
-                  <option value="pending">Pending</option>
-                  <option value="processing">Processing</option>
-                  <option value="shipped">Shipped</option>
-                  <option value="delivered">Delivered</option>
-                  <option value="cancelled">Cancelled</option>
-                </select>
+                <div className="space-y-2">
+                  {(order.status === 'pending' || order.status === 'pending_confirmation') && (
+                    <button
+                      onClick={() => handleConfirmAndRequestPayment(order.id)}
+                      disabled={actionLoading === order.id}
+                      className="w-full flex items-center justify-center gap-1 px-3 py-2 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
+                    >
+                      <ShieldCheck className="h-4 w-4" /> Confirm & Request Payment
+                    </button>
+                  )}
+                  {order.payment_status === 'requested' && (
+                    <button
+                      onClick={() => handleRecheckPayment(order.id)}
+                      disabled={actionLoading === order.id}
+                      className="w-full flex items-center justify-center gap-1 px-3 py-2 text-sm font-semibold rounded-lg border border-border hover:bg-secondary disabled:opacity-50"
+                    >
+                      <RefreshCw className="h-4 w-4" /> Recheck Payment
+                    </button>
+                  )}
+                  <select
+                    value={order.status}
+                    onChange={(e) => handleUpdateOrderStatus(order.id, e.target.value)}
+                    className="w-full px-3 py-2 text-sm border border-border rounded-lg bg-background focus:ring-2 focus:ring-accent/40 outline-none"
+                  >
+                    <option value="pending_confirmation">Pending Confirmation</option>
+                    <option value="confirmed">Confirmed</option>
+                    <option value="processing">Processing</option>
+                    <option value="shipped">Shipped</option>
+                    <option value="delivered">Delivered</option>
+                    <option value="payment_failed">Payment Failed</option>
+                    <option value="cancelled">Cancelled</option>
+                  </select>
+                </div>
               </div>
             ))}
 

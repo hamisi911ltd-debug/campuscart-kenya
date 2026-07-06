@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
 import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 const ProductPage = () => {
@@ -23,6 +23,7 @@ const ProductPage = () => {
   const [reviews, setReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
   // Admin WhatsApp number
   const ADMIN_WHATSAPP = "254108254465"; // Format: country code + number without leading 0
@@ -151,9 +152,25 @@ const ProductPage = () => {
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
   };
-  
+
   const prevImage = () => {
     setCurrentImageIndex((prev) => (prev - 1 + allImages.length) % allImages.length);
+  };
+
+  const handleTouchStart = (e: React.TouchEvent) => {
+    touchStartX.current = e.touches[0].clientX;
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    if (touchStartX.current === null) return;
+    const deltaX = e.changedTouches[0].clientX - touchStartX.current;
+    const SWIPE_THRESHOLD = 40;
+    if (deltaX > SWIPE_THRESHOLD) {
+      prevImage();
+    } else if (deltaX < -SWIPE_THRESHOLD) {
+      nextImage();
+    }
+    touchStartX.current = null;
   };
 
   return (
@@ -168,53 +185,73 @@ const ProductPage = () => {
 
         <div className="grid gap-4 md:gap-6 md:grid-cols-2 max-w-full min-w-0">
           {/* Image Carousel */}
-          <div className="relative overflow-hidden rounded-2xl bg-card shadow-card min-w-0">
-            <div
-              className={"aspect-square w-full relative " + (allImages.length > 1 ? 'cursor-pointer' : '')}
-              onClick={allImages.length > 1 ? nextImage : undefined}
-            >
-              <img 
-                src={allImages[currentImageIndex]} 
-                alt={p.title} 
-                className="w-full h-full object-cover"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/placeholder.svg';
-                }}
-              />
-              
-              {/* Navigation arrows - only show if multiple images */}
-              {allImages.length > 1 && (
-                <>
-                  <button
-                    onClick={prevImage}
-                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={nextImage}
-                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-black/50 text-white rounded-full p-2 hover:bg-black/70 transition-colors"
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </button>
-                </>
-              )}
-              
-              {/* Image indicators */}
-              {allImages.length > 1 && (
-                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
-                  {allImages.map((_, idx) => (
+          <div className="min-w-0">
+            <div className="relative overflow-hidden rounded-2xl bg-card shadow-card min-w-0">
+              <div
+                className={"aspect-square w-full relative " + (allImages.length > 1 ? 'cursor-pointer' : '')}
+                onClick={allImages.length > 1 ? nextImage : undefined}
+                onTouchStart={handleTouchStart}
+                onTouchEnd={handleTouchEnd}
+              >
+                <img
+                  src={allImages[currentImageIndex]}
+                  alt={p.title}
+                  className="w-full h-full object-cover"
+                  onError={(e) => {
+                    (e.target as HTMLImageElement).src = '/placeholder.svg';
+                  }}
+                />
+
+                {/* Navigation arrows - only show if multiple images */}
+                {allImages.length > 1 && (
+                  <>
                     <button
-                      key={idx}
-                      onClick={() => setCurrentImageIndex(idx)}
-                      className={`w-2 h-2 rounded-full transition-colors ${
-                        idx === currentImageIndex ? 'bg-white' : 'bg-white/50'
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
+                      onClick={(e) => { e.stopPropagation(); prevImage(); }}
+                      className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-1 hover:bg-black/60 transition-colors"
+                    >
+                      <ChevronLeft className="h-3 w-3" />
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); nextImage(); }}
+                      className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-1 hover:bg-black/60 transition-colors"
+                    >
+                      <ChevronRight className="h-3 w-3" />
+                    </button>
+                  </>
+                )}
+
+                {/* Image counter */}
+                {allImages.length > 1 && (
+                  <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white">
+                    {currentImageIndex + 1}/{allImages.length}
+                  </span>
+                )}
+              </div>
             </div>
+
+            {/* Thumbnail strip */}
+            {allImages.length > 1 && (
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1">
+                {allImages.map((img, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentImageIndex(idx)}
+                    className={`shrink-0 h-14 w-14 rounded-lg overflow-hidden border-2 transition-colors ${
+                      idx === currentImageIndex ? 'border-accent' : 'border-transparent opacity-70'
+                    }`}
+                  >
+                    <img
+                      src={img}
+                      alt={`${p.title} ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/placeholder.svg';
+                      }}
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           
           {/* Product Details */}

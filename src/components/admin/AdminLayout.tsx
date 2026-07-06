@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
   LayoutDashboard, Users, Package, ShoppingBag, Gift, Sparkles,
   LogOut, Menu, X, Bell, Search, ChevronDown, Shield,
-  Activity, Settings, BarChart3, Database
+  Activity, Settings, BarChart3, Database, Banknote
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
@@ -66,11 +66,17 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       path: '/admin/products',
       description: 'Product Listings'
     },
-    { 
-      icon: ShoppingBag, 
-      label: 'Orders', 
+    {
+      icon: ShoppingBag,
+      label: 'Orders',
       path: '/admin/orders',
       description: 'Order Management'
+    },
+    {
+      icon: Banknote,
+      label: 'Withdrawals',
+      path: '/admin/withdrawals',
+      description: 'Seller Cashout Requests'
     },
     { 
       icon: Gift, 

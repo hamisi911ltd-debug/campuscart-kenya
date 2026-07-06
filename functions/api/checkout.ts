@@ -98,8 +98,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const orderId = crypto.randomUUID();
 
     await context.env.DB.prepare(`
-      INSERT INTO orders (id, buyer_id, seller_id, total_amount, delivery_fee, delivery_address, delivery_latitude, delivery_longitude, buyer_phone, notes, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending')
+      INSERT INTO orders (id, buyer_id, seller_id, total_amount, delivery_fee, delivery_address, delivery_latitude, delivery_longitude, buyer_phone, notes, status, payment_status)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_confirmation', 'unpaid')
     `).bind(
       orderId,
       body.buyer_id || "guest",
@@ -126,6 +126,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
         item.price
       ).run();
     }
+
+    await context.env.DB.prepare(`
+      INSERT INTO order_status_history (id, order_id, status, note)
+      VALUES (?, ?, 'pending_confirmation', 'Order placed, awaiting seller/admin confirmation of stock availability')
+    `).bind(crypto.randomUUID(), orderId).run();
 
     // Build detailed WhatsApp message with buyer and seller info
     const itemsList = productDetails.map((item, i) => 
@@ -158,7 +163,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       `${body.notes ? `📝 Notes: ${body.notes}\n\n` : ""}` +
       `Admin Contact: +254108254465\n` +
       `Order Time: ${new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}\n\n` +
-      `Please process this order. Thank you!`;
+      `⚠️ Please confirm the item(s) are available with the seller, then open Admin → Orders ` +
+      `and tap "Confirm & Request Payment" to send the customer their M-Pesa payment prompt.`;
 
     return new Response(JSON.stringify({
       success: true,

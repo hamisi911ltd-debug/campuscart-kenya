@@ -3,6 +3,8 @@
 interface Env {
   DB: D1Database;
   STORAGE: R2Bucket;
+  PAYHERO_AUTH_TOKEN: string;
+  PAYHERO_CHANNEL_ID: string;
 }
 
 interface PagesFunction<Env = unknown> {

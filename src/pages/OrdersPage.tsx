@@ -2,7 +2,13 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { Package, Truck, CheckCircle2, XCircle, Clock, MapPin, Phone, Mail, User } from "lucide-react";
+import { Package, Truck, CheckCircle2, XCircle, Clock, MapPin, Phone, Mail, User, ShieldCheck, Smartphone, type LucideIcon } from "lucide-react";
+
+interface HistoryEntry {
+  status: string;
+  note?: string;
+  created_at: string;
+}
 
 interface Order {
   id: string;
@@ -26,18 +32,27 @@ interface Order {
   }>;
   total: number;
   deliveryAddress: string;
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled';
+  status: 'pending' | 'pending_confirmation' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'payment_failed';
+  paymentStatus: 'unpaid' | 'requested' | 'paid' | 'failed';
+  history: HistoryEntry[];
   createdAt: string;
   updatedAt: string;
 }
 
-const statusConfig = {
-  pending: { icon: Clock, label: 'Pending', color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950', iconColor: 'text-yellow-600' },
+const statusConfig: Record<string, { icon: LucideIcon; label: string; color: string; iconColor: string }> = {
+  pending: { icon: Clock, label: 'Placed', color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950', iconColor: 'text-yellow-600' },
+  pending_confirmation: { icon: Clock, label: 'Awaiting confirmation', color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950', iconColor: 'text-yellow-600' },
+  confirmed: { icon: ShieldCheck, label: 'Confirmed', color: 'text-indigo-600 bg-indigo-50 dark:bg-indigo-950', iconColor: 'text-indigo-600' },
+  payment_requested: { icon: Smartphone, label: 'Payment requested', color: 'text-blue-600 bg-blue-50 dark:bg-blue-950', iconColor: 'text-blue-600' },
+  paid: { icon: CheckCircle2, label: 'Paid', color: 'text-green-600 bg-green-50 dark:bg-green-950', iconColor: 'text-green-600' },
   processing: { icon: Package, label: 'Processing', color: 'text-blue-600 bg-blue-50 dark:bg-blue-950', iconColor: 'text-blue-600' },
   shipped: { icon: Truck, label: 'Shipped', color: 'text-purple-600 bg-purple-50 dark:bg-purple-950', iconColor: 'text-purple-600' },
   delivered: { icon: CheckCircle2, label: 'Delivered', color: 'text-green-600 bg-green-50 dark:bg-green-950', iconColor: 'text-green-600' },
   cancelled: { icon: XCircle, label: 'Cancelled', color: 'text-red-600 bg-red-50 dark:bg-red-950', iconColor: 'text-red-600' },
+  payment_failed: { icon: XCircle, label: 'Payment failed', color: 'text-red-600 bg-red-50 dark:bg-red-950', iconColor: 'text-red-600' },
 };
+
+const getStatusConfig = (status: string) => statusConfig[status] || statusConfig.pending;
 
 const OrdersPage = () => {
   const { user } = useShop();
@@ -54,6 +69,15 @@ const OrdersPage = () => {
 
     loadOrders();
   }, [user, navigate, searchParams]);
+
+  // Poll while a payment prompt is out to the customer's phone, so the
+  // tracking page reflects the M-Pesa result without a manual refresh.
+  useEffect(() => {
+    if (selectedOrder?.paymentStatus !== 'requested') return;
+
+    const interval = setInterval(loadOrders, 15000);
+    return () => clearInterval(interval);
+  }, [selectedOrder?.id, selectedOrder?.paymentStatus]);
 
   const loadOrders = async () => {
     if (!user?.id) return;
@@ -77,6 +101,8 @@ const OrdersPage = () => {
             total: order.total_amount,
             deliveryAddress: order.delivery_address,
             status: order.status,
+            paymentStatus: order.payment_status || 'unpaid',
+            history: order.history || [],
             createdAt: order.created_at,
             updatedAt: order.updated_at,
           }));
@@ -84,6 +110,9 @@ const OrdersPage = () => {
           // Sort by date (newest first)
           transformedOrders.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
           setOrders(transformedOrders);
+
+          // Keep an already-open order detail view in sync with the latest data
+          setSelectedOrder(prev => (prev ? transformedOrders.find(o => o.id === prev.id) || prev : prev));
 
           // Check if there's an order parameter in URL
           const orderId = searchParams.get('order');
@@ -120,7 +149,7 @@ const OrdersPage = () => {
   }
 
   if (selectedOrder) {
-    const config = statusConfig[selectedOrder.status];
+    const config = getStatusConfig(selectedOrder.status);
     const StatusIcon = config.icon;
 
     return (
@@ -154,32 +183,48 @@ const OrdersPage = () => {
               </span>
             </div>
 
-            {/* Order Timeline */}
+            {/* Payment prompt banner */}
+            {selectedOrder.paymentStatus === 'requested' && (
+              <div className="mt-4 flex items-start gap-3 rounded-xl bg-blue-50 dark:bg-blue-950 p-4">
+                <Smartphone className="h-5 w-5 text-blue-600 shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-bold text-blue-700 dark:text-blue-300">Check your phone</p>
+                  <p className="text-xs text-blue-700/80 dark:text-blue-300/80 mt-0.5">
+                    Enter your M-Pesa PIN on the payment prompt sent to your phone to complete this order.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Order Timeline - built from the order's real status history */}
             <div className="mt-6 relative">
               <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-border"></div>
               <div className="space-y-6">
-                {['pending', 'processing', 'shipped', 'delivered'].map((status, index) => {
-                  const stepConfig = statusConfig[status as keyof typeof statusConfig];
+                {(selectedOrder.history.length > 0
+                  ? selectedOrder.history
+                  : [{ status: selectedOrder.status, note: undefined, created_at: selectedOrder.updatedAt }]
+                ).map((entry, index) => {
+                  const stepConfig = getStatusConfig(entry.status);
                   const StepIcon = stepConfig.icon;
-                  const isCompleted = ['pending', 'processing', 'shipped', 'delivered'].indexOf(selectedOrder.status) >= index;
-                  const isCurrent = selectedOrder.status === status;
-                  
+                  const isLast = index === (selectedOrder.history.length > 0 ? selectedOrder.history.length : 1) - 1;
+
                   return (
-                    <div key={status} className="relative flex items-start gap-4">
+                    <div key={`${entry.status}-${index}`} className="relative flex items-start gap-4">
                       <div className={`relative z-10 flex h-8 w-8 items-center justify-center rounded-full ${
-                        isCompleted ? 'bg-accent text-white' : 'bg-muted text-muted-foreground'
+                        isLast ? 'bg-accent text-white' : 'bg-muted text-muted-foreground'
                       }`}>
                         <StepIcon className="h-4 w-4" />
                       </div>
                       <div className="flex-1 pt-1">
-                        <p className={`text-sm font-bold ${isCurrent ? 'text-accent' : 'text-foreground'}`}>
+                        <p className={`text-sm font-bold ${isLast ? 'text-accent' : 'text-foreground'}`}>
                           {stepConfig.label}
                         </p>
-                        {isCurrent && (
-                          <p className="text-xs text-muted-foreground mt-1">
-                            Updated {new Date(selectedOrder.updatedAt).toLocaleString()}
-                          </p>
+                        {entry.note && (
+                          <p className="text-xs text-muted-foreground mt-0.5">{entry.note}</p>
                         )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {new Date(entry.created_at).toLocaleString()}
+                        </p>
                       </div>
                     </div>
                   );
@@ -281,7 +326,7 @@ const OrdersPage = () => {
       ) : (
         <div className="space-y-4">
           {orders.map((order) => {
-            const config = statusConfig[order.status];
+            const config = getStatusConfig(order.status);
             const StatusIcon = config.icon;
             
             return (
