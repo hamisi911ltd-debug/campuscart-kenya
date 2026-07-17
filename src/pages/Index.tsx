@@ -158,22 +158,22 @@ const Index = () => {
         {/* Flash deals */}
         {flashDeals.length > 0 && (
           <section className="mb-4 rounded-xl bg-card p-3 shadow-card">
-            <div className="mb-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 rounded-md bg-destructive px-2 py-1">
-                  <Zap className="h-4 w-4 fill-destructive-foreground text-destructive-foreground" />
-                  <span className="text-sm font-extrabold text-destructive-foreground">Flash Deals</span>
+            <div className="mb-2 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1 rounded-md bg-destructive px-2 py-1">
+                  <Zap className="h-3.5 w-3.5 fill-destructive-foreground text-destructive-foreground" />
+                  <span className="whitespace-nowrap text-xs font-extrabold text-destructive-foreground">Flash Deals</span>
                 </div>
                 <FlashCountdown />
               </div>
-              <Link to="/search?sort=trending" className="flex items-center text-xs font-bold text-accent">
+              <Link to="/search?sort=trending" className="flex shrink-0 items-center text-xs font-bold text-accent">
                 More <ChevronRight className="h-3.5 w-3.5" />
               </Link>
             </div>
             <div className="-mx-1 overflow-x-auto scrollbar-hide px-1">
               <div className="flex gap-2">
                 {flashDeals.map((p) => (
-                  <div key={p.id} className="w-[130px] shrink-0">
+                  <div key={p.id} className="w-[142px] shrink-0">
                     <ProductCard p={p} />
                   </div>
                 ))}

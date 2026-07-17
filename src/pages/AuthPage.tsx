@@ -146,7 +146,7 @@ const AuthPage = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
                   <Mail className="h-4 w-4" />
-                  University Email
+                  Email Address
                 </label>
                 <input 
                   required 
@@ -156,7 +156,7 @@ const AuthPage = () => {
                     if (errors.email) setErrors(prev => ({ ...prev, email: "" }));
                   }}
                   type="email" 
-                  placeholder="you@students.uon.ac.ke" 
+                  placeholder="you@example.com"
                   className={`w-full rounded-xl border px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-accent/40 outline-none ${
                     errors.email 
                       ? "border-red-500 bg-red-50 dark:bg-red-950/20" 

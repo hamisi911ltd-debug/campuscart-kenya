@@ -1,18 +1,17 @@
-import { Home, ShoppingBag, UtensilsCrossed, Building2, UserCircle2 } from "lucide-react";
+import { Home, LayoutGrid, ShoppingCart, Package, UserCircle2 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useShop } from "@/store/shop";
 
 const tabs = [
   { to: "/", label: "Home", icon: Home, end: true },
-  { to: "/category/electronics", label: "Market", icon: ShoppingBag },
-  { to: "/category/food", label: "Food", icon: UtensilsCrossed },
-  { to: "/category/hostels", label: "Houses", icon: Building2 },
-  { to: "/profile", label: "Profile", icon: UserCircle2 },
+  { to: "/categories", label: "Categories", icon: LayoutGrid },
+  { to: "/cart", label: "Cart", icon: ShoppingCart, badge: true },
+  { to: "/orders", label: "Orders", icon: Package },
+  { to: "/profile", label: "Account", icon: UserCircle2 },
 ];
 
 export const BottomNav = () => {
-  const { cart } = useShop();
-  const cartCount = cart.reduce((n, i) => n + (i.qty ?? 1), 0);
+  const { cartCount } = useShop();
 
   return (
     <nav
@@ -23,7 +22,6 @@ export const BottomNav = () => {
       <div className="mx-auto flex w-full max-w-2xl items-stretch justify-between px-2 sm:px-6">
         {tabs.map((t) => {
           const Icon = t.icon;
-          const showBadge = false;
           return (
             <NavLink
               key={t.to}
@@ -43,8 +41,8 @@ export const BottomNav = () => {
                         isActive ? "text-accent-foreground" : "text-muted-foreground"
                       }`}
                     />
-                    {showBadge && (
-                      <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent px-1 text-[10px] font-bold text-accent-foreground">
+                    {t.badge && cartCount > 0 && (
+                      <span className="absolute right-1 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground shadow">
                         {cartCount}
                       </span>
                     )}

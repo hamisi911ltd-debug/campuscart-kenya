@@ -31,7 +31,7 @@ export const ProductCard = ({ p }: { p: Product }) => {
   return (
     <Link
       to={`/product/${p.id}`}
-      className="group flex w-full flex-col overflow-hidden rounded-lg bg-card shadow-sm transition-all hover:shadow-md"
+      className="group flex h-full w-full flex-col overflow-hidden rounded-lg bg-card shadow-sm transition-all hover:shadow-md"
     >
       <div className="relative aspect-square overflow-hidden bg-muted">
         <img
@@ -59,24 +59,25 @@ export const ProductCard = ({ p }: { p: Product }) => {
         )}
       </div>
 
-      <div className="flex flex-1 flex-col gap-1 p-2">
-        <h3 className="line-clamp-2 text-[13px] font-medium text-foreground leading-snug">{p.title}</h3>
+      <div className="flex flex-1 flex-col p-2">
+        {/* Fixed two-line title keeps every card's white area the same height */}
+        <h3 className="line-clamp-2 h-[34px] text-[13px] font-medium text-foreground leading-[17px]">{p.title}</h3>
 
-        {/* Price row */}
-        <div className="mt-0.5 flex items-end gap-1">
-          <span className="text-[11px] font-bold text-primary leading-none">KES</span>
-          <span className="text-[17px] font-extrabold text-primary leading-none">{p.price.toLocaleString()}</span>
+        {/* Price row — single line so every card's white area matches */}
+        <div className="mt-1.5 flex items-end gap-1 overflow-hidden whitespace-nowrap">
+          <span className="shrink-0 text-[11px] font-bold text-primary leading-none">KES</span>
+          <span className="shrink-0 text-[17px] font-extrabold text-primary leading-none">{p.price.toLocaleString()}</span>
           {p.oldPrice && p.oldPrice > p.price && (
-            <span className="mb-0.5 text-[10px] text-muted-foreground line-through">KES {p.oldPrice.toLocaleString()}</span>
+            <span className="mb-0.5 truncate text-[10px] text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
           )}
         </div>
 
         {/* Rating + sold + add */}
-        <div className="mt-0.5 flex items-center justify-between">
-          <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <Star className="h-3 w-3 fill-warning text-warning" />
-            <span>{(p.rating ?? 4.7).toFixed(1)}</span>
-            {p.sold !== undefined && <span>· {p.sold >= 1000 ? `${(p.sold / 1000).toFixed(1)}k` : p.sold} sold</span>}
+        <div className="mt-1.5 flex items-center justify-between gap-1">
+          <div className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap text-[10px] text-muted-foreground">
+            <Star className="h-3 w-3 shrink-0 fill-warning text-warning" />
+            <span className="shrink-0">{(p.rating ?? 4.7).toFixed(1)}</span>
+            {p.sold !== undefined && <span className="truncate">· {p.sold >= 1000 ? `${(p.sold / 1000).toFixed(1)}k` : p.sold} sold</span>}
           </div>
           <button
             onClick={(e) => { e.preventDefault(); addToCart(p); }}

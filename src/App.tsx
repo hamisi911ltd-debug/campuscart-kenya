@@ -10,6 +10,7 @@ import { useEffect } from "react";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
 import CategoryPage from "./pages/CategoryPage";
+import CategoriesPage from "./pages/CategoriesPage";
 import ProductPage from "./pages/ProductPage";
 import CartPage from "./pages/CartPage";
 import FavoritesPage from "./pages/FavoritesPage";
@@ -67,6 +68,7 @@ const App = () => {
           <ShopProvider>
             <Routes>
               <Route path="/" element={<Index />} />
+              <Route path="/categories" element={<CategoriesPage />} />
               <Route path="/category/:slug" element={<CategoryPage />} />
               <Route path="/product/:id" element={<ProductPage />} />
               <Route path="/cart" element={<CartPage />} />

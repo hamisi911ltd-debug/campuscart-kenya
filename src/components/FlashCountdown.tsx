@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import { Zap } from "lucide-react";
 
 const TWO_HOURS = 2 * 60 * 60 * 1000; // 2 hours in milliseconds
 
@@ -41,28 +40,15 @@ export const FlashCountdown = () => {
   const m = String(Math.floor((diff % 3.6e6) / 6e4)).padStart(2, "0");
   const s = String(Math.floor((diff % 6e4) / 1000)).padStart(2, "0");
   
+  // Timer only — the surrounding section supplies its own "Flash Deals" label.
   return (
-    <div className="flex items-center gap-3 text-primary-foreground">
-      <div className="flex items-center gap-2">
-        <Zap className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-        <span className="font-bold">Flash Deals</span>
-      </div>
-      <div className="flex items-center gap-1 font-mono text-sm">
-        <span className="flex items-center gap-1">
-          <span className="rounded bg-background/20 px-1.5 py-0.5 font-bold">{h}</span>
-          <span className="text-[9px] opacity-70">hours</span>
-        </span>
-        <span className="opacity-70">:</span>
-        <span className="flex items-center gap-1">
-          <span className="rounded bg-background/20 px-1.5 py-0.5 font-bold">{m}</span>
-          <span className="text-[9px] opacity-70">mins</span>
-        </span>
-        <span className="opacity-70">:</span>
-        <span className="flex items-center gap-1">
-          <span className="rounded bg-background/20 px-1.5 py-0.5 font-bold">{s}</span>
-          <span className="text-[9px] opacity-70">secs</span>
-        </span>
-      </div>
+    <div className="flex shrink-0 items-center gap-1 whitespace-nowrap">
+      <span className="hidden text-[10px] font-semibold text-muted-foreground sm:inline">Ends in</span>
+      <span className="rounded bg-primary px-1.5 py-0.5 font-mono text-[11px] font-bold text-primary-foreground">{h}</span>
+      <span className="text-[11px] font-bold text-primary">:</span>
+      <span className="rounded bg-primary px-1.5 py-0.5 font-mono text-[11px] font-bold text-primary-foreground">{m}</span>
+      <span className="text-[11px] font-bold text-primary">:</span>
+      <span className="rounded bg-primary px-1.5 py-0.5 font-mono text-[11px] font-bold text-primary-foreground">{s}</span>
     </div>
   );
 };

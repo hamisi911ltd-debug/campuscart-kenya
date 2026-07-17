@@ -92,12 +92,12 @@ const ProductPage = () => {
       `Quantity: ${qty}\n` +
       `Total: KES ${(p.price * qty).toLocaleString()}\n` +
       `Category: ${p.category}\n` +
-      `Campus: ${p.campus}\n\n` +
+      `Location: ${p.campus}\n\n` +
       `👨‍💼 *Seller/Poster Details:*\n` +
       `Name: ${p.seller?.name || 'Not available'}\n` +
       `Email: ${p.seller?.email || 'Not available'}\n` +
       `Phone: ${p.seller?.phone || 'Not available'}\n` +
-      `Campus: ${p.seller?.campus || p.campus}\n\n` +
+      `Location: ${p.seller?.campus || p.campus}\n\n` +
       `Please confirm this order. Thank you!`;
 
     // Encode message for URL
@@ -279,7 +279,7 @@ const ProductPage = () => {
             </div>
             <p className="flex items-center gap-1 text-xs opacity-90">
               <Zap className="h-3 w-3" /> 
-              {priceCardClicked ? 'Selected for purchase!' : 'Student flash price · ends tonight'}
+              {priceCardClicked ? 'Selected for purchase!' : 'Flash price · ends tonight'}
             </p>
           </div>
           {p.description && <p className="text-sm text-foreground/90 break-words">{p.description}</p>}

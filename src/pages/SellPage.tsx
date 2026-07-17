@@ -8,9 +8,13 @@ import { useShop } from "@/store/shop";
 import { uploadImages, validateImage } from "@/lib/uploadImage";
 
 const categories = [
-  { slug: "electronics", name: "Market (Electronics, Books, etc.)" },
+  { slug: "electronics", name: "Electronics" },
+  { slug: "fashion", name: "Fashion" },
+  { slug: "furniture", name: "Home & Furniture" },
   { slug: "food", name: "Food & Delivery" },
-  { slug: "hostels", name: "Houses & Accommodation" },
+  { slug: "hostels", name: "Property & Rentals" },
+  { slug: "books", name: "Books" },
+  { slug: "stationery", name: "Stationery" },
 ];
 
 const SellPage = () => {

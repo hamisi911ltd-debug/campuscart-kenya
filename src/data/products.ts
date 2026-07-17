@@ -30,13 +30,13 @@ export type ProductWithCategory = Product & {
 };
 
 export const categories = [
-  { slug: "books", name: "Books", img: catBooks },
   { slug: "electronics", name: "Electronics", img: catElec },
   { slug: "fashion", name: "Fashion", img: catFashion },
+  { slug: "furniture", name: "Home & Furniture", img: catFurn },
   { slug: "food", name: "Food", img: catFood },
-  { slug: "hostels", name: "Hostels", img: catRooms },
+  { slug: "hostels", name: "Property", img: catRooms },
+  { slug: "books", name: "Books", img: catBooks },
   { slug: "stationery", name: "Stationery", img: catStat },
-  { slug: "furniture", name: "Furniture", img: catFurn },
 ];
 
 // Function to transform database product to frontend format
