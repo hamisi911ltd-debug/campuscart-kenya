@@ -1,4 +1,4 @@
-import { ArrowRight, Flame, Sparkles, Truck, Shield, Wallet, Zap } from "lucide-react";
+import { Zap, Truck, Shield, Wallet, Ticket, ChevronRight, ThumbsUp } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { TopBar } from "@/components/TopBar";
@@ -10,7 +10,15 @@ import { LuckyCodeModal } from "@/components/LuckyCodeModal";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
-import { categories, getProducts, getProductsSync, transformDatabaseProduct } from "@/data/products";
+import { categories, getProducts, getProductsSync, transformDatabaseProduct, type ProductWithCategory } from "@/data/products";
+
+const VOUCHERS = [
+  { code: "WELCOME50", label: "KES 50 OFF", sub: "New shoppers" },
+  { code: "FLASH30", label: "KES 30 OFF", sub: "Flash sale" },
+  { code: "SHOP20", label: "KES 20 OFF", sub: "Any order" },
+  { code: "LUCKY25", label: "KES 25 OFF", sub: "Lucky draw" },
+];
+
 const Index = () => {
   const navigate = useNavigate();
   const { user } = useShop();
@@ -18,62 +26,36 @@ const Index = () => {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
-  
-  const [trending, setTrending] = useState<ProductWithCategory[]>([]);
-  const [justListed, setJustListed] = useState<ProductWithCategory[]>([]);
+  const [flashDeals, setFlashDeals] = useState<ProductWithCategory[]>([]);
 
-  // Fetch trending and just listed products
+  // Flash deals = trending products
   useEffect(() => {
-    const fetchSortedProducts = async () => {
+    const fetchFlash = async () => {
       try {
-        // Fetch trending products
-        const trendingResponse = await fetch('/api/products?sort=trending&limit=8', {
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        if (trendingResponse.ok) {
-          const trendingData = await trendingResponse.json();
-          setTrending(Array.isArray(trendingData) ? trendingData.map(transformDatabaseProduct) : []);
+        const res = await fetch('/api/products?sort=trending&limit=10', { headers: { 'Cache-Control': 'no-cache' } });
+        if (res.ok) {
+          const data = await res.json();
+          setFlashDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
         }
-
-        // Fetch just listed products
-        const newestResponse = await fetch('/api/products?sort=newest&limit=8', {
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        if (newestResponse.ok) {
-          const newestData = await newestResponse.json();
-          setJustListed(Array.isArray(newestData) ? newestData.map(transformDatabaseProduct) : []);
-        }
-      } catch (error) {
-        console.error('Error fetching sorted products:', error);
+      } catch (e) {
+        console.error('Error fetching flash deals:', e);
       }
     };
-
-    fetchSortedProducts();
+    fetchFlash();
   }, []);
 
-  // Refresh products on mount and when returning to page
+  // "More to love" feed = all products, refreshed on focus/visibility
   useEffect(() => {
     const refreshProductList = async () => {
-      const refreshedProducts = await getProducts();
-      // Ensure we always set an array
-      setProducts(Array.isArray(refreshedProducts) ? refreshedProducts : []);
+      const refreshed = await getProducts();
+      setProducts(Array.isArray(refreshed) ? refreshed : []);
     };
-    
-    // Initial load
     refreshProductList();
-    
-    // Refresh when page becomes visible
-    const handleVisibilityChange = () => {
-      if (!document.hidden) {
-        refreshProductList();
-      }
-    };
-    
-    // Listen for storage changes (when products are added)
+
+    const handleVisibilityChange = () => { if (!document.hidden) refreshProductList(); };
     window.addEventListener('storage', refreshProductList);
     window.addEventListener('focus', refreshProductList);
     document.addEventListener('visibilitychange', handleVisibilityChange);
-    
     return () => {
       window.removeEventListener('storage', refreshProductList);
       window.removeEventListener('focus', refreshProductList);
@@ -81,30 +63,26 @@ const Index = () => {
     };
   }, []);
 
-  // Show sign-in modal on first visit if not logged in
+  // Sign-in modal on first visit + login celebration
   useEffect(() => {
     if (!user) {
       const hasSeenModal = sessionStorage.getItem('hasSeenSignInModal');
       if (!hasSeenModal) {
-        // Show modal after a short delay
         const timer = setTimeout(() => {
           setShowSignInModal(true);
           sessionStorage.setItem('hasSeenSignInModal', 'true');
-        }, 2000); // 2 seconds delay
+        }, 2000);
         return () => clearTimeout(timer);
       }
     } else {
-      // Check if user just logged in
       const justLoggedIn = sessionStorage.getItem('campusmart_just_logged_in');
       if (justLoggedIn) {
         sessionStorage.removeItem('campusmart_just_logged_in');
-        // Show login celebration
         const timer = setTimeout(() => {
           setShowLoginCelebration(true);
-          // Also show welcome notification
           const firstName = user.name?.split(' ')[0] || 'friend';
           notificationService.showWelcomeNotification(firstName);
-        }, 500); // Small delay to let page load
+        }, 500);
         return () => clearTimeout(timer);
       }
     }
@@ -112,20 +90,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background pb-24">
-      {/* Sign In Modal */}
-      <SignInModal 
-        isOpen={showSignInModal} 
+      <SignInModal
+        isOpen={showSignInModal}
         onClose={() => setShowSignInModal(false)}
         message="Welcome to Urban Store! Sign in to start shopping and selling."
       />
-
-      {/* Lucky Code Modal */}
-      <LuckyCodeModal 
-        isOpen={showLuckyCodeModal} 
-        onClose={() => setShowLuckyCodeModal(false)}
-      />
-
-      {/* Login Celebration Modal */}
+      <LuckyCodeModal isOpen={showLuckyCodeModal} onClose={() => setShowLuckyCodeModal(false)} />
       <CelebrationModal
         isOpen={showLoginCelebration}
         onClose={() => setShowLoginCelebration(false)}
@@ -136,168 +106,118 @@ const Index = () => {
 
       <div className="sticky top-0 z-30">
         <TopBar />
-        {/* Promo strip */}
-        <div className="bg-destructive">
+        <div className="bg-primary">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs text-primary-foreground">
-            <FlashCountdown />
-            <div className="hidden items-center gap-4 sm:flex">
-              <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Free campus delivery</span>
-              <span className="flex items-center gap-1.5"><Shield className="h-3.5 w-3.5" /> Buyer protection</span>
-              <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> M-PESA</span>
+            <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Free delivery deals</span>
+            <div className="flex items-center gap-4">
+              <span className="hidden items-center gap-1.5 sm:flex"><Shield className="h-3.5 w-3.5" /> Buyer protection</span>
+              <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> Pay with M-PESA or Wallet</span>
             </div>
           </div>
         </div>
       </div>
 
-      <main className="mx-auto max-w-7xl px-4 pb-4">
-        <div className="py-3">
-          <Section icon={<Flame className="h-5 w-5 text-accent" />} title="Trending Near You" subtitle="Popular with students this week" link="View All" linkTo="/search?sort=trending">
-            <ProductGrid items={trending} />
-          </Section>
-        </div>
-
-        <Section icon={<Sparkles className="h-5 w-5 text-accent" />} title="Just Listed" subtitle="Fresh from your fellow students" link="See More" linkTo="/search?sort=newest">
-          <ProductGrid items={justListed} />
-        </Section>
-
-        {/* Post Item CTA Card - Shows at bottom with red color */}
-        <div className="mt-8 mb-4">
-          <div 
-            onClick={() => {
-              if (!user) {
-                setShowSignInModal(true);
-              } else {
-                navigate('/sell');
-              }
-            }}
-            className="relative overflow-hidden rounded-xl bg-red-600 p-3 shadow-card hover:shadow-elevated transition-all cursor-pointer group"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex-1">
-                <h3 className="text-sm font-extrabold text-primary-foreground mb-0.5">
-                  Got something to sell?
-                </h3>
-                <p className="text-xs text-primary-foreground/90">
-                  List your item in seconds
-                </p>
-              </div>
-              <button className="shrink-0 rounded-full bg-white text-red-600 px-4 py-2 text-xs font-bold hover:scale-105 transition-transform shadow-lg">
-                Post Now
-              </button>
+      <main className="mx-auto max-w-7xl px-4">
+        {/* Category tiles */}
+        <section className="py-3">
+          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
+            <div className="flex gap-4">
+              {categories.map((c) => (
+                <Link key={c.slug} to={`/category/${c.slug}`} className="flex w-16 shrink-0 flex-col items-center gap-1.5">
+                  <div className="h-14 w-14 overflow-hidden rounded-full border border-border bg-muted shadow-sm">
+                    <img src={c.img} alt={c.name} className="h-full w-full object-cover" />
+                  </div>
+                  <span className="text-center text-[11px] font-medium text-foreground leading-tight">{c.name}</span>
+                </Link>
+              ))}
             </div>
-            {/* Decorative elements */}
-            <div className="absolute -right-3 -top-3 h-16 w-16 rounded-full bg-white/10 blur-xl"></div>
-            <div className="absolute -left-3 -bottom-3 h-16 w-16 rounded-full bg-white/10 blur-xl"></div>
+          </div>
+        </section>
+
+        {/* Voucher / coupon strip */}
+        <section className="mb-3">
+          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
+            <div className="flex gap-2">
+              {VOUCHERS.map((v) => (
+                <button
+                  key={v.code}
+                  onClick={() => (user ? setShowLuckyCodeModal(true) : setShowSignInModal(true))}
+                  className="flex shrink-0 items-center gap-2 rounded-lg border border-dashed border-accent bg-accent/5 px-3 py-2 text-left"
+                >
+                  <Ticket className="h-4 w-4 text-accent" />
+                  <div>
+                    <div className="text-xs font-extrabold text-accent leading-tight">{v.label}</div>
+                    <div className="text-[10px] text-muted-foreground">{v.sub} · Collect</div>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Flash deals */}
+        {flashDeals.length > 0 && (
+          <section className="mb-4 rounded-xl bg-card p-3 shadow-card">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5 rounded-md bg-destructive px-2 py-1">
+                  <Zap className="h-4 w-4 fill-destructive-foreground text-destructive-foreground" />
+                  <span className="text-sm font-extrabold text-destructive-foreground">Flash Deals</span>
+                </div>
+                <FlashCountdown />
+              </div>
+              <Link to="/search?sort=trending" className="flex items-center text-xs font-bold text-accent">
+                More <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+            <div className="-mx-1 overflow-x-auto scrollbar-hide px-1">
+              <div className="flex gap-2">
+                {flashDeals.map((p) => (
+                  <div key={p.id} className="w-[130px] shrink-0">
+                    <ProductCard p={p} />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* Sell CTA */}
+        <div className="mb-4">
+          <div
+            onClick={() => (user ? navigate('/sell') : setShowSignInModal(true))}
+            className="relative flex items-center justify-between gap-3 overflow-hidden rounded-xl gradient-hero p-3 shadow-card cursor-pointer"
+          >
+            <div>
+              <h3 className="text-sm font-extrabold text-primary-foreground">Got something to sell?</h3>
+              <p className="text-xs text-primary-foreground/90">List your item in seconds and reach thousands of shoppers</p>
+            </div>
+            <button className="shrink-0 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground shadow-accent">Post Now</button>
           </div>
         </div>
 
-        {/* Category Sections - All Products by Category */}
-        <CategorySections />
+        {/* More to love feed */}
+        <section className="pb-6">
+          <div className="mb-3 flex items-center justify-center gap-2">
+            <span className="h-px w-8 bg-border" />
+            <ThumbsUp className="h-4 w-4 text-accent" />
+            <h2 className="text-base font-extrabold text-foreground">More To Love</h2>
+            <span className="h-px w-8 bg-border" />
+          </div>
+          {products.length === 0 ? (
+            <p className="py-10 text-center text-sm text-muted-foreground">Loading products…</p>
+          ) : (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {products.map((p) => (
+                <ProductCard key={p.id} p={p} />
+              ))}
+            </div>
+          )}
+        </section>
       </main>
 
       <BottomNav />
     </div>
-  );
-};
-
-const Section = ({ icon, title, subtitle, link, linkTo, children }: { icon: React.ReactNode; title: string; subtitle?: string; link: string; linkTo: string; children: React.ReactNode; }) => (
-  <section className="mt-0">
-    <div className="mb-2 flex items-end justify-between gap-2">
-      <div className="flex items-center gap-2">
-        {icon}
-        <div>
-          <h2 className="text-lg font-extrabold text-foreground md:text-xl">{title}</h2>
-          {subtitle && <p className="text-xs text-muted-foreground">{subtitle}</p>}
-        </div>
-      </div>
-      <Link to={linkTo} className="flex shrink-0 items-center gap-1 text-xs font-bold text-accent hover:gap-2 transition-all">
-        {link} <ArrowRight className="h-3 w-3" />
-      </Link>
-    </div>
-    {children}
-  </section>
-);
-
-const ProductGrid = ({ items }: { items: any[] }) => (
-  <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
-    <div className="flex gap-1">
-      {items.map((p) => (
-        <div key={p.id} className="w-[calc((100vw-2rem-0.25rem)/2.5)] shrink-0 md:w-[140px]">
-          <ProductCard p={p} />
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-// Category Sections Component - Shows products by category
-const CategorySections = () => {
-  const [categoryProducts, setCategoryProducts] = useState<Record<string, any[]>>({});
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchCategoryProducts = async () => {
-      setLoading(true);
-      const productsByCategory: Record<string, any[]> = {};
-
-      try {
-        // Fetch products for each category
-        for (const category of categories) {
-          const response = await fetch(`/api/products?category=${category.slug}&limit=10`, {
-            headers: { 'Cache-Control': 'no-cache' },
-          });
-          
-          if (response.ok) {
-            const data = await response.json();
-            productsByCategory[category.slug] = Array.isArray(data) 
-              ? data.map(transformDatabaseProduct) 
-              : [];
-          } else {
-            productsByCategory[category.slug] = [];
-          }
-        }
-
-        setCategoryProducts(productsByCategory);
-      } catch (error) {
-        console.error('Error fetching category products:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchCategoryProducts();
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="mt-8 text-center">
-        <p className="text-sm text-muted-foreground">Loading categories...</p>
-      </div>
-    );
-  }
-
-  return (
-    <>
-      {categories.map((category) => {
-        const products = categoryProducts[category.slug] || [];
-        
-        // Only show category if it has products
-        if (products.length === 0) return null;
-
-        return (
-          <Section 
-            key={category.slug}
-            icon={<Zap className="h-5 w-5 text-accent" />} 
-            title={category.name} 
-            subtitle={`Browse ${category.name.toLowerCase()}`}
-            link="View All" 
-            linkTo={`/category/${category.slug}`}
-          >
-            <ProductGrid items={products} />
-          </Section>
-        );
-      })}
-    </>
   );
 };
 

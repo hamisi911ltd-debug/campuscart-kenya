@@ -86,11 +86,11 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     if (!existingCodes || (existingCodes as any).count === 0) {
       console.log('Creating default lucky codes...');
       const testCodes = [
-        { code: 'WELCOME500', points: 500, description: 'Welcome bonus - Get 500 points (KES 50) in your wallet!' },
-        { code: 'STUDENT100', points: 100, description: 'Student discount - Get 100 points (KES 10) in your wallet!' },
-        { code: 'LUCKY250', points: 250, description: 'Lucky draw winner - Get 250 points (KES 25) in your wallet!' },
-        { code: 'CAMPUS200', points: 200, description: 'Campus special - Get 200 points (KES 20) in your wallet!' },
-        { code: 'FLASH300', points: 300, description: 'Flash sale bonus - Get 300 points (KES 30) in your wallet!' }
+        { code: 'WELCOME50', points: 50, description: 'Welcome bonus - KES 50 wallet credit!' },
+        { code: 'STUDENT10', points: 10, description: 'Student discount - KES 10 wallet credit!' },
+        { code: 'LUCKY25', points: 25, description: 'Lucky draw winner - KES 25 wallet credit!' },
+        { code: 'SHOP20', points: 20, description: 'Shopper special - KES 20 wallet credit!' },
+        { code: 'FLASH30', points: 30, description: 'Flash sale bonus - KES 30 wallet credit!' }
       ];
 
       for (const testCode of testCodes) {
@@ -260,7 +260,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         success: true,
         points: parseFloat(luckyCode.points.toString()),
         newBalance: newBalance,
-        message: `You earned ${luckyCode.points} points (KES ${(luckyCode.points / 10).toFixed(2)}) in your wallet!`
+        message: `KES ${Number(luckyCode.points).toLocaleString()} added to your wallet!`
       }), {
         headers: { 
           'Content-Type': 'application/json',

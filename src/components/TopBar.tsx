@@ -1,4 +1,4 @@
-import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Star } from "lucide-react";
+import { Bell, ChevronDown, MapPin, Search, ShoppingCart, Star, Wallet } from "lucide-react";
 import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, type FormEvent } from "react";
@@ -113,8 +113,18 @@ export const TopBar = () => {
           </button>
         </form>
         
-        {/* Desktop Layout: Lucky Code + Notifications + Cart */}
+        {/* Desktop Layout: Wallet + Lucky Code + Notifications + Cart */}
         <div className="hidden sm:flex items-center gap-2 ml-auto">
+          {/* Desktop Wallet */}
+          <Link
+            to={user ? "/wallet" : "/auth"}
+            className="flex items-center gap-1.5 rounded-full bg-accent/10 px-3 py-1.5 text-xs font-bold text-accent hover:bg-accent/20 transition"
+            aria-label="Wallet"
+          >
+            <Wallet className="h-4 w-4" />
+            <span className="hidden md:inline">KES {(user?.walletBalance || 0).toLocaleString()}</span>
+          </Link>
+
           {/* Desktop Lucky Code Button */}
           <button
             onClick={handleLuckyCodeClick}
@@ -156,8 +166,17 @@ export const TopBar = () => {
           </Link>
         </div>
         
-        {/* Mobile Layout: Lucky Code + Notifications + Cart */}
+        {/* Mobile Layout: Wallet + Lucky Code + Notifications + Cart */}
         <div className="sm:hidden flex items-center gap-2 ml-auto">
+          {/* Mobile Wallet */}
+          <Link
+            to={user ? "/wallet" : "/auth"}
+            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent hover:bg-accent/20"
+            aria-label="Wallet"
+          >
+            <Wallet className="h-4 w-4" />
+          </Link>
+
           {/* Mobile Lucky Code Button */}
           <button
             onClick={handleLuckyCodeClick}

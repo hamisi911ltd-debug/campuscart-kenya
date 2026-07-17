@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { CheckCircle2, MapPin, Loader2 } from "lucide-react";
+import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
 import { CouponRedemption } from "@/components/CouponRedemption";
 
@@ -36,10 +36,13 @@ interface Order {
 }
 
 const CheckoutPage = () => {
-  const { cart, cartTotal, clearCart, user } = useShop();
+  const { cart, cartTotal, clearCart, user, refreshUser } = useShop();
   const navigate = useNavigate();
   const [address, setAddress] = useState("");
   const [done, setDone] = useState(false);
+  const [paidWithWallet, setPaidWithWallet] = useState(false);
+  const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("mpesa");
+  const [submitting, setSubmitting] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -64,6 +67,8 @@ const CheckoutPage = () => {
   const deliveryFee = getDeliveryFee(cartTotal);
   const subtotalAfterDiscount = cartTotal - couponDiscount;
   const orderTotal = subtotalAfterDiscount + deliveryFee;
+  const walletBalance = user?.walletBalance || 0;
+  const walletCovers = walletBalance >= orderTotal;
 
   const handleCouponApplied = (discount: number, couponCode: string) => {
     setCouponDiscount(discount);
@@ -95,7 +100,9 @@ const CheckoutPage = () => {
             Order #{orderNumber} has been placed successfully!
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
-            Your order details and location have been sent to the admin via WhatsApp.
+            {paidWithWallet
+              ? "Paid from your wallet balance. The seller is being notified to prepare your order."
+              : "Your order details and location have been sent to the admin via WhatsApp."}
           </p>
           <div className="mt-5 flex gap-3 justify-center">
             <button 
@@ -118,7 +125,9 @@ const CheckoutPage = () => {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
+    if (submitting) return;
+
     if (!user) {
       toast.error("Please sign in to continue");
       navigate('/auth');
@@ -129,6 +138,13 @@ const CheckoutPage = () => {
       toast.error("Please share your location to continue");
       return;
     }
+
+    if (payMethod === "wallet" && !walletCovers) {
+      toast.error("Wallet balance is too low. Top up or choose M-Pesa.");
+      return;
+    }
+
+    setSubmitting(true);
 
     // Generate order number
     const newOrderNumber = `CM${Date.now().toString().slice(-8)}`;
@@ -165,37 +181,51 @@ const CheckoutPage = () => {
       }
 
       const result = await response.json();
-      
-      // Use the WhatsApp message from the API response
+
+      // --- Pay from wallet balance ---
+      if (payMethod === "wallet") {
+        const payRes = await fetch('/api/wallet/pay', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ user_id: user.id, order_id: result.order_id }),
+        });
+        const payData = await payRes.json();
+
+        if (!payRes.ok || !payData.success) {
+          toast.error(payData.error || "Wallet payment failed. Try M-Pesa instead.");
+          setSubmitting(false);
+          return;
+        }
+
+        await refreshUser();
+        toast.success("Paid from wallet!");
+        setPaidWithWallet(true);
+        await clearCart();
+        setDone(true);
+        setSubmitting(false);
+        return;
+      }
+
+      // --- M-Pesa: notify admin via WhatsApp, payment prompt sent on confirmation ---
       const whatsappMessage = result.whatsapp_message;
       const adminPhone = result.admin_phone;
-      
-      // Encode message for URL
       const encodedMessage = encodeURIComponent(whatsappMessage);
-      
-      // Detect if mobile device
       const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      
-      // Use whatsapp:// protocol to open app directly on mobile
-      // Use wa.me for desktop (will open WhatsApp Desktop if installed, otherwise web)
-      const whatsappUrl = isMobile 
+      const whatsappUrl = isMobile
         ? `whatsapp://send?phone=${adminPhone}&text=${encodedMessage}`
         : `https://wa.me/${adminPhone}?text=${encodedMessage}`;
-      
-      // Open WhatsApp app directly
       window.location.href = whatsappUrl;
 
       toast.success("Order placed successfully!");
-      
-      // Clear cart and show success after a short delay
-      setTimeout(async () => { 
-        await clearCart(); 
-        setDone(true); 
+      setTimeout(async () => {
+        await clearCart();
+        setDone(true);
       }, 800);
 
     } catch (error) {
       console.error('Error placing order:', error);
       toast.error("Failed to place order. Please try again.");
+      setSubmitting(false);
     }
   };
 
@@ -238,6 +268,54 @@ const CheckoutPage = () => {
                 appliedCoupon={appliedCoupon}
                 orderTotal={cartTotal}
               />
+            </div>
+
+            {/* Payment Method */}
+            <div className="rounded-lg lg:rounded-xl bg-card p-3 lg:p-4 shadow-card">
+              <h2 className="text-sm lg:text-base font-bold mb-2 lg:mb-3">Payment Method</h2>
+              <div className="space-y-2">
+                <button
+                  type="button"
+                  onClick={() => setPayMethod("wallet")}
+                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${payMethod === "wallet" ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-accent/10 text-accent">
+                    <Wallet className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold">Urban Store Wallet</div>
+                    <div className="text-xs text-muted-foreground">
+                      Balance: KES {walletBalance.toLocaleString()}
+                      {!walletCovers && <span className="text-destructive"> · Too low for this order</span>}
+                    </div>
+                  </div>
+                  <span className={`h-4 w-4 rounded-full border-2 ${payMethod === "wallet" ? "border-accent bg-accent" : "border-muted-foreground"}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPayMethod("mpesa")}
+                  className={`flex w-full items-center gap-3 rounded-lg border p-3 text-left transition ${payMethod === "mpesa" ? "border-accent bg-accent/5 ring-1 ring-accent" : "border-border hover:border-accent/50"}`}
+                >
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-green-100 text-green-600 dark:bg-green-950">
+                    <Smartphone className="h-4 w-4" />
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-sm font-bold">M-Pesa</div>
+                    <div className="text-xs text-muted-foreground">Pay when the seller confirms your order</div>
+                  </div>
+                  <span className={`h-4 w-4 rounded-full border-2 ${payMethod === "mpesa" ? "border-accent bg-accent" : "border-muted-foreground"}`} />
+                </button>
+              </div>
+              {payMethod === "wallet" && !walletCovers && (
+                <button
+                  type="button"
+                  onClick={() => navigate("/wallet")}
+                  className="mt-2 w-full rounded-lg bg-accent/10 py-2 text-xs font-bold text-accent hover:bg-accent/20"
+                >
+                  Top up wallet →
+                </button>
+              )}
             </div>
 
             {/* Order Confirmation */}
@@ -316,12 +394,17 @@ const CheckoutPage = () => {
               <span className="text-accent">KES {orderTotal.toLocaleString()}</span>
             </div>
             
-            <button 
+            <button
               type="submit"
-              disabled={!location}
-              className="mt-3 lg:mt-4 w-full rounded-full gradient-accent py-2 lg:py-2.5 text-xs lg:text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
+              disabled={!location || submitting}
+              className="mt-3 lg:mt-4 flex w-full items-center justify-center gap-2 rounded-full gradient-accent py-2 lg:py-2.5 text-xs lg:text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {location ? 'Complete Order Placement' : 'Share Location to Continue'}
+              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
+              {!location
+                ? 'Share Location to Continue'
+                : payMethod === 'wallet'
+                  ? `Pay KES ${orderTotal.toLocaleString()} from Wallet`
+                  : 'Place Order'}
             </button>
             
             {!location && (

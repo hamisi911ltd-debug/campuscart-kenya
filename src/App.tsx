@@ -19,6 +19,7 @@ import MyListingsPage from "./pages/MyListingsPage";
 import ProfilePage from "./pages/ProfilePage";
 import OrdersPage from "./pages/OrdersPage";
 import WalletPage from "./pages/WalletPage";
+import SellerEarningsPage from "./pages/SellerEarningsPage";
 import AuthPage from "./pages/AuthPage";
 import GoogleCallback from "./pages/auth/GoogleCallback";
 import NotificationsPage from "./pages/NotificationsPage";
@@ -77,6 +78,7 @@ const App = () => {
               <Route path="/profile" element={<ProfilePage />} />
               <Route path="/orders" element={<OrdersPage />} />
               <Route path="/wallet" element={<WalletPage />} />
+              <Route path="/earnings" element={<SellerEarningsPage />} />
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
               <Route path="/notifications" element={<NotificationsPage />} />

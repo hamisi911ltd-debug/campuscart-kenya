@@ -1,111 +1,118 @@
-import { useState, useEffect, type FormEvent } from "react";
+import { useState, useEffect, useCallback, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { Banknote, Clock, CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Wallet, Plus, ArrowDownLeft, ArrowUpRight, Loader2, Banknote, Smartphone, X } from "lucide-react";
 
-interface Withdrawal {
+interface Transaction {
   id: string;
+  type: "credit" | "debit";
   amount: number;
-  phone_number: string;
-  status: 'pending' | 'completed' | 'rejected' | 'failed';
-  admin_note?: string;
-  requested_at: string;
-  processed_at?: string;
+  description: string;
+  reference_type?: string;
+  balance_after: number;
+  created_at: string;
 }
 
-const withdrawalStatusConfig = {
-  pending: { icon: Clock, label: 'Pending', color: 'text-yellow-600 bg-yellow-50 dark:bg-yellow-950' },
-  completed: { icon: CheckCircle2, label: 'Completed', color: 'text-green-600 bg-green-50 dark:bg-green-950' },
-  rejected: { icon: XCircle, label: 'Rejected', color: 'text-red-600 bg-red-50 dark:bg-red-950' },
-  failed: { icon: XCircle, label: 'Failed', color: 'text-red-600 bg-red-50 dark:bg-red-950' },
-};
-
-const MIN_WITHDRAWAL = 100;
+const QUICK_AMOUNTS = [100, 200, 500, 1000, 2000];
 
 const WalletPage = () => {
-  const { user } = useShop();
+  const { user, refreshUser } = useShop();
   const navigate = useNavigate();
   const [balance, setBalance] = useState(0);
-  const [totalEarned, setTotalEarned] = useState(0);
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showTopup, setShowTopup] = useState(false);
   const [amount, setAmount] = useState("");
   const [phone, setPhone] = useState(user?.phone || "");
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!user) {
-      navigate('/auth');
+      navigate("/auth");
       return;
     }
-    loadWalletData();
-  }, [user, navigate]);
+    loadWallet();
+  }, [user]);
 
-  const loadWalletData = async () => {
+  const loadWallet = useCallback(async () => {
     if (!user?.id) return;
     setLoading(true);
     try {
-      const [balanceRes, withdrawalsRes] = await Promise.all([
-        fetch(`/api/seller-wallet?user_id=${user.id}`),
-        fetch(`/api/wallet/withdraw?user_id=${user.id}`),
+      const [balRes, txRes] = await Promise.all([
+        fetch(`/api/wallet?user_id=${user.id}`),
+        fetch(`/api/wallet/transactions?user_id=${user.id}`),
       ]);
-
-      if (balanceRes.ok) {
-        const data = await balanceRes.json();
+      if (balRes.ok) {
+        const data = await balRes.json();
         setBalance(data.balance || 0);
-        setTotalEarned(data.totalEarned || 0);
       }
-
-      if (withdrawalsRes.ok) {
-        const data = await withdrawalsRes.json();
-        setWithdrawals(data.withdrawals || []);
+      if (txRes.ok) {
+        const data = await txRes.json();
+        setTransactions(data.transactions || []);
       }
-    } catch (error) {
-      console.error('Error loading wallet data:', error);
-      toast.error('Failed to load wallet data');
+    } catch {
+      toast.error("Failed to load wallet");
     } finally {
       setLoading(false);
     }
-  };
+  }, [user?.id]);
 
-  const handleWithdraw = async (e: FormEvent) => {
+  // Poll a top-up until it completes/fails or times out (~2 min).
+  const pollTopup = useCallback(async (topupId: string) => {
+    for (let i = 0; i < 40; i++) {
+      await new Promise((r) => setTimeout(r, 3000));
+      try {
+        const res = await fetch(`/api/wallet/topup?topup_id=${topupId}`);
+        if (!res.ok) continue;
+        const data = await res.json();
+        if (data.status === "completed") {
+          toast.success(`Top-up successful! KES ${Number(data.amount).toLocaleString()} added.`);
+          await loadWallet();
+          await refreshUser();
+          return;
+        }
+        if (data.status === "failed") {
+          toast.error("Top-up was not completed. No money was deducted.");
+          return;
+        }
+      } catch {
+        // keep polling
+      }
+    }
+    toast("Still waiting for M-Pesa confirmation. Pull to refresh in a moment.");
+    await loadWallet();
+  }, [loadWallet, refreshUser]);
+
+  const handleTopup = async (e: FormEvent) => {
     e.preventDefault();
     if (!user?.id) return;
-
-    const amountNum = Number(amount);
-    if (!amountNum || amountNum < MIN_WITHDRAWAL) {
-      toast.error(`Minimum withdrawal is KES ${MIN_WITHDRAWAL}`);
-      return;
-    }
-    if (amountNum > balance) {
-      toast.error('Amount exceeds your wallet balance');
+    const amt = Number(amount);
+    if (!amt || amt < 10) {
+      toast.error("Minimum top-up is KES 10");
       return;
     }
     if (!phone.trim()) {
-      toast.error('Enter the M-Pesa number to send the money to');
+      toast.error("Enter your M-Pesa number");
       return;
     }
-
     setSubmitting(true);
     try {
-      const response = await fetch('/api/wallet/withdraw', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ user_id: user.id, amount: amountNum, phone_number: phone }),
+      const res = await fetch("/api/wallet/topup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ user_id: user.id, amount: amt, phone }),
       });
-      const data = await response.json();
+      const data = await res.json();
+      if (!res.ok || !data.success) throw new Error(data.error || "Top-up failed");
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Withdrawal request failed');
-      }
-
-      toast.success('Withdrawal request submitted. You will be paid once an admin approves it.');
+      toast.success(data.message || "Check your phone for the M-Pesa prompt.");
+      setShowTopup(false);
       setAmount("");
-      loadWalletData();
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Withdrawal request failed');
+      pollTopup(data.topup_id);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Top-up failed");
     } finally {
       setSubmitting(false);
     }
@@ -114,79 +121,65 @@ const WalletPage = () => {
   if (!user) return null;
 
   return (
-    <PageShell title="Seller Earnings">
+    <PageShell title="My Wallet">
       <div className="max-w-2xl mx-auto space-y-4">
-        <div className="rounded-2xl bg-gradient-to-r from-green-600 to-emerald-600 p-5 text-white shadow-elevated">
-          <div className="flex items-center gap-2 mb-2">
-            <Banknote className="h-5 w-5" />
-            <h3 className="font-bold">Available Balance</h3>
-          </div>
-          <div className="text-3xl font-extrabold">KES {balance.toLocaleString()}</div>
-          <div className="text-xs opacity-90 mt-1">Total earned from sales: KES {totalEarned.toLocaleString()}</div>
-        </div>
-
-        <div className="rounded-2xl bg-card p-5 shadow-card">
-          <h3 className="font-bold text-foreground mb-3">Cash Out to M-Pesa</h3>
-          <form onSubmit={handleWithdraw} className="space-y-3">
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Amount (KES)</label>
-              <input
-                type="number"
-                min={MIN_WITHDRAWAL}
-                max={balance}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder={`Minimum KES ${MIN_WITHDRAWAL}`}
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
+        {/* Balance card */}
+        <div className="relative overflow-hidden rounded-2xl gradient-hero p-6 text-primary-foreground shadow-elevated">
+          <div className="absolute -right-6 -top-6 h-28 w-28 rounded-full bg-accent/20 blur-2xl" />
+          <div className="relative">
+            <div className="flex items-center gap-2 opacity-90">
+              <Wallet className="h-5 w-5" />
+              <span className="text-sm font-semibold">Wallet Balance</span>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">M-Pesa Phone Number</label>
-              <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                placeholder="07XXXXXXXX"
-                className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
+            <div className="mt-2 text-4xl font-extrabold tracking-tight">
+              KES {balance.toLocaleString()}
             </div>
             <button
-              type="submit"
-              disabled={submitting || balance < MIN_WITHDRAWAL}
-              className="w-full rounded-full gradient-accent py-2.5 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              onClick={() => setShowTopup(true)}
+              className="mt-4 inline-flex items-center gap-1.5 rounded-full bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.03] transition"
             >
-              {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              Request Withdrawal
+              <Plus className="h-4 w-4" /> Top Up
             </button>
-            {balance < MIN_WITHDRAWAL && (
-              <p className="text-xs text-center text-muted-foreground">
-                You need at least KES {MIN_WITHDRAWAL} to cash out
-              </p>
-            )}
-          </form>
+          </div>
         </div>
 
+        {/* Info strip */}
+        <div className="flex items-center gap-2 rounded-xl bg-accent/10 px-4 py-3 text-xs text-foreground">
+          <Smartphone className="h-4 w-4 shrink-0 text-accent" />
+          Top up instantly with M-Pesa and pay for orders straight from your balance at checkout.
+        </div>
+
+        {/* Transactions */}
         <div className="rounded-2xl bg-card p-5 shadow-card">
-          <h3 className="font-bold text-foreground mb-3">Withdrawal History</h3>
+          <div className="flex items-center gap-2 mb-3">
+            <Banknote className="h-4 w-4 text-accent" />
+            <h3 className="font-bold text-foreground">Transactions</h3>
+          </div>
           {loading ? (
-            <p className="text-sm text-muted-foreground">Loading...</p>
-          ) : withdrawals.length === 0 ? (
-            <p className="text-sm text-muted-foreground">No withdrawals yet.</p>
+            <div className="flex justify-center py-6"><Loader2 className="h-5 w-5 animate-spin text-muted-foreground" /></div>
+          ) : transactions.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">No transactions yet. Top up to get started.</p>
           ) : (
             <div className="space-y-3">
-              {withdrawals.map((w) => {
-                const config = withdrawalStatusConfig[w.status];
-                const Icon = config.icon;
+              {transactions.map((t) => {
+                const credit = t.type === "credit";
                 return (
-                  <div key={w.id} className="flex items-center justify-between border-b border-border last:border-0 pb-3 last:pb-0">
-                    <div>
-                      <p className="text-sm font-bold text-foreground">KES {w.amount.toLocaleString()}</p>
-                      <p className="text-xs text-muted-foreground">{w.phone_number} · {new Date(w.requested_at).toLocaleDateString()}</p>
-                      {w.admin_note && <p className="text-xs text-muted-foreground mt-0.5">{w.admin_note}</p>}
+                  <div key={t.id} className="flex items-center justify-between gap-3 border-b border-border last:border-0 pb-3 last:pb-0">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full ${credit ? "bg-green-100 text-green-600 dark:bg-green-950" : "bg-red-100 text-red-600 dark:bg-red-950"}`}>
+                        {credit ? <ArrowDownLeft className="h-4 w-4" /> : <ArrowUpRight className="h-4 w-4" />}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-foreground">{t.description}</p>
+                        <p className="text-xs text-muted-foreground">{new Date(t.created_at).toLocaleString()}</p>
+                      </div>
                     </div>
-                    <span className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-semibold ${config.color}`}>
-                      <Icon className="h-3 w-3" /> {config.label}
-                    </span>
+                    <div className="text-right shrink-0">
+                      <p className={`text-sm font-bold ${credit ? "text-green-600" : "text-red-600"}`}>
+                        {credit ? "+" : "−"}KES {Number(t.amount).toLocaleString()}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">Bal: KES {Number(t.balance_after).toLocaleString()}</p>
+                    </div>
                   </div>
                 );
               })}
@@ -194,6 +187,61 @@ const WalletPage = () => {
           )}
         </div>
       </div>
+
+      {/* Top-up sheet */}
+      {showTopup && (
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4" onClick={() => setShowTopup(false)}>
+          <div className="w-full max-w-md rounded-t-2xl sm:rounded-2xl bg-card p-5 shadow-elevated" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-lg font-extrabold">Top Up Wallet</h3>
+              <button onClick={() => setShowTopup(false)} className="rounded-full p-1 hover:bg-muted"><X className="h-5 w-5" /></button>
+            </div>
+            <form onSubmit={handleTopup} className="space-y-4">
+              <div className="flex flex-wrap gap-2">
+                {QUICK_AMOUNTS.map((a) => (
+                  <button
+                    type="button"
+                    key={a}
+                    onClick={() => setAmount(String(a))}
+                    className={`rounded-full border px-4 py-1.5 text-sm font-bold transition ${Number(amount) === a ? "border-accent bg-accent text-accent-foreground" : "border-border bg-background text-foreground hover:border-accent"}`}
+                  >
+                    {a.toLocaleString()}
+                  </button>
+                ))}
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">Amount (KES)</label>
+                <input
+                  type="number"
+                  min={10}
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent/40"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">M-Pesa Number</label>
+                <input
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="07XXXXXXXX"
+                  className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-accent/40"
+                />
+              </div>
+              <button
+                type="submit"
+                disabled={submitting}
+                className="w-full rounded-full gradient-accent py-3 text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Smartphone className="h-4 w-4" />}
+                {submitting ? "Sending M-Pesa prompt..." : "Pay with M-Pesa"}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </PageShell>
   );
 };

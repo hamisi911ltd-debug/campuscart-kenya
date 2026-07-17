@@ -108,7 +108,7 @@ const ProfilePage = () => {
     { i: Heart, t: "Favorites", s: `${favorites.length} saved`, to: "/favorites" },
     { i: Package, t: "My Orders", s: "Track deliveries", to: "/orders" },
     { i: Store, t: "My Listings", s: "Manage what you sell", to: "/my-listings" },
-    { i: Banknote, t: "Seller Earnings", s: "Track sales & cash out to M-Pesa", to: "/wallet" },
+    { i: Banknote, t: "Seller Earnings", s: "Track sales & cash out to M-Pesa", to: "/earnings" },
   ];
 
   // Add Install App option if not installed
@@ -155,7 +155,7 @@ const ProfilePage = () => {
       </div>
 
       {/* Wallet Section - Mobile Priority */}
-      <div className="mt-5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-500 p-5 text-white shadow-elevated">
+      <div className="mt-5 rounded-2xl gradient-hero p-5 text-primary-foreground shadow-elevated">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5" />
@@ -163,31 +163,28 @@ const ProfilePage = () => {
           </div>
           <div className="text-right">
             <div className="text-2xl font-extrabold">
-              KES {((user.walletBalance || 0) / 10).toLocaleString()}
+              KES {(user.walletBalance || 0).toLocaleString()}
             </div>
-            <div className="text-xs opacity-90">
-              {(user.walletBalance || 0).toLocaleString()} points
-            </div>
+            <div className="text-xs opacity-90">Available balance</div>
           </div>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="opacity-90">Conversion Rate:</span>
-          <span className="font-semibold">10 points = KES 1</span>
+        <p className="text-xs opacity-90">
+          Top up with M-Pesa and pay for orders instantly from your balance.
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-2">
+          <Link
+            to="/wallet"
+            className="flex items-center justify-center gap-1.5 py-2.5 bg-accent text-accent-foreground rounded-xl font-bold text-sm shadow-accent hover:scale-[1.02] transition"
+          >
+            <Wallet className="h-4 w-4" /> Top Up
+          </Link>
+          <button
+            onClick={() => setShowLuckyCodeModal(true)}
+            className="flex items-center justify-center gap-1.5 py-2.5 bg-white/15 text-primary-foreground rounded-xl font-bold text-sm hover:bg-white/25 transition"
+          >
+            Redeem Code
+          </button>
         </div>
-        <div className="mt-3 p-3 bg-white/10 rounded-lg">
-          <div className="text-xs opacity-90 mb-1">How to earn points:</div>
-          <div className="text-xs">
-            • Redeem lucky codes from promotions<br/>
-            • Complete purchases and reviews<br/>
-            • Refer friends to Urban Store
-          </div>
-        </div>
-        <button 
-          onClick={() => setShowLuckyCodeModal(true)}
-          className="mt-4 w-full py-2.5 bg-white text-green-600 rounded-xl font-bold text-sm shadow-lg hover:bg-green-50 transition-colors"
-        >
-          Redeem Lucky Code
-        </button>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">

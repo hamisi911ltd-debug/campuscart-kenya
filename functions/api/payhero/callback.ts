@@ -2,6 +2,7 @@
 // Called by PayHero's servers (not the browser) once an STK push resolves.
 import { parseCallbackPayload, type JsonRecord } from "../_lib/payhero";
 import { settleOrderPayment } from "../_lib/settlePayment";
+import { settleWalletTopup } from "../_lib/settleWallet";
 
 interface Env {
   DB: D1Database;
@@ -32,6 +33,14 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
   });
 
   if (!parsed.externalReference) return ack();
+
+  // Customer wallet top-ups use a "WALLET-<topupId>" reference; everything else
+  // is an order id.
+  if (parsed.externalReference.startsWith("WALLET-")) {
+    const topupId = parsed.externalReference.slice("WALLET-".length);
+    await settleWalletTopup(env, topupId, parsed);
+    return ack();
+  }
 
   const order = await env.DB.prepare("SELECT * FROM orders WHERE id = ?").bind(parsed.externalReference).first();
   if (!order) return ack();
