@@ -178,7 +178,7 @@ const SellPage = () => {
   };
 
   return (
-    <PageShell title="Sell on CampusMart">
+    <PageShell title="Sell on Urban Store">
       <form onSubmit={submit} className="grid gap-6 rounded-2xl bg-card p-6 shadow-card md:max-w-2xl">
         
         {/* Photo Upload Section */}

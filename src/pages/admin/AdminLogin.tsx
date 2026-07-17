@@ -149,7 +149,7 @@ const AdminLogin = () => {
             {/* Security Info */}
             <div className="flex items-center justify-center gap-2 pt-6 border-t border-gray-200">
               <Shield className="h-4 w-4 text-gray-500" />
-              <p className="text-xs text-gray-500 font-medium">Secure Admin Portal • CampusMart Kenya</p>
+              <p className="text-xs text-gray-500 font-medium">Secure Admin Portal • Urban Store Kenya</p>
             </div>
           </div>
         </form>
@@ -160,7 +160,7 @@ const AdminLogin = () => {
             onClick={() => navigate("/")}
             className="text-sm text-white/80 hover:text-white transition-colors font-medium"
           >
-            ← Back to CampusMart
+            ← Back to Urban Store
           </button>
         </div>
       </div>

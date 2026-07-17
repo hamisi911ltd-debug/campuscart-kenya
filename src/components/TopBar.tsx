@@ -69,12 +69,12 @@ export const TopBar = () => {
       <SignInModal 
         isOpen={showSignInModal} 
         onClose={() => setShowSignInModal(false)}
-        message="Sign in to access this feature and enjoy all CampusMart benefits."
+        message="Sign in to access this feature and enjoy all Urban Store benefits."
       />
       
       <header className="sticky top-0 z-30 border-b border-border bg-card/95 backdrop-blur-lg">
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3">
-        <Link to="/" aria-label="CampusMart home">
+        <Link to="/" aria-label="Urban Store home">
           <Logo />
         </Link>
         <div className="relative ml-2 hidden md:block">

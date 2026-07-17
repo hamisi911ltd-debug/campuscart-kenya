@@ -297,7 +297,7 @@ export const NotificationPopup = ({ notification, onClose, onMoveToBox }: Notifi
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-1.5">
                 <div className="w-1.5 h-1.5 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">CampusMart</span>
+                <span className="text-xs font-medium text-gray-600 dark:text-gray-300">Urban Store</span>
               </div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
                 Just now

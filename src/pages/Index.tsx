@@ -116,7 +116,7 @@ const Index = () => {
       <SignInModal 
         isOpen={showSignInModal} 
         onClose={() => setShowSignInModal(false)}
-        message="Welcome to CampusMart! Sign in to start shopping and selling."
+        message="Welcome to Urban Store! Sign in to start shopping and selling."
       />
 
       {/* Lucky Code Modal */}
