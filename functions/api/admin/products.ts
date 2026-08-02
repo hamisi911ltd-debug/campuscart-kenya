@@ -1,5 +1,6 @@
 // Cloudflare Pages Function for Admin Products API
 // This handles CRUD operations for products in D1 database
+import { OWNER_ID, ensureOwnerUser } from "../_lib/owner";
 
 interface Env {
   DB: D1Database;
@@ -101,6 +102,85 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
     console.error("Error fetching products:", error);
     return new Response(JSON.stringify({ 
       error: "Failed to fetch products" 
+    }), {
+      status: 500,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+}
+
+export async function onRequestPost(context: { env: Env; request: Request }) {
+  const { env, request } = context;
+
+  const domainCheck = enforceAdminDomain(request);
+  if (domainCheck) return domainCheck;
+
+  if (!isAdmin(request)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" }
+    });
+  }
+
+  try {
+    const data = await request.json() as {
+      title: string;
+      description: string;
+      category: string;
+      price: number;
+      original_price?: number;
+      image_url?: string;
+      images?: string;
+      quantity_available?: number;
+      location?: string;
+      latitude?: number;
+      longitude?: number;
+    };
+
+    if (!data.title || !data.description || !data.category || !data.price) {
+      return new Response(JSON.stringify({
+        error: "Missing required fields",
+        required: ["title", "description", "category", "price"],
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    await ensureOwnerUser(env);
+
+    const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
+    await env.DB.prepare(
+      `INSERT INTO products (id, seller_id, title, description, category, price, original_price, image_url, images, quantity_available, location, latitude, longitude, rating, reviews_count, created_at, updated_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, 0, ?, ?)`
+    ).bind(
+      id,
+      OWNER_ID,
+      data.title,
+      data.description,
+      data.category,
+      data.price,
+      data.original_price || null,
+      data.image_url || null,
+      data.images || null,
+      data.quantity_available || 1,
+      data.location || null,
+      data.latitude || null,
+      data.longitude || null,
+      now,
+      now
+    ).run();
+
+    return new Response(JSON.stringify({ success: true, id }), {
+      status: 201,
+      headers: { "Content-Type": "application/json" }
+    });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    return new Response(JSON.stringify({
+      error: error instanceof Error ? error.message : "Failed to create product"
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" }
@@ -214,33 +294,70 @@ export async function onRequestPut(context: { env: Env; request: Request }) {
 
   try {
     const body = await request.json();
-    const { id, is_available } = body;
+    const { id, is_available, title, description, category, price, original_price, image_url, images, quantity_available, location, latitude, longitude } = body;
 
-    if (!id || typeof is_available !== 'boolean') {
-      return new Response(JSON.stringify({ 
-        error: "Product ID and is_available status are required" 
+    if (!id) {
+      return new Response(JSON.stringify({
+        error: "Product ID is required"
       }), {
         status: 400,
         headers: { "Content-Type": "application/json" }
       });
     }
 
-    // Update product availability
-    await env.DB.prepare(
-      "UPDATE products SET is_available = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
-    ).bind(is_available, id).run();
+    // Availability-only toggle (used by the Approve/Reject buttons)
+    if (typeof is_available === 'boolean' && title === undefined) {
+      await env.DB.prepare(
+        "UPDATE products SET is_available = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?"
+      ).bind(is_available, id).run();
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      message: `Product ${is_available ? 'approved' : 'rejected'} successfully` 
-    }), {
+      return new Response(JSON.stringify({
+        success: true,
+        message: `Product ${is_available ? 'approved' : 'rejected'} successfully`
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    // Full field edit (used by the product edit form)
+    if (!title || !description || !category || !price) {
+      return new Response(JSON.stringify({
+        error: "title, description, category and price are required"
+      }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
+
+    await env.DB.prepare(`
+      UPDATE products SET
+        title = ?, description = ?, category = ?, price = ?, original_price = ?,
+        image_url = ?, images = ?, quantity_available = ?, location = ?,
+        latitude = ?, longitude = ?, updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).bind(
+      title,
+      description,
+      category,
+      price,
+      original_price || null,
+      image_url || null,
+      images || null,
+      quantity_available || 1,
+      location || null,
+      latitude || null,
+      longitude || null,
+      id
+    ).run();
+
+    return new Response(JSON.stringify({ success: true, message: "Product updated successfully" }), {
       headers: { "Content-Type": "application/json" }
     });
 
   } catch (error) {
     console.error("Error updating product:", error);
-    return new Response(JSON.stringify({ 
-      error: "Failed to update product" 
+    return new Response(JSON.stringify({
+      error: "Failed to update product"
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" }

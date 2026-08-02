@@ -93,11 +93,6 @@ const ProductPage = () => {
       `Total: KES ${(p.price * qty).toLocaleString()}\n` +
       `Category: ${p.category}\n` +
       `Location: ${p.campus}\n\n` +
-      `👨‍💼 *Seller/Poster Details:*\n` +
-      `Name: ${p.seller?.name || 'Not available'}\n` +
-      `Email: ${p.seller?.email || 'Not available'}\n` +
-      `Phone: ${p.seller?.phone || 'Not available'}\n` +
-      `Location: ${p.seller?.campus || p.campus}\n\n` +
       `Please confirm this order. Thank you!`;
 
     // Encode message for URL

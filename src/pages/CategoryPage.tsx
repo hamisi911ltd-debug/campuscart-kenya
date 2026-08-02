@@ -40,7 +40,7 @@ const CategoryPage = () => {
         </p>
       ) : items.length === 0 ? (
         <p className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground shadow-card">
-          No listings yet in this category. Be the first to <Link to="/sell" className="font-bold text-accent">post one</Link>.
+          No listings yet in this category. Check back soon!
         </p>
       ) : (
         <div className="grid grid-cols-2 gap-1 md:grid-cols-6 md:gap-2">

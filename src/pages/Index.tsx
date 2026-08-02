@@ -1,5 +1,5 @@
 import { Zap, Truck, Shield, Wallet, Ticket, ChevronRight, ThumbsUp } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
@@ -20,7 +20,6 @@ const VOUCHERS = [
 ];
 
 const Index = () => {
-  const navigate = useNavigate();
   const { user } = useShop();
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [showSignInModal, setShowSignInModal] = useState(false);
@@ -181,20 +180,6 @@ const Index = () => {
             </div>
           </section>
         )}
-
-        {/* Sell CTA */}
-        <div className="mb-4">
-          <div
-            onClick={() => (user ? navigate('/sell') : setShowSignInModal(true))}
-            className="relative flex items-center justify-between gap-3 overflow-hidden rounded-xl gradient-hero p-3 shadow-card cursor-pointer"
-          >
-            <div>
-              <h3 className="text-sm font-extrabold text-primary-foreground">Got something to sell?</h3>
-              <p className="text-xs text-primary-foreground/90">List your item in seconds and reach thousands of shoppers</p>
-            </div>
-            <button className="shrink-0 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground shadow-accent">Post Now</button>
-          </div>
-        </div>
 
         {/* More to love feed */}
         <section className="pb-6">

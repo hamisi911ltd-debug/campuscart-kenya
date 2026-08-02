@@ -1,13 +1,12 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, CheckCircle, XCircle, Eye, Trash2 } from "lucide-react";
+import { Link } from "react-router-dom";
+import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGet, adminPut, adminDelete } from "@/utils/adminApi";
 
 interface Product {
   id: string;
   title: string;
-  seller_name: string;
-  seller_email: string;
   category: string;
   price: number;
   original_price?: number;
@@ -107,9 +106,8 @@ const AdminProducts = () => {
   };
 
   const filteredProducts = products.filter(product => {
-    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         product.seller_name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterStatus === 'all' || 
+    const matchesSearch = product.title.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesFilter = filterStatus === 'all' ||
                          (filterStatus === 'approved' && product.is_available) ||
                          (filterStatus === 'rejected' && !product.is_available);
     return matchesSearch && matchesFilter;
@@ -159,9 +157,18 @@ const AdminProducts = () => {
     <AdminLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 md:mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">Product Management</h1>
-          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Review and moderate product listings</p>
+        <div className="mb-6 md:mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">Product Management</h1>
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Add, edit and manage your store listings</p>
+          </div>
+          <Link
+            to="/admin/products/new"
+            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-primary text-primary-foreground text-xs md:text-sm font-bold hover:bg-primary-glow transition shrink-0"
+          >
+            <Plus className="h-4 w-4" />
+            <span className="hidden sm:inline">Add Product</span>
+          </Link>
         </div>
 
         {/* Filters */}
@@ -227,8 +234,6 @@ const AdminProducts = () => {
                 <div className="flex items-start justify-between mb-2 md:mb-3">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-foreground mb-1 text-sm md:text-base line-clamp-2">{product.title}</h3>
-                    <p className="text-xs md:text-sm text-muted-foreground truncate">by {product.seller_name}</p>
-                    <p className="text-xs text-muted-foreground truncate">{product.seller_email}</p>
                   </div>
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ml-2 ${getStatusColor(product.is_available)}`}>
                     {getStatusText(product.is_available)}
@@ -253,7 +258,14 @@ const AdminProducts = () => {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <button 
+                  <Link
+                    to={`/admin/products/edit/${product.id}`}
+                    className="px-2 md:px-4 py-2 bg-secondary hover:bg-secondary/80 text-foreground rounded-lg md:rounded-xl transition-colors"
+                    title="Edit Product"
+                  >
+                    <Pencil className="h-3 w-3 md:h-4 md:w-4" />
+                  </Link>
+                  <button
                     onClick={() => handleToggleAvailability(product.id, product.is_available)}
                     className={`flex-1 flex items-center justify-center gap-1 md:gap-2 px-2 md:px-4 py-2 rounded-lg md:rounded-xl text-xs md:text-sm transition-colors ${
                       product.is_available 

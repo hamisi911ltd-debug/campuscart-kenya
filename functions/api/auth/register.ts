@@ -80,11 +80,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       `INSERT INTO user_settings (id, user_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
     ).bind(crypto.randomUUID(), id, now, now).run();
 
-    // Create default seller stats
-    await context.env.DB.prepare(
-      `INSERT INTO seller_stats (id, seller_id, created_at, updated_at) VALUES (?, ?, ?, ?)`
-    ).bind(crypto.randomUUID(), id, now, now).run();
-
     return new Response(JSON.stringify({
       success: true,
       user: { id, email: data.email.toLowerCase(), full_name: data.full_name, phone_number: data.phone_number },

@@ -1,4 +1,6 @@
 // Cloudflare Pages Function - Checkout API
+import { OWNER_ID, ensureOwnerUser } from "./_lib/owner";
+
 interface Env {
   DB: D1Database;
 }
@@ -61,38 +63,22 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     const total_amount = subtotal + delivery_fee;
 
-    // Get product details with seller information
+    // Get product details for the order confirmation
     const productDetails = await Promise.all(
       body.items.map(async (item) => {
         const product = await context.env.DB.prepare(`
-          SELECT 
-            p.id, 
-            p.title, 
-            p.category, 
-            p.seller_id, 
-            u.full_name as seller_name, 
-            u.phone_number as seller_phone, 
-            u.email as seller_email,
-            u.location as seller_location
-          FROM products p
-          LEFT JOIN users u ON p.seller_id = u.id
-          WHERE p.id = ?
+          SELECT id, title, category FROM products WHERE id = ?
         `).bind(item.product_id).first();
-        
+
         return {
           ...item,
           title: product?.title || 'Unknown Product',
           category: product?.category || 'N/A',
-          seller_id: product?.seller_id || 'unknown',
-          seller_name: product?.seller_name || 'Unknown Seller',
-          seller_phone: product?.seller_phone || 'Not provided',
-          seller_email: product?.seller_email || 'Not provided',
-          seller_location: product?.seller_location || 'Not provided',
         };
       })
     );
 
-    const seller_id = productDetails[0]?.seller_id || "unknown";
+    await ensureOwnerUser(context.env);
 
     // Create the order
     const orderId = crypto.randomUUID();
@@ -103,7 +89,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     `).bind(
       orderId,
       body.buyer_id || "guest",
-      seller_id,
+      OWNER_ID,
       total_amount,
       delivery_fee,
       body.delivery_address,
@@ -132,14 +118,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       VALUES (?, ?, 'pending_confirmation', 'Order placed, awaiting seller/admin confirmation of stock availability')
     `).bind(crypto.randomUUID(), orderId).run();
 
-    // Build detailed WhatsApp message with buyer and seller info
-    const itemsList = productDetails.map((item, i) => 
+    // Build detailed WhatsApp message with buyer and order info
+    const itemsList = productDetails.map((item, i) =>
       `${i + 1}. ${item.title}\n` +
       `Price: KES ${item.price.toLocaleString()} × ${item.quantity} = KES ${(item.price * item.quantity).toLocaleString()}\n` +
-      `Category: ${item.category}\n` +
-      `Seller: ${item.seller_name}\n` +
-      `Seller Phone: ${item.seller_phone}\n` +
-      `Seller Email: ${item.seller_email}`
+      `Category: ${item.category}`
     ).join("\n\n");
 
     // Google Maps link if location provided
@@ -163,7 +146,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       `${body.notes ? `📝 Notes: ${body.notes}\n\n` : ""}` +
       `Admin Contact: +254108254465\n` +
       `Order Time: ${new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}\n\n` +
-      `⚠️ Please confirm the item(s) are available with the seller, then open Admin → Orders ` +
+      `⚠️ Please confirm the item(s) are in stock, then open Admin → Orders ` +
       `and tap "Confirm & Request Payment" to send the customer their M-Pesa payment prompt.`;
 
     return new Response(JSON.stringify({

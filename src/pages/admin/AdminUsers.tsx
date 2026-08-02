@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Search, Filter, UserCheck, UserX, Mail, Phone, MapPin, Calendar, TrendingUp } from "lucide-react";
+import { Search, Filter, UserCheck, UserX, Mail, Phone, MapPin, Calendar } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGet, adminPut } from "@/utils/adminApi";
 
@@ -9,16 +9,9 @@ interface User {
   full_name: string;
   phone_number?: string;
   location?: string;
-  is_seller: boolean;
-  seller_rating: number;
-  seller_reviews_count: number;
   is_active: boolean;
   created_at: string;
   last_login?: string;
-  total_products?: number;
-  total_sales?: number;
-  total_revenue?: number;
-  average_rating?: number;
 }
 
 const AdminUsers = () => {
@@ -82,9 +75,7 @@ const AdminUsers = () => {
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          user.email.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesFilter = filterType === 'all' || 
-                         (filterType === 'sellers' && user.is_seller) ||
-                         (filterType === 'buyers' && !user.is_seller) ||
+    const matchesFilter = filterType === 'all' ||
                          (filterType === 'active' && user.is_active) ||
                          (filterType === 'inactive' && !user.is_active);
     return matchesSearch && matchesFilter;
@@ -150,15 +141,13 @@ const AdminUsers = () => {
                 className="w-full sm:w-auto pl-9 md:pl-10 pr-8 py-2 md:py-3 text-sm md:text-base rounded-lg md:rounded-xl border border-border bg-background focus:ring-2 focus:ring-accent/40 outline-none appearance-none cursor-pointer"
               >
                 <option value="all">All Users</option>
-                <option value="sellers">Sellers</option>
-                <option value="buyers">Buyers</option>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-border/50">
+          <div className="grid grid-cols-3 gap-3 md:gap-4 mt-4 md:mt-6 pt-4 md:pt-6 border-t border-border/50">
             <div className="text-center sm:text-left">
               <p className="text-xs md:text-sm text-muted-foreground">Total Users</p>
               <p className="text-lg md:text-2xl font-bold text-foreground">{users.length}</p>
@@ -166,10 +155,6 @@ const AdminUsers = () => {
             <div className="text-center sm:text-left">
               <p className="text-xs md:text-sm text-muted-foreground">Active Users</p>
               <p className="text-lg md:text-2xl font-bold text-green-600">{users.filter(u => u.is_active).length}</p>
-            </div>
-            <div className="text-center sm:text-left">
-              <p className="text-xs md:text-sm text-muted-foreground">Sellers</p>
-              <p className="text-lg md:text-2xl font-bold text-blue-600">{users.filter(u => u.is_seller).length}</p>
             </div>
             <div className="text-center sm:text-left">
               <p className="text-xs md:text-sm text-muted-foreground">Inactive</p>
@@ -188,8 +173,6 @@ const AdminUsers = () => {
                   <tr>
                     <th className="text-left p-3 md:p-4 text-sm font-semibold">User</th>
                     <th className="text-left p-3 md:p-4 text-sm font-semibold">Contact</th>
-                    <th className="text-left p-3 md:p-4 text-sm font-semibold">Type</th>
-                    <th className="text-left p-3 md:p-4 text-sm font-semibold">Stats</th>
                     <th className="text-left p-3 md:p-4 text-sm font-semibold">Status</th>
                     <th className="text-left p-3 md:p-4 text-sm font-semibold">Actions</th>
                   </tr>
@@ -228,34 +211,7 @@ const AdminUsers = () => {
                       </td>
                       <td className="p-3 md:p-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          user.is_seller 
-                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200'
-                            : 'bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-200'
-                        }`}>
-                          {user.is_seller ? 'Seller' : 'Buyer'}
-                        </span>
-                      </td>
-                      <td className="p-3 md:p-4">
-                        {user.is_seller && (
-                          <div className="space-y-1">
-                            <div className="text-xs flex items-center gap-1">
-                              <TrendingUp className="h-3 w-3" />
-                              {user.total_products || 0} products
-                            </div>
-                            <div className="text-xs">
-                              KES {(user.total_revenue || 0).toLocaleString()}
-                            </div>
-                            {user.average_rating > 0 && (
-                              <div className="text-xs">
-                                ⭐ {user.average_rating.toFixed(1)}
-                              </div>
-                            )}
-                          </div>
-                        )}
-                      </td>
-                      <td className="p-3 md:p-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                          user.is_active 
+                          user.is_active
                             ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200'
                             : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200'
                         }`}>
@@ -305,14 +261,7 @@ const AdminUsers = () => {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      user.is_seller 
-                        ? 'bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200'
-                        : 'bg-gray-100 text-gray-800 dark:bg-gray-950 dark:text-gray-200'
-                    }`}>
-                      {user.is_seller ? 'Seller' : 'Buyer'}
-                    </span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      user.is_active 
+                      user.is_active
                         ? 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-200'
                         : 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200'
                     }`}>
@@ -340,24 +289,7 @@ const AdminUsers = () => {
                   )}
                 </div>
 
-                {user.is_seller && (
-                  <div className="grid grid-cols-3 gap-2 mb-3 p-2 bg-secondary/20 rounded-lg">
-                    <div className="text-center">
-                      <div className="text-xs font-semibold">{user.total_products || 0}</div>
-                      <div className="text-xs text-muted-foreground">Products</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs font-semibold">KES {((user.total_revenue || 0) / 1000).toFixed(0)}K</div>
-                      <div className="text-xs text-muted-foreground">Revenue</div>
-                    </div>
-                    <div className="text-center">
-                      <div className="text-xs font-semibold">⭐ {user.average_rating?.toFixed(1) || 'N/A'}</div>
-                      <div className="text-xs text-muted-foreground">Rating</div>
-                    </div>
-                  </div>
-                )}
-
-                <button 
+                <button
                   onClick={() => handleToggleUserStatus(user.id, user.is_active)}
                   className={`w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
                     user.is_active 
