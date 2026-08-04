@@ -92,7 +92,7 @@ const ProfilePage = () => {
 
   if (!user) {
     return (
-      <PageShell title="Profile">
+      <PageShell title="Profile" noIndex>
         <div className="rounded-2xl bg-card p-8 text-center shadow-card">
           <p className="text-sm text-muted-foreground">Sign in to view your profile, orders & listings.</p>
           <Link to="/auth" className="mt-4 inline-block rounded-full gradient-accent px-6 py-2.5 text-sm font-bold text-accent-foreground shadow-accent">
@@ -132,7 +132,7 @@ const ProfilePage = () => {
         message={`Great to see you again, ${user?.name?.split(' ')[0] || 'friend'}! 🎉`}
       />
       
-      <PageShell title="Profile">
+      <PageShell title="Profile" noIndex>
       <div className="rounded-2xl gradient-hero p-5 text-primary-foreground shadow-elevated">
         <div className="flex items-center gap-4">
           <div className="flex h-14 w-14 items-center justify-center rounded-full bg-background/20 text-xl font-extrabold overflow-hidden">

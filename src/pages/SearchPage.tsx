@@ -58,7 +58,7 @@ const SearchPage = () => {
   };
 
   return (
-    <PageShell title={getTitle()}>
+    <PageShell title={getTitle()} noIndex>
       <form
         onSubmit={(e) => { e.preventDefault(); setParams(q ? { q } : {}); }}
         className="mb-4 flex gap-2"

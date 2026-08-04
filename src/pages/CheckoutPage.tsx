@@ -84,7 +84,7 @@ const CheckoutPage = () => {
 
   if (cart.length === 0 && !done) {
     return (
-      <PageShell title="Checkout">
+      <PageShell title="Checkout" noIndex>
         <p className="rounded-xl bg-card p-6 text-center text-sm text-muted-foreground shadow-card">Your cart is empty.</p>
       </PageShell>
     );
@@ -92,7 +92,7 @@ const CheckoutPage = () => {
 
   if (done) {
     return (
-      <PageShell title="Order confirmed">
+      <PageShell title="Order confirmed" noIndex>
         <div className="rounded-2xl bg-card p-8 text-center shadow-elevated">
           <CheckCircle2 className="mx-auto h-14 w-14 text-success" />
           <h2 className="mt-3 text-xl font-extrabold">Asante sana!</h2>
@@ -230,7 +230,7 @@ const CheckoutPage = () => {
   };
 
   return (
-    <PageShell title="Checkout">
+    <PageShell title="Checkout" noIndex>
       <div className="min-h-screen pb-4">
         <form onSubmit={submit} className="grid gap-3 lg:gap-6 lg:grid-cols-[1fr_320px] max-w-7xl mx-auto">
           <div className="space-y-3 lg:space-y-4 overflow-hidden">

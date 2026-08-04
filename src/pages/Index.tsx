@@ -10,6 +10,7 @@ import { LuckyCodeModal } from "@/components/LuckyCodeModal";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
+import { useSEO } from "@/hooks/useSEO";
 import { categories, getProducts, getProductsSync, transformDatabaseProduct, type ProductWithCategory } from "@/data/products";
 
 const VOUCHERS = [
@@ -21,6 +22,7 @@ const VOUCHERS = [
 
 const Index = () => {
   const { user } = useShop();
+  useSEO({ title: "", path: "/" });
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);

@@ -16,11 +16,12 @@ const AdminLogin = () => {
   useEffect(() => {
     const hostname = window.location.hostname;
     // Only redirect from main production domain, not from development or mobile environments
-    const isMainProductionDomain = hostname === "campusmart.co.ke" || hostname === "www.campusmart.co.ke";
-    
+    const isMainProductionDomain = hostname === "urbanstore.co.ke" || hostname === "www.urbanstore.co.ke" ||
+      hostname === "campusmart.co.ke" || hostname === "www.campusmart.co.ke"; // legacy domain, remove once migration is complete
+
     if (isMainProductionDomain) {
       setIsRedirecting(true);
-      window.location.href = `https://admin.campusmart.co.ke/admin/login`;
+      window.location.href = `https://admin.urbanstore.co.ke/admin/login`;
     }
   }, []);
 

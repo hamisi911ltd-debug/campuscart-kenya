@@ -7,8 +7,8 @@
     <!-- Cache Control - Reduced cache for faster updates -->
     <meta http-equiv="Cache-Control" content="public, max-age=300, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
-    <meta name="cache-version" content="v3.1-mobile-lucky-codes" />
-    <meta name="build-timestamp" content="2026-05-08-mobile-update" />
+    <meta name="cache-version" content="v3.3-icon-fix" />
+    <meta name="build-timestamp" content="2026-08-04-icon-fix" />
     
     <!-- App Title and Description - Optimized for SEO -->
     <title>Urban Store Kenya - Shop Local. Live Better. | Buy & Sell Online</title>
@@ -28,12 +28,12 @@
     <meta name="revisit-after" content="1 day" />
     
     <!-- Canonical URL -->
-    <link rel="canonical" href="https://campusmart.co.ke" />
+    <link rel="canonical" href="https://urbanstore.co.ke" />
     
     <!-- Alternate URLs for different regions -->
-    <link rel="alternate" hreflang="en-ke" href="https://campusmart.co.ke" />
-    <link rel="alternate" hreflang="sw-ke" href="https://campusmart.co.ke" />
-    <link rel="alternate" hreflang="x-default" href="https://campusmart.co.ke" />
+    <link rel="alternate" hreflang="en-ke" href="https://urbanstore.co.ke" />
+    <link rel="alternate" hreflang="sw-ke" href="https://urbanstore.co.ke" />
+    <link rel="alternate" hreflang="x-default" href="https://urbanstore.co.ke" />
 
     <!-- PWA Manifest -->
     <link rel="manifest" href="/manifest.json" />
@@ -63,20 +63,23 @@
     <!-- iOS Splash Screens -->
     <link rel="apple-touch-startup-image" href="/icon-512x512.png" />
     
-    <!-- Standard Favicon -->
+    <!-- Standard Favicon: SVG first (scales crisply at any size in tabs/
+         bookmarks on browsers that support it), then PNG/ICO fallbacks -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <link rel="icon" type="image/png" sizes="32x32" href="/logo.png" />
     <link rel="icon" type="image/png" sizes="16x16" href="/logo.png" />
+    <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="shortcut icon" href="/logo.png" />
     
     <!-- Enhanced Open Graph / Social Media -->
     <meta property="og:title" content="Urban Store Kenya - Shop Local. Live Better. | Buy & Sell Online" />
     <meta property="og:description" content="Urban Store Kenya - Shop Local. Live Better. Buy and sell electronics, textbooks, fashion, food & rooms. Trusted by 50,000+ shoppers. Free delivery & secure payments." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://campusmart.co.ke/logo.png" />
+    <meta property="og:image" content="https://urbanstore.co.ke/logo.png" />
     <meta property="og:image:width" content="512" />
     <meta property="og:image:height" content="512" />
     <meta property="og:image:alt" content="Urban Store Kenya - Shop Local. Live Better." />
-    <meta property="og:url" content="https://campusmart.co.ke" />
+    <meta property="og:url" content="https://urbanstore.co.ke" />
     <meta property="og:site_name" content="Urban Store Kenya" />
     <meta property="og:locale" content="en_KE" />
     <meta property="og:locale:alternate" content="sw_KE" />
@@ -87,7 +90,7 @@
     <meta name="twitter:creator" content="@UrbanStoreKE" />
     <meta name="twitter:title" content="Urban Store Kenya - Shop Local. Live Better." />
     <meta name="twitter:description" content="Urban Store Kenya - Shop Local. Live Better. Buy & sell electronics, textbooks, fashion, food & rooms. Trusted by 50,000+ shoppers." />
-    <meta name="twitter:image" content="https://campusmart.co.ke/logo.png" />
+    <meta name="twitter:image" content="https://urbanstore.co.ke/logo.png" />
     <meta name="twitter:image:alt" content="Urban Store Kenya - Shop Local. Live Better." />
 
     <!-- Business/Organization Schema -->
@@ -97,8 +100,8 @@
       "@type": "Organization",
       "name": "Urban Store Kenya",
       "alternateName": "Urban Store",
-      "url": "https://campusmart.co.ke",
-      "logo": "https://campusmart.co.ke/logo.png",
+      "url": "https://urbanstore.co.ke",
+      "logo": "https://urbanstore.co.ke/logo.png",
       "description": "Urban Store Kenya - Shop Local. Live Better. Buy and sell online across Kenya",
       "address": {
         "@type": "PostalAddress",
@@ -124,11 +127,11 @@
       "@context": "https://schema.org",
       "@type": "WebSite",
       "name": "Urban Store Kenya",
-      "url": "https://campusmart.co.ke",
+      "url": "https://urbanstore.co.ke",
       "description": "Urban Store Kenya - Shop Local. Live Better. Buy and sell online across Kenya",
       "potentialAction": {
         "@type": "SearchAction",
-        "target": "https://campusmart.co.ke/search?q={search_term_string}",
+        "target": "https://urbanstore.co.ke/search?q={search_term_string}",
         "query-input": "required name=search_term_string"
       }
     }
@@ -140,7 +143,7 @@
       "@context": "https://schema.org",
       "@type": "OnlineStore",
       "name": "Urban Store Kenya",
-      "url": "https://campusmart.co.ke",
+      "url": "https://urbanstore.co.ke",
       "description": "Online store for electronics, textbooks, fashion, food, furniture and rooms across Kenya",
       "currenciesAccepted": "KES",
       "paymentAccepted": "M-Pesa, Cash, Bank Transfer",
@@ -149,6 +152,32 @@
         "@type": "Country",
         "name": "Kenya"
       }
+    }
+    </script>
+
+    <!-- Site navigation hint for Google Sitelinks. This is a hint, not a
+         guarantee — Google decides on its own whether/when to surface
+         sitelinks under the main search result, based on site structure and
+         search demand for the brand. Deliberately lists only indexable,
+         content-rich pages (home, categories) rather than sign-in-gated
+         pages like Cart/Orders, which are noindexed and would never
+         actually qualify as sitelinks anyway. -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "SiteNavigationElement",
+      "name": ["Home", "All Categories", "Electronics", "Fashion", "Home & Furniture", "Food", "Property", "Books", "Stationery"],
+      "url": [
+        "https://urbanstore.co.ke/",
+        "https://urbanstore.co.ke/categories",
+        "https://urbanstore.co.ke/category/electronics",
+        "https://urbanstore.co.ke/category/fashion",
+        "https://urbanstore.co.ke/category/furniture",
+        "https://urbanstore.co.ke/category/food",
+        "https://urbanstore.co.ke/category/hostels",
+        "https://urbanstore.co.ke/category/books",
+        "https://urbanstore.co.ke/category/stationery"
+      ]
     }
     </script>
   </head>

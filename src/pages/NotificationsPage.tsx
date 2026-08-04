@@ -12,7 +12,7 @@ const NotificationsPage = () => {
   }, [markNotificationsAsRead]);
 
   return (
-    <PageShell title="Notifications">
+    <PageShell title="Notifications" noIndex>
       {notifications.length === 0 ? (
         <div className="rounded-xl bg-card p-8 text-center shadow-card">
           <Bell className="mx-auto h-12 w-12 text-muted-foreground mb-3" />

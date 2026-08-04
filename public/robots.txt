@@ -1,18 +1,25 @@
 User-agent: *
 Allow: /
 
-# Disallow admin areas
+# Admin panel and admin API
 Disallow: /admin/
 Disallow: /api/admin/
 
-# Allow important pages
-Allow: /category/
-Allow: /search
-Allow: /sell
-Allow: /auth
+# Sign-in-gated, transactional or thin/duplicate pages with no public
+# content for a crawler to index
+Disallow: /cart
+Disallow: /checkout
+Disallow: /favorites
+Disallow: /wallet
+Disallow: /notifications
+Disallow: /settings
+Disallow: /orders
+Disallow: /auth
+Disallow: /search
 
-# Sitemap location
-Sitemap: https://campusmart.co.ke/sitemap.xml
+# Sitemaps
+Sitemap: https://urbanstore.co.ke/sitemap.xml
+Sitemap: https://urbanstore.co.ke/api/sitemap-products.xml
 
 # Crawl delay (be nice to servers)
 Crawl-delay: 1

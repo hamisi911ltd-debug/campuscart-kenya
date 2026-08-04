@@ -2,9 +2,9 @@
   "name": "Urban Store Kenya",
   "short_name": "Urban Store",
   "description": "Urban Store Kenya - Shop Local. Live Better. Buy and sell online across Kenya",
-  "version": "3.1.0",
-  "version_name": "Mobile Lucky Codes Update",
-  "start_url": "/?v=3.1-mobile-lucky-codes",
+  "version": "3.3.0",
+  "version_name": "Icon Cache Fix",
+  "start_url": "/?v=3.3-icon-fix",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
   "background_color": "#ffffff",
@@ -16,6 +16,12 @@
     "preferred_width": 400
   },
   "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
     {
       "src": "/icon-72x72.png",
       "sizes": "72x72",

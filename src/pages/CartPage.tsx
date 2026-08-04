@@ -20,7 +20,7 @@ const CartPage = () => {
 
   if (cart.length === 0) {
     return (
-      <PageShell title="Your Cart">
+      <PageShell title="Your Cart" noIndex>
         <div className="rounded-2xl bg-card p-10 text-center shadow-card">
           <ShoppingBag className="mx-auto h-12 w-12 text-muted-foreground" />
           <p className="mt-3 text-sm text-muted-foreground">Your cart is empty.</p>
@@ -33,7 +33,7 @@ const CartPage = () => {
   }
 
   return (
-    <PageShell title="Your Cart">
+    <PageShell title="Your Cart" noIndex>
       {/* Sign In Modal */}
       <SignInModal 
         isOpen={showSignInModal} 

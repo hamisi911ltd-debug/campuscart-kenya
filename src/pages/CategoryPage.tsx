@@ -2,6 +2,7 @@ import { useParams, Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
+import { useSEO } from "@/hooks/useSEO";
 import { categories, productsByCategory } from "@/data/products";
 import type { ProductWithCategory } from "@/data/products";
 
@@ -20,6 +21,23 @@ const CategoryPage = () => {
     };
     loadProducts();
   }, [slug]);
+
+  useSEO({
+    title: cat?.name ?? "Category",
+    description: cat
+      ? `Shop ${cat.name} on Urban Store Kenya — quality products, fast delivery and secure M-Pesa payments across Kenya.`
+      : undefined,
+    path: `/category/${slug}`,
+    structuredData: cat ? [{
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://urbanstore.co.ke/" },
+        { "@type": "ListItem", position: 2, name: "All Categories", item: "https://urbanstore.co.ke/categories" },
+        { "@type": "ListItem", position: 3, name: cat.name, item: `https://urbanstore.co.ke/category/${slug}` },
+      ],
+    }] : undefined,
+  });
 
   return (
     <PageShell title={cat?.name ?? "Category"}>

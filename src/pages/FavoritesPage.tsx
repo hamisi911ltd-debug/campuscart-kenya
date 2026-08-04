@@ -25,7 +25,7 @@ const FavoritesPage = () => {
   }, [favorites]);
 
   return (
-    <PageShell title="Favorites">
+    <PageShell title="Favorites" noIndex>
       {loading ? (
         <div className="rounded-2xl bg-card p-10 text-center shadow-card">
           <p className="text-sm text-muted-foreground">Loading favorites...</p>

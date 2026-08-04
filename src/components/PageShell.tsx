@@ -3,9 +3,21 @@ import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useSEO } from "@/hooks/useSEO";
 
-export const PageShell = ({ title, children, back = true }: { title: string; children: ReactNode; back?: boolean }) => {
+interface PageShellProps {
+  title: string;
+  children: ReactNode;
+  back?: boolean;
+  /** Overrides `title` for the document <title>/meta tags when the visible H1 differs (or is blank). */
+  seoTitle?: string;
+  /** Set to skip indexing (e.g. sign-in-gated pages with no public content). */
+  noIndex?: boolean;
+}
+
+export const PageShell = ({ title, children, back = true, seoTitle, noIndex = false }: PageShellProps) => {
   const navigate = useNavigate();
+  useSEO({ title: seoTitle ?? title, noindex: noIndex });
   return (
     <div className="min-h-screen bg-background pb-24">
       <TopBar />

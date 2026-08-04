@@ -102,7 +102,7 @@ const AuthPage = () => {
   };
 
   return (
-    <PageShell title="">
+    <PageShell title="" seoTitle="Sign In" noIndex>
       <div className="bg-gradient-to-br from-background via-background to-accent/5">
         <div className="max-w-md mx-auto px-4 pb-6">
           {/* Header */}

@@ -72,7 +72,7 @@ const SettingsPage = () => {
 
   if (!user) {
     return (
-      <PageShell title="Settings">
+      <PageShell title="Settings" noIndex>
         <div className="rounded-2xl bg-card p-8 text-center shadow-card">
           <p className="text-sm text-muted-foreground">Sign in to access settings.</p>
           <button
@@ -141,7 +141,7 @@ const SettingsPage = () => {
   };
 
   return (
-    <PageShell title="Settings">
+    <PageShell title="Settings" noIndex>
       <div className="space-y-4">
         {/* Account Settings */}
         <div className="rounded-2xl bg-card p-5 shadow-card">

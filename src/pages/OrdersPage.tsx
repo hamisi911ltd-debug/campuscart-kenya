@@ -153,7 +153,7 @@ const OrdersPage = () => {
     const StatusIcon = config.icon;
 
     return (
-      <PageShell title="Order Details">
+      <PageShell title="Order Details" noIndex>
         <div className="max-w-4xl mx-auto">
           <button
             onClick={() => setSelectedOrder(null)}
@@ -314,7 +314,7 @@ const OrdersPage = () => {
   }
 
   return (
-    <PageShell title="My Orders">
+    <PageShell title="My Orders" noIndex>
       {orders.length === 0 ? (
         <div className="rounded-2xl bg-card p-10 text-center shadow-card">
           <Package className="mx-auto h-12 w-12 text-muted-foreground" />

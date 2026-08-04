@@ -121,7 +121,7 @@ const WalletPage = () => {
   if (!user) return null;
 
   return (
-    <PageShell title="My Wallet">
+    <PageShell title="My Wallet" noIndex>
       <div className="max-w-2xl mx-auto space-y-4">
         {/* Balance card */}
         <div className="relative overflow-hidden rounded-2xl gradient-hero p-6 text-primary-foreground shadow-elevated">

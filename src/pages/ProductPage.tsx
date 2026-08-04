@@ -1,9 +1,10 @@
 import { useNavigate, useParams, Link } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
-import { findProduct, products } from "@/data/products";
+import { findProduct, products, categories } from "@/data/products";
 import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
+import { useSEO, SITE_URL } from "@/hooks/useSEO";
 import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
@@ -73,6 +74,43 @@ const ProductPage = () => {
     setPriceCardClicked(true);
   }, [id]);
 
+  const categoryName = p ? categories.find((c) => c.slug === p.category)?.name : undefined;
+  const absoluteImage = p?.image ? (p.image.startsWith("http") ? p.image : `${SITE_URL}${p.image}`) : undefined;
+
+  useSEO({
+    title: p ? p.title : "",
+    description: p
+      ? (p.description ? p.description.slice(0, 155) : `Buy ${p.title} on Urban Store Kenya for KES ${p.price?.toLocaleString()}. Fast delivery and secure M-Pesa payments.`)
+      : undefined,
+    path: `/product/${id}`,
+    image: absoluteImage,
+    structuredData: p ? [
+      {
+        "@context": "https://schema.org",
+        "@type": "Product",
+        name: p.title,
+        image: absoluteImage ? [absoluteImage] : undefined,
+        description: p.description || undefined,
+        offers: {
+          "@type": "Offer",
+          priceCurrency: "KES",
+          price: p.price,
+          availability: "https://schema.org/InStock",
+          url: `${SITE_URL}/product/${id}`,
+        },
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: `${SITE_URL}/` },
+          ...(categoryName ? [{ "@type": "ListItem", position: 2, name: categoryName, item: `${SITE_URL}/category/${p.category}` }] : []),
+          { "@type": "ListItem", position: categoryName ? 3 : 2, name: p.title, item: `${SITE_URL}/product/${id}` },
+        ],
+      },
+    ] : undefined,
+  });
+
   const handleBuyNow = () => {
     if (!user) {
       toast.error('Please sign in to continue');
@@ -132,7 +170,7 @@ const ProductPage = () => {
 
   if (!p) {
     return (
-      <PageShell title="Product not found">
+      <PageShell title="Product not found" noIndex>
         <Link to="/" className="text-accent font-bold">Go home</Link>
       </PageShell>
     );

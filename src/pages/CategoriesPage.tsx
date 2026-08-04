@@ -2,9 +2,37 @@ import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
+import { useSEO } from "@/hooks/useSEO";
 import { categories } from "@/data/products";
 
-const CategoriesPage = () => (
+const CategoriesPage = () => {
+  useSEO({
+    title: "All Categories",
+    description: "Browse every category on Urban Store Kenya: Electronics, Fashion, Books, Food, Furniture, Stationery and Property. Shop local with fast delivery and secure M-Pesa payments.",
+    path: "/categories",
+    structuredData: [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://urbanstore.co.ke/" },
+          { "@type": "ListItem", position: 2, name: "All Categories", item: "https://urbanstore.co.ke/categories" },
+        ],
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        itemListElement: categories.map((c, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          name: c.name,
+          url: `https://urbanstore.co.ke/category/${c.slug}`,
+        })),
+      },
+    ],
+  });
+
+  return (
   <div className="min-h-screen bg-background pb-24">
     <div className="sticky top-0 z-30">
       <TopBar />
@@ -39,6 +67,7 @@ const CategoriesPage = () => (
 
     <BottomNav />
   </div>
-);
+  );
+};
 
 export default CategoriesPage;

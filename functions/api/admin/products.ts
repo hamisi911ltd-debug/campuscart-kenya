@@ -1,6 +1,7 @@
 // Cloudflare Pages Function for Admin Products API
 // This handles CRUD operations for products in D1 database
 import { OWNER_ID, ensureOwnerUser } from "../_lib/owner";
+import { enforceAdminDomain } from "../_lib/adminDomain";
 
 interface Env {
   DB: D1Database;
@@ -26,20 +27,6 @@ interface Product {
   is_available: boolean;
   created_at: string;
   updated_at: string;
-}
-
-// Enforce admin subdomain access only
-function enforceAdminDomain(request: Request): Response | null {
-  const url = new URL(request.url);
-  if (url.hostname !== "admin.campusmart.co.ke" && url.hostname !== "localhost") {
-    return new Response(JSON.stringify({ 
-      error: "Admin access is only available at admin.campusmart.co.ke" 
-    }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-  return null;
 }
 
 // Simple admin authentication check - check both cookie and Authorization header

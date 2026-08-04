@@ -1,22 +1,9 @@
 // Cloudflare Pages Function for Admin Login
+import { enforceAdminDomain } from "../_lib/adminDomain";
 
 interface Env {
   ADMIN_EMAIL?: string;
   ADMIN_PASSWORD?: string;
-}
-
-// Enforce admin subdomain access only
-function enforceAdminDomain(request: Request): Response | null {
-  const url = new URL(request.url);
-  if (url.hostname !== "admin.campusmart.co.ke" && url.hostname !== "localhost") {
-    return new Response(JSON.stringify({ 
-      error: "Admin access is only available at admin.campusmart.co.ke" 
-    }), {
-      status: 403,
-      headers: { "Content-Type": "application/json" }
-    });
-  }
-  return null;
 }
 
 export async function onRequestPost(context: { env: Env; request: Request }) {
