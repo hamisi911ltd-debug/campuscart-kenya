@@ -201,6 +201,29 @@ const Index = () => {
             </div>
           )}
         </section>
+        {/* SEO footer: real, crawlable text and internal links (not just
+            structured-data hints) confirming the CampusMart -> Urban Store
+            rebrand and linking every category, so both search engines and
+            anyone who followed an old CampusMart link land in the right
+            place. */}
+        <footer className="mt-2 border-t border-border pt-4 pb-6 text-xs text-muted-foreground">
+          <p className="mb-3">
+            <strong className="text-foreground">Urban Store Kenya</strong> (formerly <strong className="text-foreground">CampusMart</strong>) is
+            Kenya's online marketplace to shop local and live better — buy and sell electronics, fashion, books, food,
+            home &amp; furniture, stationery and property listings, with fast delivery and secure M-Pesa payments across
+            Nairobi, Mombasa, Kisumu and beyond.
+          </p>
+          <nav aria-label="Categories" className="flex flex-wrap gap-x-3 gap-y-1">
+            {categories.map((c, i) => (
+              <span key={c.slug} className="flex items-center gap-3">
+                <Link to={`/category/${c.slug}`} className="hover:text-foreground hover:underline">
+                  {c.name}
+                </Link>
+                {i < categories.length - 1 && <span aria-hidden="true">·</span>}
+              </span>
+            ))}
+          </nav>
+        </footer>
       </main>
 
       <BottomNav />

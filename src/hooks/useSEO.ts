@@ -3,7 +3,7 @@ import { useEffect } from "react";
 const SITE_URL = "https://urbanstore.co.ke";
 const SITE_NAME = "Urban Store Kenya";
 const DEFAULT_DESCRIPTION =
-  "Urban Store Kenya - Shop Local. Live Better. Buy electronics, fashion, food, furniture, books & more with fast delivery and secure M-Pesa payments across Kenya.";
+  "Urban Store Kenya (formerly CampusMart) - Shop Local. Live Better. Buy electronics, fashion, food, furniture, books & more with fast delivery and secure M-Pesa payments across Kenya.";
 const DEFAULT_IMAGE = `${SITE_URL}/logo.png`;
 
 interface SEOOptions {
