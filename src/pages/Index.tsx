@@ -126,16 +126,35 @@ const Index = () => {
 
         {/* Category tiles */}
         <section className="py-3">
+          <div className="mb-2.5 flex items-center justify-between">
+            <h2 className="text-sm font-extrabold text-foreground">Shop by Category</h2>
+            <Link to="/categories" className="flex items-center text-xs font-bold text-accent">
+              See all <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
           <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
             <div className="flex gap-4">
               {categories.map((c) => (
-                <Link key={c.slug} to={`/category/${c.slug}`} className="flex w-16 shrink-0 flex-col items-center gap-1.5">
-                  <div className="h-14 w-14 overflow-hidden rounded-full border border-border bg-muted shadow-sm">
-                    <img src={c.img} alt={c.name} className="h-full w-full object-cover" />
+                <Link key={c.slug} to={`/category/${c.slug}`} className="group flex w-16 shrink-0 flex-col items-center gap-1.5">
+                  <div className="rounded-full bg-gradient-to-br from-accent/60 to-primary/40 p-[2px] shadow-sm transition-transform group-active:scale-95">
+                    <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-background bg-muted">
+                      <img
+                        src={c.img}
+                        alt={c.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                      />
+                    </div>
                   </div>
                   <span className="text-center text-[11px] font-medium text-foreground leading-tight">{c.name}</span>
                 </Link>
               ))}
+              <Link to="/categories" className="flex w-16 shrink-0 flex-col items-center gap-1.5">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-border bg-muted text-muted-foreground transition group-hover:border-accent">
+                  <ChevronRight className="h-5 w-5" />
+                </div>
+                <span className="text-center text-[11px] font-medium text-foreground leading-tight">See all</span>
+              </Link>
             </div>
           </div>
         </section>

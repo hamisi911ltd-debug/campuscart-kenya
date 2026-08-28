@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, LayoutGrid } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
@@ -55,32 +55,49 @@ const CategoriesPage = () => {
       <TopBar />
     </div>
 
-    <main className="mx-auto max-w-7xl px-4 py-4">
-      <h1 className="mb-3 text-lg font-extrabold text-foreground">All Categories</h1>
+    <main className="mx-auto max-w-7xl px-4 py-5">
+      {/* Header */}
+      <div className="mb-5 flex items-center gap-2.5">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl gradient-accent shadow-accent">
+          <LayoutGrid className="h-5 w-5 text-accent-foreground" />
+        </div>
+        <div>
+          <h1 className="text-xl font-extrabold leading-tight text-foreground">Explore Categories</h1>
+          <p className="text-xs text-muted-foreground">Everything CampusMart sells, in one place</p>
+        </div>
+      </div>
 
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
         {categories.map((c) => (
           <Link
             key={c.slug}
             to={`/category/${c.slug}`}
-            className="group flex items-center gap-3 rounded-xl bg-card p-3 shadow-card transition hover:shadow-elevated"
+            className="group relative isolate aspect-[4/5] overflow-hidden rounded-2xl shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated"
           >
-            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-lg bg-muted">
-              <img
-                src={c.img}
-                alt={c.name}
-                className="h-full w-full object-cover transition-transform group-hover:scale-105"
-              />
-            </div>
-            <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-bold text-foreground">{c.name}</div>
-              <div className="text-xs text-muted-foreground">
-                {countsLoaded
-                  ? `${counts[c.slug] || 0} item${counts[c.slug] === 1 ? "" : "s"}`
-                  : "Shop now"}
+            <img
+              src={c.img}
+              alt={c.name}
+              loading="lazy"
+              className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"
+            />
+            {/* Legibility gradient so white text always reads over any photo */}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/10 to-transparent" />
+            {/* Hairline border for definition on light backgrounds */}
+            <div className="absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/15" />
+
+            <div className="absolute inset-x-0 bottom-0 p-3">
+              <div className="text-sm font-extrabold leading-tight text-white drop-shadow-sm sm:text-base">
+                {c.name}
+              </div>
+              <div className="mt-1 flex items-center gap-1 text-[11px] font-semibold text-white/85">
+                <span>
+                  {countsLoaded
+                    ? `${counts[c.slug] || 0} item${counts[c.slug] === 1 ? "" : "s"}`
+                    : "Shop now"}
+                </span>
+                <ChevronRight className="h-3 w-3 transition-transform group-hover:translate-x-0.5" />
               </div>
             </div>
-            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </Link>
         ))}
       </div>
