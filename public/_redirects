@@ -1,17 +1,18 @@
-# Domain migration: campusmart.co.ke -> urbanstore.co.ke
-# 301 (permanent) preserves search ranking/link equity earned by the old
-# domain instead of losing it to duplicate-content/404s. Keep these rules
-# (and keep campusmart.co.ke attached as a custom domain on this Cloudflare
-# Pages project) until Google Search Console's Change of Address has fully
-# propagated — don't remove this block early.
-https://campusmart.co.ke/* https://urbanstore.co.ke/:splat 301!
-https://www.campusmart.co.ke/* https://urbanstore.co.ke/:splat 301!
-https://www.urbanstore.co.ke/* https://urbanstore.co.ke/:splat 301!
+# Domain reverted: urbanstore.co.ke -> campusmart.co.ke (back to the
+# original domain). 301 (permanent) preserves whatever search ranking/link
+# equity was earned during the brief Urban Store period instead of losing
+# it to duplicate-content/404s. Keep these rules (and keep urbanstore.co.ke
+# attached as a custom domain on this Cloudflare Pages project) until
+# Google Search Console's Change of Address has fully propagated back —
+# don't remove this block early.
+https://urbanstore.co.ke/* https://campusmart.co.ke/:splat 301!
+https://www.urbanstore.co.ke/* https://campusmart.co.ke/:splat 301!
+https://www.campusmart.co.ke/* https://campusmart.co.ke/:splat 301!
 
 # Redirect admin routes from main domain to admin subdomain
-https://urbanstore.co.ke/admin/* https://admin.urbanstore.co.ke/admin/:splat 301!
-https://admin.campusmart.co.ke/admin/* https://admin.urbanstore.co.ke/admin/:splat 301!
-https://*.pages.dev/admin/* https://admin.urbanstore.co.ke/admin/:splat 301!
+https://campusmart.co.ke/admin/* https://admin.campusmart.co.ke/admin/:splat 301!
+https://admin.urbanstore.co.ke/admin/* https://admin.campusmart.co.ke/admin/:splat 301!
+https://*.pages.dev/admin/* https://admin.campusmart.co.ke/admin/:splat 301!
 
 # Allow admin routes only on admin subdomain
 /admin/* /admin/:splat 200

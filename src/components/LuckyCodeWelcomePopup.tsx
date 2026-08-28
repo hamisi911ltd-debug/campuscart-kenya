@@ -51,7 +51,7 @@ export const LuckyCodeWelcomePopup = () => {
             <div className="flex items-center justify-center w-16 h-16 bg-white/20 rounded-full mx-auto mb-3">
               <Star className="h-8 w-8 fill-current animate-pulse" />
             </div>
-            <h2 className="text-xl font-bold mb-1">Welcome to Urban Store!</h2>
+            <h2 className="text-xl font-bold mb-1">Welcome to CampusMart!</h2>
             <p className="text-white/90 text-sm">{user ? "You've got lucky codes waiting!" : "Sign up and get lucky codes!"}</p>
           </div>
           

@@ -1,6 +1,6 @@
 // Service Worker for CampusMart - Mobile Lucky Codes Update
-const CACHE_NAME = 'campusmart-v3.3-icon-fix';
-const CACHE_VERSION = '2026-08-04-icon-fix';
+const CACHE_NAME = 'campusmart-v3.4-rebrand-revert';
+const CACHE_VERSION = '2026-08-05-rebrand-revert';
 
 // Force update on version change
 self.addEventListener('install', (event) => {

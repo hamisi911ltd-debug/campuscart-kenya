@@ -77,7 +77,7 @@ const ProfilePage = () => {
 
   const handleContactSupport = () => {
     const adminPhone = "254108254465";
-    const message = `Hello Urban Store Support,\n\nI need help with:\n\n[Please describe your issue or feedback here]\n\n---\nUser: ${user?.name || 'Guest'}\nEmail: ${user?.email || 'N/A'}`;
+    const message = `Hello CampusMart Support,\n\nI need help with:\n\n[Please describe your issue or feedback here]\n\n---\nUser: ${user?.name || 'Guest'}\nEmail: ${user?.email || 'N/A'}`;
     
     // Detect if mobile device
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);

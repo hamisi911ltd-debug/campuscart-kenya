@@ -94,7 +94,7 @@ const Index = () => {
       <SignInModal
         isOpen={showSignInModal}
         onClose={() => setShowSignInModal(false)}
-        message="Welcome to Urban Store! Sign in to start shopping and selling."
+        message="Welcome to CampusMart! Sign in to start shopping and selling."
       />
       <LuckyCodeModal isOpen={showLuckyCodeModal} onClose={() => setShowLuckyCodeModal(false)} />
       <CelebrationModal
@@ -122,7 +122,7 @@ const Index = () => {
         {/* Real <h1> for the homepage — visually hidden (the header logo/tagline
             already carries this visually) but every page should have exactly
             one, and the homepage previously had none at all. */}
-        <h1 className="sr-only">Urban Store Kenya (formerly CampusMart) — Shop Local, Live Better, Buy &amp; Sell Online</h1>
+        <h1 className="sr-only">CampusMart Kenya — Shop Local, Live Better, Buy &amp; Sell Online</h1>
 
         {/* Category tiles */}
         <section className="py-3">
@@ -207,13 +207,12 @@ const Index = () => {
           )}
         </section>
         {/* SEO footer: real, crawlable text and internal links (not just
-            structured-data hints) confirming the CampusMart -> Urban Store
-            rebrand and linking every category, so both search engines and
-            anyone who followed an old CampusMart link land in the right
-            place. */}
+            structured-data hints) linking every category, so both search
+            engines and shoppers can find the whole catalog from the
+            homepage. */}
         <footer className="mt-2 border-t border-border pt-4 pb-6 text-xs text-muted-foreground">
           <p className="mb-3">
-            <strong className="text-foreground">Urban Store Kenya</strong> (formerly <strong className="text-foreground">CampusMart</strong>) is
+            <strong className="text-foreground">CampusMart Kenya</strong> is
             Kenya's online marketplace to shop local and live better — buy and sell electronics, fashion, books, food,
             home &amp; furniture, stationery and property listings, with fast delivery and secure M-Pesa payments across
             Nairobi, Mombasa, Kisumu and beyond.

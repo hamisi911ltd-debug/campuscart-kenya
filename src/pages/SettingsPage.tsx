@@ -458,7 +458,7 @@ const SettingsPage = () => {
                 <Download className="h-5 w-5" />
               </div>
               <div>
-                <h2 className="text-lg font-extrabold">Install Urban Store App</h2>
+                <h2 className="text-lg font-extrabold">Install CampusMart App</h2>
                 <p className="text-xs opacity-90">Get quick access from your home screen</p>
               </div>
             </div>

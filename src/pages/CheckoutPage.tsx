@@ -283,7 +283,7 @@ const CheckoutPage = () => {
                     <Wallet className="h-4 w-4" />
                   </div>
                   <div className="flex-1">
-                    <div className="text-sm font-bold">Urban Store Wallet</div>
+                    <div className="text-sm font-bold">CampusMart Wallet</div>
                     <div className="text-xs text-muted-foreground">
                       Balance: KES {walletBalance.toLocaleString()}
                       {!walletCovers && <span className="text-destructive"> · Too low for this order</span>}

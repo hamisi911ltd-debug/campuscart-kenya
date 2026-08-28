@@ -10,8 +10,8 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
   
   // More flexible domain checking - allow admin access on mobile and development
   const hostname = window.location.hostname;
-  const isAdminDomain = hostname === "admin.urbanstore.co.ke" ||
-                        hostname === "admin.campusmart.co.ke" || // legacy domain, remove once migration is complete
+  const isAdminDomain = hostname === "admin.campusmart.co.ke" ||
+                        hostname === "admin.urbanstore.co.ke" || // legacy domain from the brief Urban Store rebrand, remove once fully reverted
                         hostname === "localhost" ||
                         hostname === "127.0.0.1" ||
                         hostname.includes("campusmart-kenya.pages.dev") ||
@@ -32,7 +32,7 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     if (isMainProductionDomain && !window.location.pathname.startsWith('/admin')) {
       setIsRedirecting(true);
       // Redirect to admin subdomain
-      window.location.href = `https://admin.urbanstore.co.ke${window.location.pathname}${window.location.search}`;
+      window.location.href = `https://admin.campusmart.co.ke${window.location.pathname}${window.location.search}`;
     }
   }, [hostname]);
 
@@ -73,10 +73,10 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
         <div className="bg-white p-8 rounded-lg shadow-lg max-w-md text-center">
           <h1 className="text-2xl font-bold text-red-600 mb-4">⛔ Access Denied</h1>
           <p className="text-gray-700 mb-4">
-            Admin access is only available at <strong>admin.urbanstore.co.ke</strong>
+            Admin access is only available at <strong>admin.campusmart.co.ke</strong>
           </p>
           <a
-            href="https://admin.urbanstore.co.ke/admin/login"
+            href="https://admin.campusmart.co.ke/admin/login"
             className="inline-block bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-colors"
           >
             Go to Admin Portal

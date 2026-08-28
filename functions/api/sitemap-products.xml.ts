@@ -20,7 +20,7 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const urls = (results || []).map((p: any) => {
       const lastmod = p.updated_at ? new Date(p.updated_at).toISOString().split("T")[0] : "";
       return `  <url>
-    <loc>${escapeXml(`https://urbanstore.co.ke/product/${p.id}`)}</loc>
+    <loc>${escapeXml(`https://campusmart.co.ke/product/${p.id}`)}</loc>
     ${lastmod ? `<lastmod>${lastmod}</lastmod>` : ""}
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>

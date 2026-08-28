@@ -35,16 +35,16 @@ const CategoryPage = () => {
   useSEO({
     title: cat?.name ?? "Category",
     description: cat
-      ? `Shop ${cat.name} on Urban Store Kenya — quality products, fast delivery and secure M-Pesa payments across Kenya.`
+      ? `Shop ${cat.name} on CampusMart Kenya — quality products, fast delivery and secure M-Pesa payments across Kenya.`
       : undefined,
     path: `/category/${slug}`,
     structuredData: cat ? [{
       "@context": "https://schema.org",
       "@type": "BreadcrumbList",
       itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: "https://urbanstore.co.ke/" },
-        { "@type": "ListItem", position: 2, name: "All Categories", item: "https://urbanstore.co.ke/categories" },
-        { "@type": "ListItem", position: 3, name: cat.name, item: `https://urbanstore.co.ke/category/${slug}` },
+        { "@type": "ListItem", position: 1, name: "Home", item: "https://campusmart.co.ke/" },
+        { "@type": "ListItem", position: 2, name: "All Categories", item: "https://campusmart.co.ke/categories" },
+        { "@type": "ListItem", position: 3, name: cat.name, item: `https://campusmart.co.ke/category/${slug}` },
       ],
     }] : undefined,
   });

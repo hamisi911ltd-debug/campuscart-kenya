@@ -80,7 +80,7 @@ const ProductPage = () => {
   useSEO({
     title: p ? p.title : "",
     description: p
-      ? (p.description ? p.description.slice(0, 155) : `Buy ${p.title} on Urban Store Kenya for KES ${p.price?.toLocaleString()}. Fast delivery and secure M-Pesa payments.`)
+      ? (p.description ? p.description.slice(0, 155) : `Buy ${p.title} on CampusMart Kenya for KES ${p.price?.toLocaleString()}. Fast delivery and secure M-Pesa payments.`)
       : undefined,
     path: `/product/${id}`,
     image: absoluteImage,

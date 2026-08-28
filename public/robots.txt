@@ -18,8 +18,8 @@ Disallow: /auth
 Disallow: /search
 
 # Sitemaps
-Sitemap: https://urbanstore.co.ke/sitemap.xml
-Sitemap: https://urbanstore.co.ke/api/sitemap-products.xml
+Sitemap: https://campusmart.co.ke/sitemap.xml
+Sitemap: https://campusmart.co.ke/api/sitemap-products.xml
 
 # Crawl delay (be nice to servers)
 Crawl-delay: 1

@@ -16,12 +16,12 @@ const AdminLogin = () => {
   useEffect(() => {
     const hostname = window.location.hostname;
     // Only redirect from main production domain, not from development or mobile environments
-    const isMainProductionDomain = hostname === "urbanstore.co.ke" || hostname === "www.urbanstore.co.ke" ||
-      hostname === "campusmart.co.ke" || hostname === "www.campusmart.co.ke"; // legacy domain, remove once migration is complete
+    const isMainProductionDomain = hostname === "campusmart.co.ke" || hostname === "www.campusmart.co.ke" ||
+      hostname === "urbanstore.co.ke" || hostname === "www.urbanstore.co.ke"; // legacy domain from the brief Urban Store rebrand, remove once fully reverted
 
     if (isMainProductionDomain) {
       setIsRedirecting(true);
-      window.location.href = `https://admin.urbanstore.co.ke/admin/login`;
+      window.location.href = `https://admin.campusmart.co.ke/admin/login`;
     }
   }, []);
 
@@ -150,7 +150,7 @@ const AdminLogin = () => {
             {/* Security Info */}
             <div className="flex items-center justify-center gap-2 pt-6 border-t border-gray-200">
               <Shield className="h-4 w-4 text-gray-500" />
-              <p className="text-xs text-gray-500 font-medium">Secure Admin Portal • Urban Store Kenya</p>
+              <p className="text-xs text-gray-500 font-medium">Secure Admin Portal • CampusMart Kenya</p>
             </div>
           </div>
         </form>
@@ -161,7 +161,7 @@ const AdminLogin = () => {
             onClick={() => navigate("/")}
             className="text-sm text-white/80 hover:text-white transition-colors font-medium"
           >
-            ← Back to Urban Store
+            ← Back to CampusMart
           </button>
         </div>
       </div>

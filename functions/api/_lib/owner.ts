@@ -7,8 +7,8 @@ interface Env {
 
 export const OWNER_ID = "store-owner";
 
-const OWNER_NAME = "Urban Store";
-const OWNER_EMAIL = "store-owner@urbanstore.local";
+const OWNER_NAME = "CampusMart";
+const OWNER_EMAIL = "store-owner@campusmart.local";
 const OWNER_PHONE = "254108254465";
 
 export async function ensureOwnerUser(env: Env): Promise<void> {

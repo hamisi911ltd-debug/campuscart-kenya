@@ -1,5 +1,5 @@
 -- ============================================================
--- Urban Store — FULL DATABASE WIPE (fresh start)
+-- CampusMart — FULL DATABASE WIPE (fresh start)
 -- ============================================================
 -- Deletes ALL rows from every data table so you can start posting
 -- products/orders again from scratch. Schema (tables/indexes) is kept.

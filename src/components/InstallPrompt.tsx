@@ -101,7 +101,7 @@ export default function InstallPrompt() {
           </div>
           
           <h2 className="text-xl font-extrabold text-foreground mb-2">
-            Install Urban Store
+            Install CampusMart
           </h2>
           
           <p className="text-sm text-muted-foreground mb-6">

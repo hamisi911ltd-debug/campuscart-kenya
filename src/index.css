@@ -4,7 +4,7 @@
 
 @layer base {
   :root {
-    /* Urban Store palette — navy primary from logo + green accent */
+    /* CampusMart palette — navy primary from logo + green accent */
     --background: 210 40% 98%;
     --foreground: 222 60% 12%;
 

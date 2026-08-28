@@ -295,7 +295,7 @@ const AuthPage = () => {
                   className="text-sm text-muted-foreground hover:text-accent transition-colors"
                 >
                   {mode === "signin" 
-                    ? <span>New to Urban Store? <span className="text-green-600 font-semibold">Create account</span></span>
+                    ? <span>New to CampusMart? <span className="text-green-600 font-semibold">Create account</span></span>
                     : "Already have an account? Sign in"
                   }
                 </button>
