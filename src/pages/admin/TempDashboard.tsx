@@ -64,12 +64,12 @@ const TempDashboard = () => {
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <div className="flex justify-between items-start mb-4">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-red-600 to-blue-600 bg-clip-text text-transparent mb-2">
+              <h1 className="text-2xl sm:text-4xl font-bold bg-gradient-to-r from-red-600 to-blue-600 bg-clip-text text-transparent mb-2">
                 🔧 ADMIN DASHBOARD - DIAGNOSTIC MODE
               </h1>
-              <p className="text-lg text-gray-600 dark:text-gray-400">
+              <p className="text-sm sm:text-lg text-gray-600 dark:text-gray-400">
                 Diagnosing API connectivity and database access
                 {lastTest && (
                   <span className="ml-2 text-blue-600 font-semibold">
@@ -78,10 +78,10 @@ const TempDashboard = () => {
                 )}
               </p>
             </div>
-            <button 
+            <button
               onClick={testApis}
               disabled={apiStatus === 'testing'}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 shadow-lg"
+              className="flex shrink-0 items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all disabled:opacity-50 shadow-lg"
             >
               <RefreshCw className={`h-5 w-5 ${apiStatus === 'testing' ? 'animate-spin' : ''}`} />
               Test APIs

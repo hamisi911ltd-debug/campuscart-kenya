@@ -37,7 +37,6 @@ import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminLuckyCodes from "./pages/admin/AdminLuckyCodes";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AuthDebug from "./pages/admin/AuthDebug";
-import ApiTestPage from "./pages/admin/ApiTestPage";
 import AdminRoute from "./components/AdminRoute";
 import SettingsPage from "./pages/SettingsPage";
 
