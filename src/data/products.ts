@@ -1,5 +1,9 @@
 import type { Product } from "@/components/ProductCard";
 
+// Category illustrations: free-license stock photos from pexels.com (no
+// attribution required for commercial use), shown as a fallback wherever a
+// category has no real product photo yet — see getCategoryImages() below,
+// which prefers an actual in-stock item's photo over these when one exists.
 import catBooks from "@/assets/cat-books.jpg";
 import catElec from "@/assets/cat-electronics.jpg";
 import catFashion from "@/assets/cat-fashion.jpg";
