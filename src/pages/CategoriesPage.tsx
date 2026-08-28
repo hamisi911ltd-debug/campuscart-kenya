@@ -1,11 +1,28 @@
 import { Link } from "react-router-dom";
 import { ChevronRight } from "lucide-react";
+import { useEffect, useState } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { useSEO } from "@/hooks/useSEO";
-import { categories } from "@/data/products";
+import { categories, getProducts } from "@/data/products";
 
 const CategoriesPage = () => {
+  const [counts, setCounts] = useState<Record<string, number>>({});
+  const [countsLoaded, setCountsLoaded] = useState(false);
+
+  useEffect(() => {
+    const loadCounts = async () => {
+      // One fetch of the whole catalog, tallied client-side, rather than a
+      // request per category tile.
+      const all = await getProducts({ limit: 1000 });
+      const tally: Record<string, number> = {};
+      for (const p of all) tally[p.category] = (tally[p.category] || 0) + 1;
+      setCounts(tally);
+      setCountsLoaded(true);
+    };
+    loadCounts();
+  }, []);
+
   useSEO({
     title: "All Categories",
     description: "Browse every category on Urban Store Kenya: Electronics, Fashion, Books, Food, Furniture, Stationery and Property. Shop local with fast delivery and secure M-Pesa payments.",
@@ -57,7 +74,11 @@ const CategoriesPage = () => {
             </div>
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-bold text-foreground">{c.name}</div>
-              <div className="text-xs text-muted-foreground">Shop now</div>
+              <div className="text-xs text-muted-foreground">
+                {countsLoaded
+                  ? `${counts[c.slug] || 0} item${counts[c.slug] === 1 ? "" : "s"}`
+                  : "Shop now"}
+              </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
           </Link>

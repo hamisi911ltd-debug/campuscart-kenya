@@ -73,12 +73,28 @@ export const transformDatabaseProduct = (dbProduct: any): ProductWithCategory =>
   };
 };
 
-// Function to get all products from database API
-export const getProducts = async (): Promise<ProductWithCategory[]> => {
+export interface GetProductsParams {
+  category?: string;
+  sort?: "newest" | "trending" | "price_low" | "price_high" | "rating";
+  search?: string;
+  limit?: number;
+}
+
+// Function to get products from the database API. Filtering/sorting is done
+// server-side (via query params) rather than fetching everything and
+// filtering client-side, both for performance and because the API's default
+// limit (50) would otherwise silently hide products past the first page.
+export const getProducts = async (params: GetProductsParams = {}): Promise<ProductWithCategory[]> => {
   if (typeof window === "undefined") return [];
-  
+
   try {
-    const response = await fetch('/api/products', {
+    const query = new URLSearchParams();
+    if (params.category) query.set("category", params.category);
+    if (params.sort) query.set("sort", params.sort);
+    if (params.search) query.set("search", params.search);
+    query.set("limit", String(params.limit ?? 50));
+
+    const response = await fetch(`/api/products?${query.toString()}`, {
       headers: {
         'Cache-Control': 'no-cache',
       },
@@ -119,12 +135,32 @@ export const refreshProducts = () => {
   return getProductsSync();
 };
 
-export const findProduct = async (id: string) => {
-  const allProducts = await getProducts();
-  return allProducts.find((p) => p.id === id);
+// Fetches a single product directly by id (GET /api/products/:id) instead of
+// pulling the whole catalog and searching client-side — the previous
+// implementation meant a product ranked past the default page size couldn't
+// be found at all, so any direct/shared link to it would 404.
+export const findProduct = async (id: string): Promise<ProductWithCategory | undefined> => {
+  if (typeof window === "undefined" || !id) return undefined;
+
+  try {
+    const response = await fetch(`/api/products/${id}`, {
+      headers: { 'Cache-Control': 'no-cache' },
+    });
+    if (!response.ok) return undefined;
+    const dbProduct = await response.json();
+    if (!dbProduct || dbProduct.error) return undefined;
+    return transformDatabaseProduct(dbProduct);
+  } catch (error) {
+    console.error('Error fetching product:', error);
+    return undefined;
+  }
 };
 
-export const productsByCategory = async (slug: string) => {
-  const allProducts = await getProducts();
-  return allProducts.filter((p) => p.category === slug);
+export const productsByCategory = async (
+  slug: string,
+  sort?: GetProductsParams["sort"]
+): Promise<ProductWithCategory[]> => {
+  // High limit rather than "all": a category page should show everything in
+  // that category, not just the first page of the overall catalog.
+  return getProducts({ category: slug, sort, limit: 500 });
 };
