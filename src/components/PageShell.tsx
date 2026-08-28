@@ -28,7 +28,7 @@ export const PageShell = ({ title, children, back = true, seoTitle, noIndex = fa
               <ArrowLeft className="h-4 w-4" />
             </button>
           )}
-          <h1 className="text-2xl font-extrabold text-foreground">{title}</h1>
+          {title && <h1 className="text-2xl font-extrabold text-foreground">{title}</h1>}
         </div>
         {children}
       </main>

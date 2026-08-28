@@ -107,7 +107,7 @@ export const SignInModal = ({ isOpen, onClose, message }: SignInModalProps) => {
           </div>
 
           <p className="text-xs text-muted-foreground mt-4">
-            Free to join • Verified sellers • Secure
+            Free to join • Fast delivery • Secure payments
           </p>
         </div>
       </div>

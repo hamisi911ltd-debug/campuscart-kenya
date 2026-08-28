@@ -119,6 +119,11 @@ const Index = () => {
       </div>
 
       <main className="mx-auto max-w-7xl px-4">
+        {/* Real <h1> for the homepage — visually hidden (the header logo/tagline
+            already carries this visually) but every page should have exactly
+            one, and the homepage previously had none at all. */}
+        <h1 className="sr-only">Urban Store Kenya (formerly CampusMart) — Shop Local, Live Better, Buy &amp; Sell Online</h1>
+
         {/* Category tiles */}
         <section className="py-3">
           <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
