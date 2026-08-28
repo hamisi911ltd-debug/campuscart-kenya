@@ -4,7 +4,7 @@ import { ArrowDownAZ } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
 import { useSEO } from "@/hooks/useSEO";
-import { categories, productsByCategory, type GetProductsParams } from "@/data/products";
+import { categories, productsByCategory, getCategoryImages, type GetProductsParams } from "@/data/products";
 import type { ProductWithCategory } from "@/data/products";
 
 const SORT_OPTIONS: { value: GetProductsParams["sort"]; label: string }[] = [
@@ -21,6 +21,7 @@ const CategoryPage = () => {
   const [items, setItems] = useState<ProductWithCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<GetProductsParams["sort"]>("newest");
+  const [catImages, setCatImages] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const loadProducts = async () => {
@@ -31,6 +32,12 @@ const CategoryPage = () => {
     };
     loadProducts();
   }, [slug, sort]);
+
+  // Real photos for the category-switcher thumbnails (one fetch, reused
+  // across every chip regardless of which category is active).
+  useEffect(() => {
+    getCategoryImages().then(setCatImages);
+  }, []);
 
   useSEO({
     title: cat?.name ?? "Category",
@@ -54,7 +61,12 @@ const CategoryPage = () => {
       {/* Hero banner */}
       {cat && (
         <div className="relative mb-4 h-28 overflow-hidden rounded-2xl shadow-card sm:h-36">
-          <img src={cat.img} alt="" aria-hidden="true" className="absolute inset-0 h-full w-full object-cover" />
+          <img
+            src={items[0]?.image || catImages[slug] || cat.img}
+            alt=""
+            aria-hidden="true"
+            className="absolute inset-0 h-full w-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/60 to-primary/10" />
           <div className="absolute inset-0 flex flex-col justify-center px-5">
             <span className="text-xl font-extrabold text-primary-foreground sm:text-2xl">{cat.name}</span>
@@ -77,7 +89,7 @@ const CategoryPage = () => {
                 className={`flex shrink-0 items-center gap-1.5 rounded-full py-1 pl-1 pr-3 text-xs font-bold transition ${active ? "gradient-accent text-accent-foreground shadow-accent" : "bg-muted text-foreground hover:bg-secondary"}`}
               >
                 <span className={`h-6 w-6 shrink-0 overflow-hidden rounded-full ${active ? "ring-2 ring-white/60" : ""}`}>
-                  <img src={c.img} alt="" aria-hidden="true" className="h-full w-full object-cover" />
+                  <img src={catImages[c.slug] || c.img} alt="" aria-hidden="true" className="h-full w-full object-cover" />
                 </span>
                 {c.name}
               </Link>

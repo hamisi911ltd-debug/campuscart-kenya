@@ -164,3 +164,18 @@ export const productsByCategory = async (
   // that category, not just the first page of the overall catalog.
   return getProducts({ category: slug, sort, limit: 500 });
 };
+
+// Real photo of an actual in-stock item per category (the newest product in
+// that category), for use in place of the generic stock-photo illustrations
+// in `categories[].img`. A category with no products yet has no entry here —
+// callers should fall back to the static illustration in that case.
+export const getCategoryImages = async (): Promise<Record<string, string>> => {
+  const all = await getProducts({ limit: 1000 });
+  const images: Record<string, string> = {};
+  for (const p of all) {
+    if (!images[p.category] && p.image && p.image !== "/placeholder.svg") {
+      images[p.category] = p.image;
+    }
+  }
+  return images;
+};

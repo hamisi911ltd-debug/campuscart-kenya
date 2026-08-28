@@ -1,4 +1,4 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { ChevronRight, LayoutGrid } from "lucide-react";
 import { useEffect, useState } from "react";
 import { TopBar } from "@/components/TopBar";
@@ -6,9 +6,26 @@ import { BottomNav } from "@/components/BottomNav";
 import { useSEO } from "@/hooks/useSEO";
 import { categories, getProducts } from "@/data/products";
 
+// On phones, the big card grid is one extra tap before you see any actual
+// products — go straight to browsing the first category instead, same as
+// tapping "Electronics" would. Desktop/tablet keep the grid. Checked as
+// lazy initial state (not an effect) so a phone never even paints the grid
+// before redirecting.
+const isMobileViewport = () =>
+  typeof window !== "undefined" && window.matchMedia("(max-width: 767px)").matches;
+
 const CategoriesPage = () => {
+  const navigate = useNavigate();
+  const [redirectingOnMobile] = useState(isMobileViewport);
   const [counts, setCounts] = useState<Record<string, number>>({});
+  const [images, setImages] = useState<Record<string, string>>({});
   const [countsLoaded, setCountsLoaded] = useState(false);
+
+  useEffect(() => {
+    if (redirectingOnMobile) {
+      navigate(`/category/${categories[0].slug}`, { replace: true });
+    }
+  }, [redirectingOnMobile, navigate]);
 
   useEffect(() => {
     const loadCounts = async () => {
@@ -16,8 +33,15 @@ const CategoriesPage = () => {
       // request per category tile.
       const all = await getProducts({ limit: 1000 });
       const tally: Record<string, number> = {};
-      for (const p of all) tally[p.category] = (tally[p.category] || 0) + 1;
+      const imgs: Record<string, string> = {};
+      for (const p of all) {
+        tally[p.category] = (tally[p.category] || 0) + 1;
+        if (!imgs[p.category] && p.image && p.image !== "/placeholder.svg") {
+          imgs[p.category] = p.image;
+        }
+      }
       setCounts(tally);
+      setImages(imgs);
       setCountsLoaded(true);
     };
     loadCounts();
@@ -49,6 +73,8 @@ const CategoriesPage = () => {
     ],
   });
 
+  if (redirectingOnMobile) return null;
+
   return (
   <div className="min-h-screen bg-background pb-24">
     <div className="sticky top-0 z-30">
@@ -75,7 +101,7 @@ const CategoriesPage = () => {
             className="group relative isolate aspect-[4/5] overflow-hidden rounded-2xl shadow-card transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated"
           >
             <img
-              src={c.img}
+              src={images[c.slug] || c.img}
               alt={c.name}
               loading="lazy"
               className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-110"

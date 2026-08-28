@@ -1,6 +1,6 @@
 import { Zap, Truck, Shield, Wallet, Ticket, ChevronRight, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
@@ -63,6 +63,17 @@ const Index = () => {
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
+
+  // Real photos of actual in-stock items, one per category, derived from the
+  // products already fetched above — no extra request. Falls back to the
+  // generic illustration for a category with nothing in stock yet.
+  const categoryImages = useMemo(() => {
+    const map: Record<string, string> = {};
+    for (const p of products) {
+      if (!map[p.category] && p.image && p.image !== "/placeholder.svg") map[p.category] = p.image;
+    }
+    return map;
+  }, [products]);
 
   // Sign-in modal on first visit + login celebration
   useEffect(() => {
@@ -139,7 +150,7 @@ const Index = () => {
                   <div className="rounded-full bg-gradient-to-br from-accent/60 to-primary/40 p-[2px] shadow-sm transition-transform group-active:scale-95">
                     <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-background bg-muted">
                       <img
-                        src={c.img}
+                        src={categoryImages[c.slug] || c.img}
                         alt={c.name}
                         loading="lazy"
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
