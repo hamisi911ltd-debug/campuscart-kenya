@@ -1,11 +1,28 @@
 // Debug Lucky Codes - Check what's in database
+// Admin-only: this dumps every promo code verbatim, which would let anyone
+// redeem them without ever seeing them through the real UI.
 
 interface Env {
   DB: D1Database;
 }
 
+function isAdmin(request: Request): boolean {
+  const cookie = request.headers.get("Cookie") || "";
+  if (cookie.includes("admin_session=true")) return true;
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader === "Bearer admin_session_true") return true;
+  return request.headers.get("X-Admin-Session") === "true";
+}
+
 export async function onRequestGet(context: { env: Env; request: Request }) {
-  const { env } = context;
+  const { env, request } = context;
+
+  if (!isAdmin(request)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { 'Content-Type': 'application/json' },
+    });
+  }
 
   try {
     // Check if tables exist

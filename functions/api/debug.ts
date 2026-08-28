@@ -1,10 +1,27 @@
 // Cloudflare Pages Function - Diagnostic Tool
+// Admin-only: this dumps real user emails/PII and product data, so it must
+// never be reachable without authentication.
 interface Env {
   DB: D1Database;
   STORAGE: R2Bucket;
 }
 
+function isAdmin(request: Request): boolean {
+  const cookie = request.headers.get("Cookie") || "";
+  if (cookie.includes("admin_session=true")) return true;
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader === "Bearer admin_session_true") return true;
+  return request.headers.get("X-Admin-Session") === "true";
+}
+
 export const onRequestGet: PagesFunction<Env> = async (context) => {
+  if (!isAdmin(context.request)) {
+    return new Response(JSON.stringify({ error: "Unauthorized" }), {
+      status: 401,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+
   const results: Record<string, any> = {
     timestamp: new Date().toISOString(),
     environment: "production",

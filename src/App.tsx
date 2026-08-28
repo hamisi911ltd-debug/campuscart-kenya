@@ -22,9 +22,6 @@ import AuthPage from "./pages/AuthPage";
 import GoogleCallback from "./pages/auth/GoogleCallback";
 import NotificationsPage from "./pages/NotificationsPage";
 import CheckoutPage from "./pages/CheckoutPage";
-import AdminDashboardNew from "./pages/admin/AdminDashboardNew";
-import RealDashboard from "./pages/admin/RealDashboard";
-import LiveDashboard2025 from "./pages/admin/LiveDashboard2025";
 import TempDashboard from "./pages/admin/TempDashboard";
 import ComprehensiveMonitor from "./pages/admin/ComprehensiveMonitor";
 import ActivityMonitor from "./pages/admin/ActivityMonitor";
@@ -79,7 +76,6 @@ const App = () => {
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
-              <Route path="/test-lucky-codes" element={<TestLuckyCodes />} />
 
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
@@ -97,6 +93,7 @@ const App = () => {
               <Route path="/admin/test" element={<AdminRoute><DirectApiTest /></AdminRoute>} />
               <Route path="/admin/debug" element={<AdminRoute><AuthDebug /></AdminRoute>} />
               <Route path="/admin/diagnostic" element={<AdminRoute><TempDashboard /></AdminRoute>} />
+              <Route path="/admin/test-lucky-codes" element={<AdminRoute><TestLuckyCodes /></AdminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
