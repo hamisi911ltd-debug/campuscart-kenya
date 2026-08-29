@@ -30,6 +30,12 @@
     <priority>0.9</priority>
   </url>
   <url>
+    <loc>https://campusmart.co.ke/category/computing</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
     <loc>https://campusmart.co.ke/category/appliances</loc>
     <lastmod>2026-08-29</lastmod>
     <changefreq>daily</changefreq>
@@ -60,7 +66,13 @@
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://campusmart.co.ke/category/automotive</loc>
+    <loc>https://campusmart.co.ke/category/gaming</loc>
+    <lastmod>2026-08-29</lastmod>
+    <changefreq>daily</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://campusmart.co.ke/category/watches</loc>
     <lastmod>2026-08-29</lastmod>
     <changefreq>daily</changefreq>
     <priority>0.9</priority>

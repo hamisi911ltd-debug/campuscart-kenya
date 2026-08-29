@@ -12,12 +12,14 @@ import { adminGet, adminPost, adminPut } from "@/utils/adminApi";
 const categories = [
   { slug: "phones", name: "Phones & Accessories" },
   { slug: "electronics", name: "Electronics" },
+  { slug: "computing", name: "Computing" },
   { slug: "appliances", name: "Appliances" },
   { slug: "fashion", name: "Fashion" },
   { slug: "home", name: "Home & Kitchen" },
   { slug: "beauty", name: "Health & Beauty" },
   { slug: "baby", name: "Baby & Kids" },
-  { slug: "automotive", name: "Automotive" },
+  { slug: "gaming", name: "Gaming" },
+  { slug: "watches", name: "Watches & Jewellery" },
 ];
 
 const AdminProductForm = () => {

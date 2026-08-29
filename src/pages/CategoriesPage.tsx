@@ -49,7 +49,7 @@ const CategoriesPage = () => {
 
   useSEO({
     title: "All Categories",
-    description: "Browse every category on CampusMart Kenya: Phones, Electronics, Appliances, Fashion, Home & Kitchen, Health & Beauty, Baby & Kids and Automotive. Shop local with fast delivery and secure M-Pesa payments.",
+    description: "Browse every category on CampusMart Kenya: Phones, Electronics, Computing, Appliances, Fashion, Home & Kitchen, Health & Beauty, Baby & Kids, Gaming and Watches & Jewellery. Shop local with fast delivery and secure M-Pesa payments.",
     path: "/categories",
     structuredData: [
       {

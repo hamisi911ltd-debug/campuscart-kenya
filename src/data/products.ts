@@ -6,12 +6,14 @@ import type { Product } from "@/components/ProductCard";
 // which prefers an actual in-stock item's photo over these when one exists.
 import catPhones from "@/assets/cat-phones.jpg";
 import catElec from "@/assets/cat-electronics.jpg";
+import catComputing from "@/assets/cat-computing.jpg";
 import catAppliances from "@/assets/cat-appliances.jpg";
 import catFashion from "@/assets/cat-fashion.jpg";
 import catHome from "@/assets/cat-home.jpg";
 import catBeauty from "@/assets/cat-beauty.jpg";
 import catBaby from "@/assets/cat-baby.jpg";
-import catAuto from "@/assets/cat-automotive.jpg";
+import catGaming from "@/assets/cat-gaming.jpg";
+import catWatches from "@/assets/cat-watches.jpg";
 
 export type ProductWithCategory = Product & { 
   category: string; 
@@ -35,18 +37,21 @@ export type ProductWithCategory = Product & {
 };
 
 // Matches the top-level categories shared by Jumia Kenya and Kilimall Kenya
-// (Phones, Electronics/TVs/Computing, Appliances, Fashion, Home & Kitchen,
-// Health & Beauty, Baby/Kids, Automotive) rather than the earlier
-// campus-marketplace-specific set (Food, Property, Books, Stationery).
+// (Phones, Electronics/TVs, Computing, Appliances, Fashion, Home & Kitchen,
+// Health & Beauty, Baby/Kids, Gaming, Watches & Jewellery) rather than the
+// earlier campus-marketplace-specific set (Food, Property, Books,
+// Stationery). Automotive was dropped per request.
 export const categories = [
   { slug: "phones", name: "Phones & Accessories", img: catPhones },
   { slug: "electronics", name: "Electronics", img: catElec },
+  { slug: "computing", name: "Computing", img: catComputing },
   { slug: "appliances", name: "Appliances", img: catAppliances },
   { slug: "fashion", name: "Fashion", img: catFashion },
   { slug: "home", name: "Home & Kitchen", img: catHome },
   { slug: "beauty", name: "Health & Beauty", img: catBeauty },
   { slug: "baby", name: "Baby & Kids", img: catBaby },
-  { slug: "automotive", name: "Automotive", img: catAuto },
+  { slug: "gaming", name: "Gaming", img: catGaming },
+  { slug: "watches", name: "Watches & Jewellery", img: catWatches },
 ];
 
 // Function to transform database product to frontend format
