@@ -2,7 +2,15 @@ import { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { Package, Truck, CheckCircle2, XCircle, Clock, MapPin, Phone, Mail, User, ShieldCheck, Smartphone, type LucideIcon } from "lucide-react";
+import { toast } from "sonner";
+import { Package, Truck, CheckCircle2, XCircle, Clock, MapPin, Phone, Mail, User, ShieldCheck, Smartphone, Copy, type LucideIcon } from "lucide-react";
+
+// A courier-style tracking code derived from the order id — distinct from
+// the order number, no schema change needed, stable for a given order.
+const getWaybillNumber = (orderId: string) => {
+  const clean = orderId.replace(/-/g, "").toUpperCase();
+  return `WB${clean.slice(0, 4)}-${clean.slice(4, 8)}-${clean.slice(8, 12)}`;
+};
 
 interface HistoryEntry {
   status: string;
@@ -233,6 +241,40 @@ const OrdersPage = () => {
             </div>
           </div>
 
+          {/* Waybill / Tracking */}
+          <div className="bg-card rounded-2xl p-6 shadow-card mb-6 border-2 border-dashed border-border">
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Waybill No.</p>
+                <p className="font-mono text-lg font-extrabold tracking-wider text-foreground sm:text-xl">
+                  {getWaybillNumber(selectedOrder.id)}
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  navigator.clipboard.writeText(getWaybillNumber(selectedOrder.id));
+                  toast.success("Waybill number copied");
+                }}
+                className="flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-bold text-foreground hover:bg-secondary transition"
+              >
+                <Copy className="h-3.5 w-3.5" /> Copy
+              </button>
+            </div>
+            {/* Decorative barcode — visual only, encodes nothing */}
+            <div
+              className="mt-4 h-9 w-full rounded opacity-80"
+              style={{
+                backgroundImage:
+                  "repeating-linear-gradient(90deg, currentColor 0px, currentColor 2px, transparent 2px, transparent 4px, currentColor 4px, currentColor 5px, transparent 5px, transparent 8px, currentColor 8px, currentColor 11px, transparent 11px, transparent 13px)",
+                color: "hsl(var(--foreground))",
+              }}
+              aria-hidden="true"
+            />
+            <p className="mt-2 text-center text-[10px] tracking-[0.35em] text-muted-foreground">
+              {getWaybillNumber(selectedOrder.id)}
+            </p>
+          </div>
+
           {/* Order Items */}
           <div className="bg-card rounded-2xl p-6 shadow-card mb-6">
             <h3 className="text-lg font-extrabold mb-4">Order Items</h3>
@@ -338,11 +380,14 @@ const OrdersPage = () => {
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <h3 className="font-bold text-foreground">Order #{order.orderNumber}</h3>
+                    <p className="mt-0.5 font-mono text-[11px] tracking-wide text-muted-foreground">
+                      Waybill: {getWaybillNumber(order.id)}
+                    </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      {new Date(order.createdAt).toLocaleDateString('en-US', { 
-                        year: 'numeric', 
-                        month: 'short', 
-                        day: 'numeric' 
+                      {new Date(order.createdAt).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
                       })}
                     </p>
                   </div>

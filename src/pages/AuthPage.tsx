@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
+import { Logo } from "@/components/Logo";
 import { useShop } from "@/store/shop";
 import { Eye, EyeOff, Mail, User, Lock, Phone, Shield } from "lucide-react";
 import { toast } from "sonner";
@@ -105,13 +106,18 @@ const AuthPage = () => {
     <PageShell title="" seoTitle="Sign In" noIndex>
       <div className="bg-gradient-to-br from-background via-background to-accent/5">
         <div className="max-w-md mx-auto px-4 pb-6">
-          {/* Header */}
-          <div className="text-center mb-4">
-            <p className="text-base text-foreground">
-              {mode === "signin" 
-                ? "Sign in to your account" 
-                : "Create your account to start shopping"
-              }
+          {/* Header — same logo treatment as the "Install App" popup */}
+          <div className="mb-6 flex flex-col items-center text-center">
+            <div className="mb-4">
+              <Logo />
+            </div>
+            <h1 className="text-xl font-extrabold text-foreground">
+              {mode === "signin" ? "Welcome back" : "Join CampusMart"}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {mode === "signin"
+                ? "Sign in to continue shopping"
+                : "Create an account to start shopping"}
             </p>
           </div>
 
