@@ -11,7 +11,8 @@ import { CelebrationModal } from "@/components/CelebrationModal";
 import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
 import { useSEO } from "@/hooks/useSEO";
-import { categories, getProducts, getProductsSync, transformDatabaseProduct, type ProductWithCategory } from "@/data/products";
+import { Pagination } from "@/components/Pagination";
+import { categories, getProducts, getProductsPage, getProductsSync, transformDatabaseProduct, type ProductWithCategory } from "@/data/products";
 
 const VOUCHERS = [
   { code: "WELCOME50", label: "KES 50 OFF", sub: "New shoppers" },
@@ -24,10 +25,13 @@ const Index = () => {
   const { user } = useShop();
   useSEO({ title: "", path: "/" });
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
+  const [productsHasMore, setProductsHasMore] = useState(false);
+  const [productsPage, setProductsPage] = useState(1);
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
   const [flashDeals, setFlashDeals] = useState<ProductWithCategory[]>([]);
+  const [categoryImageSample, setCategoryImageSample] = useState<ProductWithCategory[]>([]);
 
   // Flash deals = trending products
   useEffect(() => {
@@ -45,11 +49,14 @@ const Index = () => {
     fetchFlash();
   }, []);
 
-  // "More to love" feed = all products, refreshed on focus/visibility
+  // "More to love" feed — one page at a time (see Pagination below) rather
+  // than one long scrolling grid, refreshed on focus/visibility so a page
+  // left open in a background tab still reflects newly added products.
   useEffect(() => {
     const refreshProductList = async () => {
-      const refreshed = await getProducts();
-      setProducts(Array.isArray(refreshed) ? refreshed : []);
+      const result = await getProductsPage({}, productsPage);
+      setProducts(result.items);
+      setProductsHasMore(result.hasMore);
     };
     refreshProductList();
 
@@ -62,18 +69,24 @@ const Index = () => {
       window.removeEventListener('focus', refreshProductList);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
+  }, [productsPage]);
+
+  // A broader (unpaginated) sample purely for deriving one real photo per
+  // category for the strip below — independent of whichever page of "More
+  // to love" happens to be showing.
+  useEffect(() => {
+    getProducts({ limit: 100 }).then(setCategoryImageSample);
   }, []);
 
-  // Real photos of actual in-stock items, one per category, derived from the
-  // products already fetched above — no extra request. Falls back to the
-  // generic illustration for a category with nothing in stock yet.
+  // Real photos of actual in-stock items, one per category. Falls back to
+  // the generic illustration for a category with nothing in stock yet.
   const categoryImages = useMemo(() => {
     const map: Record<string, string> = {};
-    for (const p of products) {
+    for (const p of categoryImageSample) {
       if (!map[p.category] && p.image && p.image !== "/placeholder.svg") map[p.category] = p.image;
     }
     return map;
-  }, [products]);
+  }, [categoryImageSample]);
 
   // Sign-in modal on first visit + login celebration
   useEffect(() => {
@@ -229,11 +242,14 @@ const Index = () => {
           {products.length === 0 ? (
             <p className="py-10 text-center text-sm text-muted-foreground">Loading products…</p>
           ) : (
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-              {products.map((p) => (
-                <ProductCard key={p.id} p={p} />
-              ))}
-            </div>
+            <>
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+                {products.map((p) => (
+                  <ProductCard key={p.id} p={p} />
+                ))}
+              </div>
+              <Pagination page={productsPage} hasMore={productsHasMore} onChange={setProductsPage} />
+            </>
           )}
         </section>
         {/* SEO footer: real, crawlable text and internal links (not just
@@ -243,9 +259,9 @@ const Index = () => {
         <footer className="mt-2 border-t border-border pt-4 pb-6 text-xs text-muted-foreground">
           <p className="mb-3">
             <strong className="text-foreground">CampusMart Kenya</strong> is
-            Kenya's online marketplace to shop local and live better — buy and sell electronics, fashion, books, food,
-            home &amp; furniture, stationery and property listings, with fast delivery and secure M-Pesa payments across
-            Nairobi, Mombasa, Kisumu and beyond.
+            Kenya's online marketplace to shop local and live better — buy and sell phones, electronics, appliances,
+            fashion, home &amp; kitchen, health &amp; beauty, baby &amp; kids items and automotive accessories, with
+            fast delivery and secure M-Pesa payments across Nairobi, Mombasa, Kisumu and beyond.
           </p>
           <nav aria-label="Categories" className="flex flex-wrap gap-x-3 gap-y-1">
             {categories.map((c, i) => (

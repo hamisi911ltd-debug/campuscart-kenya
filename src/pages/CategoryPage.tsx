@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { ArrowDownAZ } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
+import { Pagination } from "@/components/Pagination";
 import { useSEO } from "@/hooks/useSEO";
-import { categories, productsByCategory, getCategoryImages, type GetProductsParams } from "@/data/products";
+import { categories, productsByCategory, getCategoryImages, DEFAULT_PAGE_SIZE, type GetProductsParams } from "@/data/products";
 import type { ProductWithCategory } from "@/data/products";
 
 const SORT_OPTIONS: { value: GetProductsParams["sort"]; label: string }[] = [
@@ -19,19 +20,28 @@ const CategoryPage = () => {
   const { slug = "" } = useParams();
   const cat = categories.find((c) => c.slug === slug);
   const [items, setItems] = useState<ProductWithCategory[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
   const [sort, setSort] = useState<GetProductsParams["sort"]>("newest");
+  const [page, setPage] = useState(1);
   const [catImages, setCatImages] = useState<Record<string, string>>({});
+
+  // Changing category or sort starts back at page 1 rather than keeping
+  // whatever page you'd scrolled to in the previous listing.
+  useEffect(() => {
+    setPage(1);
+  }, [slug, sort]);
 
   useEffect(() => {
     const loadProducts = async () => {
       setLoading(true);
-      const products = await productsByCategory(slug, sort);
-      setItems(products);
+      const result = await productsByCategory(slug, sort, page);
+      setItems(result.items);
+      setHasMore(result.hasMore);
       setLoading(false);
     };
     loadProducts();
-  }, [slug, sort]);
+  }, [slug, sort, page]);
 
   // Real photos for the category-switcher thumbnails (one fetch, reused
   // across every chip regardless of which category is active).
@@ -71,7 +81,11 @@ const CategoryPage = () => {
           <div className="absolute inset-0 flex flex-col justify-center px-5">
             <span className="text-xl font-extrabold text-primary-foreground sm:text-2xl">{cat.name}</span>
             <span className="mt-1 text-xs font-medium text-primary-foreground/85 sm:text-sm">
-              {loading ? "Loading products…" : `${items.length} item${items.length === 1 ? "" : "s"} available`}
+              {loading
+                ? "Loading products…"
+                : items.length === 0
+                ? "No items yet"
+                : `Showing ${(page - 1) * DEFAULT_PAGE_SIZE + 1}–${(page - 1) * DEFAULT_PAGE_SIZE + items.length}`}
             </span>
           </div>
         </div>
@@ -123,9 +137,12 @@ const CategoryPage = () => {
           No listings yet in this category. Check back soon!
         </p>
       ) : (
-        <div className="grid grid-cols-2 gap-1 md:grid-cols-6 md:gap-2">
-          {items.map((p) => <ProductCard key={p.id} p={p} />)}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-1 md:grid-cols-6 md:gap-2">
+            {items.map((p) => <ProductCard key={p.id} p={p} />)}
+          </div>
+          <Pagination page={page} hasMore={hasMore} onChange={setPage} loading={loading} />
+        </>
       )}
     </PageShell>
   );

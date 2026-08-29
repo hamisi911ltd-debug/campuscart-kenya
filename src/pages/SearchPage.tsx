@@ -1,54 +1,36 @@
 import { useSearchParams } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
+import { Pagination } from "@/components/Pagination";
 import { useState, useEffect } from "react";
-import { transformDatabaseProduct } from "@/data/products";
+import { getProductsPage, type ProductWithCategory, type GetProductsParams } from "@/data/products";
 
 const SearchPage = () => {
   const [params, setParams] = useSearchParams();
   const initial = params.get("q") ?? "";
-  const sort = params.get("sort") ?? "";
+  const sort = (params.get("sort") ?? undefined) as GetProductsParams["sort"] | undefined;
   const [q, setQ] = useState(initial);
-  const [results, setResults] = useState<any[]>([]);
+  const [results, setResults] = useState<ProductWithCategory[]>([]);
+  const [hasMore, setHasMore] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
   const term = (params.get("q") ?? "").toLowerCase();
+
+  // A new search term or sort starts back at page 1.
+  useEffect(() => {
+    setPage(1);
+  }, [term, sort]);
 
   useEffect(() => {
     const fetchProducts = async () => {
       setLoading(true);
-      try {
-        let url = '/api/products?limit=100';
-        
-        // Add sorting if specified
-        if (sort) {
-          url += `&sort=${sort}`;
-        }
-        
-        // Add search term if specified
-        if (term) {
-          url += `&search=${encodeURIComponent(term)}`;
-        }
-        
-        const response = await fetch(url, {
-          headers: { 'Cache-Control': 'no-cache' },
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          setResults(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
-        } else {
-          setResults([]);
-        }
-      } catch (error) {
-        console.error('Error fetching products:', error);
-        setResults([]);
-      } finally {
-        setLoading(false);
-      }
+      const result = await getProductsPage({ search: term || undefined, sort }, page);
+      setResults(result.items);
+      setHasMore(result.hasMore);
+      setLoading(false);
     };
-
     fetchProducts();
-  }, [term, sort]);
+  }, [term, sort, page]);
 
   const getTitle = () => {
     if (term) return `Results for "${term}"`;
@@ -76,9 +58,12 @@ const SearchPage = () => {
       ) : results.length === 0 ? (
         <p className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground shadow-card">No matches. Try a different keyword.</p>
       ) : (
-        <div className="grid grid-cols-2 gap-1 md:grid-cols-6 md:gap-2">
-          {results.map((p) => <ProductCard key={p.id} p={p} />)}
-        </div>
+        <>
+          <div className="grid grid-cols-2 gap-1 md:grid-cols-6 md:gap-2">
+            {results.map((p) => <ProductCard key={p.id} p={p} />)}
+          </div>
+          <Pagination page={page} hasMore={hasMore} onChange={setPage} loading={loading} />
+        </>
       )}
     </PageShell>
   );

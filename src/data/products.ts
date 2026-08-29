@@ -4,13 +4,14 @@ import type { Product } from "@/components/ProductCard";
 // attribution required for commercial use), shown as a fallback wherever a
 // category has no real product photo yet — see getCategoryImages() below,
 // which prefers an actual in-stock item's photo over these when one exists.
-import catBooks from "@/assets/cat-books.jpg";
+import catPhones from "@/assets/cat-phones.jpg";
 import catElec from "@/assets/cat-electronics.jpg";
+import catAppliances from "@/assets/cat-appliances.jpg";
 import catFashion from "@/assets/cat-fashion.jpg";
-import catFood from "@/assets/cat-food.jpg";
-import catRooms from "@/assets/cat-rooms.jpg";
-import catStat from "@/assets/cat-stationery.jpg";
-import catFurn from "@/assets/cat-furniture.jpg";
+import catHome from "@/assets/cat-home.jpg";
+import catBeauty from "@/assets/cat-beauty.jpg";
+import catBaby from "@/assets/cat-baby.jpg";
+import catAuto from "@/assets/cat-automotive.jpg";
 
 export type ProductWithCategory = Product & { 
   category: string; 
@@ -33,14 +34,19 @@ export type ProductWithCategory = Product & {
   totalReviews?: number;
 };
 
+// Matches the top-level categories shared by Jumia Kenya and Kilimall Kenya
+// (Phones, Electronics/TVs/Computing, Appliances, Fashion, Home & Kitchen,
+// Health & Beauty, Baby/Kids, Automotive) rather than the earlier
+// campus-marketplace-specific set (Food, Property, Books, Stationery).
 export const categories = [
+  { slug: "phones", name: "Phones & Accessories", img: catPhones },
   { slug: "electronics", name: "Electronics", img: catElec },
+  { slug: "appliances", name: "Appliances", img: catAppliances },
   { slug: "fashion", name: "Fashion", img: catFashion },
-  { slug: "furniture", name: "Home & Furniture", img: catFurn },
-  { slug: "food", name: "Food", img: catFood },
-  { slug: "hostels", name: "Property", img: catRooms },
-  { slug: "books", name: "Books", img: catBooks },
-  { slug: "stationery", name: "Stationery", img: catStat },
+  { slug: "home", name: "Home & Kitchen", img: catHome },
+  { slug: "beauty", name: "Health & Beauty", img: catBeauty },
+  { slug: "baby", name: "Baby & Kids", img: catBaby },
+  { slug: "automotive", name: "Automotive", img: catAuto },
 ];
 
 // Function to transform database product to frontend format
@@ -82,6 +88,7 @@ export interface GetProductsParams {
   sort?: "newest" | "trending" | "price_low" | "price_high" | "rating";
   search?: string;
   limit?: number;
+  offset?: number;
 }
 
 // Function to get products from the database API. Filtering/sorting is done
@@ -97,6 +104,7 @@ export const getProducts = async (params: GetProductsParams = {}): Promise<Produ
     if (params.sort) query.set("sort", params.sort);
     if (params.search) query.set("search", params.search);
     query.set("limit", String(params.limit ?? 50));
+    if (params.offset) query.set("offset", String(params.offset));
 
     const response = await fetch(`/api/products?${query.toString()}`, {
       headers: {
@@ -160,13 +168,34 @@ export const findProduct = async (id: string): Promise<ProductWithCategory | und
   }
 };
 
+export const DEFAULT_PAGE_SIZE = 24;
+
+export interface PagedResult {
+  items: ProductWithCategory[];
+  hasMore: boolean;
+}
+
+// Fetches one page at a time (rather than a large flat list) so a listing
+// can show "Next"/"Previous" instead of one long scrolling grid. Requests
+// pageSize+1 items and trims the extra one — if it came back, there's a
+// next page — since the API doesn't return a total count to compare against.
+export const getProductsPage = async (
+  params: Omit<GetProductsParams, "limit" | "offset">,
+  page = 1,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PagedResult> => {
+  const offset = (page - 1) * pageSize;
+  const items = await getProducts({ ...params, limit: pageSize + 1, offset });
+  return { items: items.slice(0, pageSize), hasMore: items.length > pageSize };
+};
+
 export const productsByCategory = async (
   slug: string,
-  sort?: GetProductsParams["sort"]
-): Promise<ProductWithCategory[]> => {
-  // High limit rather than "all": a category page should show everything in
-  // that category, not just the first page of the overall catalog.
-  return getProducts({ category: slug, sort, limit: 500 });
+  sort: GetProductsParams["sort"] | undefined,
+  page = 1,
+  pageSize = DEFAULT_PAGE_SIZE
+): Promise<PagedResult> => {
+  return getProductsPage({ category: slug, sort }, page, pageSize);
 };
 
 // Real photo of an actual in-stock item per category (the newest product in

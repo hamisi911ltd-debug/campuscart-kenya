@@ -7,14 +7,17 @@ import { LocationPicker } from "@/components/LocationPicker";
 import { uploadImages, validateImage } from "@/lib/uploadImage";
 import { adminGet, adminPost, adminPut } from "@/utils/adminApi";
 
+// Kept in sync with categories in src/data/products.ts (the customer-facing
+// category list) — same slugs, same order.
 const categories = [
+  { slug: "phones", name: "Phones & Accessories" },
   { slug: "electronics", name: "Electronics" },
+  { slug: "appliances", name: "Appliances" },
   { slug: "fashion", name: "Fashion" },
-  { slug: "furniture", name: "Home & Furniture" },
-  { slug: "food", name: "Food & Delivery" },
-  { slug: "hostels", name: "Property & Rentals" },
-  { slug: "books", name: "Books" },
-  { slug: "stationery", name: "Stationery" },
+  { slug: "home", name: "Home & Kitchen" },
+  { slug: "beauty", name: "Health & Beauty" },
+  { slug: "baby", name: "Baby & Kids" },
+  { slug: "automotive", name: "Automotive" },
 ];
 
 const AdminProductForm = () => {
