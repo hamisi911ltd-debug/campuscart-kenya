@@ -77,7 +77,7 @@ const ProfilePage = () => {
 
   const handleContactSupport = () => {
     const adminPhone = "254108254465";
-    const message = `Hello CampusMart Support,\n\nI need help with:\n\n[Please describe your issue or feedback here]\n\n---\nUser: ${user?.name || 'Guest'}\nEmail: ${user?.email || 'N/A'}`;
+    const message = `Hello CampusMart Support,\n\nI need help with:\n\n[Please describe your issue or feedback here]\n\n---\nUser: ${user?.name || 'Guest'}\nPhone: ${user?.phone || 'N/A'}`;
     
     // Detect if mobile device
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
@@ -144,7 +144,6 @@ const ProfilePage = () => {
           </div>
           <div className="flex-1">
             <div className="text-lg font-extrabold">{user.name}</div>
-            <div className="text-xs opacity-90">{user.email}</div>
             {user.phone && (
               <div className="text-xs opacity-90 mt-1">📱 {user.phone}</div>
             )}

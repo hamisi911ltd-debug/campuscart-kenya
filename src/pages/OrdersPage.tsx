@@ -3,7 +3,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { toast } from "sonner";
-import { Package, Truck, CheckCircle2, XCircle, Clock, MapPin, Phone, Mail, User, ShieldCheck, Smartphone, Copy, type LucideIcon } from "lucide-react";
+import { Package, Truck, CheckCircle2, XCircle, Clock, MapPin, Phone, User, ShieldCheck, Smartphone, Copy, type LucideIcon } from "lucide-react";
 
 // A courier-style tracking code derived from the order id — distinct from
 // the order number, no schema change needed, stable for a given order.
@@ -23,7 +23,7 @@ interface Order {
   orderNumber: string;
   customer: {
     name: string;
-    email: string;
+    email?: string;
     phone: string;
   };
   items: Array<{
@@ -102,7 +102,6 @@ const OrdersPage = () => {
             orderNumber: `CM${order.id.slice(-8)}`,
             customer: {
               name: user.name,
-              email: user.email,
               phone: order.delivery_phone,
             },
             items: order.items || [],
@@ -139,7 +138,7 @@ const OrdersPage = () => {
       
       // Fallback to localStorage
       const savedOrders = JSON.parse(localStorage.getItem('campusmart_orders') || '[]');
-      const userOrders = savedOrders.filter((order: Order) => order.customer.email === user.email);
+      const userOrders = savedOrders.filter((order: Order) => order.customer.phone === user.phone);
       userOrders.sort((a: Order, b: Order) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
       setOrders(userOrders);
 
@@ -339,13 +338,6 @@ const OrdersPage = () => {
                 <div>
                   <p className="text-sm font-semibold text-foreground">Phone</p>
                   <p className="text-sm text-muted-foreground">{selectedOrder.customer.phone}</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Mail className="h-5 w-5 text-accent mt-0.5" />
-                <div>
-                  <p className="text-sm font-semibold text-foreground">Email</p>
-                  <p className="text-sm text-muted-foreground">{selectedOrder.customer.email}</p>
                 </div>
               </div>
             </div>

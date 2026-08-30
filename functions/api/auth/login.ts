@@ -1,13 +1,14 @@
-// Cloudflare Pages Function - User Login
+// Cloudflare Pages Function - User Login (by phone number + password)
+import { normalizeKenyanPhone } from "../_lib/phone";
+
 interface Env {
   DB: D1Database;
 }
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
-    // Check if DB binding exists
     if (!context.env.DB) {
-      return new Response(JSON.stringify({ 
+      return new Response(JSON.stringify({
         error: "DB binding not found",
         message: "The D1 database binding is not configured. Check Cloudflare Pages settings."
       }), {
@@ -17,15 +18,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     }
 
     const data = await context.request.json() as {
-      email: string;
+      phone_number: string;
       password: string;
     };
 
-    if (!data.email || !data.password) {
-      return new Response(JSON.stringify({ 
+    if (!data.phone_number || !data.password) {
+      return new Response(JSON.stringify({
         error: "Missing required fields",
-        required: ["email", "password"]
+        required: ["phone_number", "password"]
       }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
+    const phone = normalizeKenyanPhone(data.phone_number);
+    if (!phone) {
+      return new Response(JSON.stringify({ error: "Please enter a valid Kenyan phone number" }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -40,13 +49,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       .join("");
 
     const user = await context.env.DB.prepare(
-      "SELECT id, email, full_name, phone_number, profile_image_url, bio, location, is_seller, seller_rating, is_admin, is_active FROM users WHERE email = ? AND password_hash = ?"
-    ).bind(data.email.toLowerCase(), passwordHash).first();
+      "SELECT id, full_name, phone_number, profile_image_url, bio, location, is_seller, seller_rating, is_admin, is_active FROM users WHERE phone_number = ? AND password_hash = ?"
+    ).bind(phone, passwordHash).first();
 
     if (!user) {
-      return new Response(JSON.stringify({ 
-        error: "Invalid email or password",
-        email: data.email
+      return new Response(JSON.stringify({
+        error: "Invalid phone number or password",
       }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -70,7 +78,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     });
   } catch (err: any) {
     console.error('POST /api/auth/login error:', err);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: err.message,
       stack: err.stack,
       details: "Failed to authenticate user"

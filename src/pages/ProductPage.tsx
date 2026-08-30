@@ -122,7 +122,6 @@ const ProductPage = () => {
     const message = `🛒 *New Order Request*\n\n` +
       `👤 *Customer Details:*\n` +
       `Name: ${user.name}\n` +
-      `Email: ${user.email}\n` +
       `Phone: ${user.phone || 'Not provided'}\n\n` +
       `📦 *Product Details:*\n` +
       `Product: ${p.title}\n` +

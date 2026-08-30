@@ -1,9 +1,9 @@
 import { useState, type FormEvent } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { Logo } from "@/components/Logo";
 import { useShop } from "@/store/shop";
-import { Eye, EyeOff, Mail, User, Lock, Phone, Shield } from "lucide-react";
+import { Eye, EyeOff, User, Lock, Phone, Shield } from "lucide-react";
 import { toast } from "sonner";
 
 const AuthPage = () => {
@@ -11,7 +11,6 @@ const AuthPage = () => {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -27,15 +26,9 @@ const AuthPage = () => {
       newErrors.name = "Full name is required";
     }
 
-    if (!email.trim()) {
-      newErrors.email = "Email is required";
-    } else if (!email.includes("@")) {
-      newErrors.email = "Please enter a valid email";
-    }
-
-    if (mode === "signup" && !phone.trim()) {
+    if (!phone.trim()) {
       newErrors.phone = "Phone number is required";
-    } else if (mode === "signup" && phone && !/^(\+254|0)[17]\d{8}$/.test(phone.replace(/\s/g, ''))) {
+    } else if (!/^(\+254|0)[17]\d{8}$/.test(phone.replace(/\s/g, ''))) {
       newErrors.phone = "Please enter a valid Kenyan phone number";
     }
 
@@ -55,18 +48,17 @@ const AuthPage = () => {
 
   const submit = async (e: FormEvent) => {
     e.preventDefault();
-    
+
     if (!validateForm()) return;
 
     setIsLoading(true);
-    
+
     try {
-      // ALWAYS use database API (both production and development)
       const endpoint = mode === 'signup' ? '/api/auth/register' : '/api/auth/login';
-      const payload = mode === 'signup' 
-        ? { email, password, full_name: name, phone_number: phone }
-        : { email, password };
-      
+      const payload = mode === 'signup'
+        ? { password, full_name: name, phone_number: phone }
+        : { phone_number: phone, password };
+
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -81,17 +73,17 @@ const AuthPage = () => {
 
       // Sign in with user data from database
       signIn(
-        data.user.full_name, 
-        data.user.email, 
+        data.user.full_name,
+        data.user.email,
         data.user.phone_number,
         data.user.profile_image_url,
         data.user.location,
         data.user.id  // Pass user ID from database
       );
-      
+
       // Set flag to trigger notifications
       sessionStorage.setItem('campusmart_just_logged_in', 'true');
-      
+
       toast.success(`Account ${mode === 'signup' ? 'created' : 'signed in'} successfully!`);
       navigate("/profile");
     } catch (error: any) {
@@ -131,16 +123,16 @@ const AuthPage = () => {
                     <User className="h-4 w-4" />
                     Full Name
                   </label>
-                  <input 
-                    value={name} 
+                  <input
+                    value={name}
                     onChange={(e) => {
                       setName(e.target.value);
                       if (errors.name) setErrors(prev => ({ ...prev, name: "" }));
                     }}
-                    placeholder="Enter your full name" 
+                    placeholder="Enter your full name"
                     className={`w-full rounded-xl border px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-accent/40 outline-none ${
-                      errors.name 
-                        ? "border-red-500 bg-red-50 dark:bg-red-950/20" 
+                      errors.name
+                        ? "border-red-500 bg-red-50 dark:bg-red-950/20"
                         : "border-border bg-background hover:border-accent/50"
                     }`}
                   />
@@ -148,56 +140,32 @@ const AuthPage = () => {
                 </div>
               )}
 
-              {/* Email Field */}
+              {/* Phone Field */}
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                  <Mail className="h-4 w-4" />
-                  Email Address
+                  <Phone className="h-4 w-4" />
+                  Phone Number
                 </label>
-                <input 
-                  required 
-                  value={email} 
+                <input
+                  required
+                  value={phone}
                   onChange={(e) => {
-                    setEmail(e.target.value);
-                    if (errors.email) setErrors(prev => ({ ...prev, email: "" }));
+                    setPhone(e.target.value);
+                    if (errors.phone) setErrors(prev => ({ ...prev, phone: "" }));
                   }}
-                  type="email" 
-                  placeholder="you@example.com"
+                  type="tel"
+                  placeholder="+254 712 345 678 or 0712 345 678"
                   className={`w-full rounded-xl border px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-accent/40 outline-none ${
-                    errors.email 
-                      ? "border-red-500 bg-red-50 dark:bg-red-950/20" 
+                    errors.phone
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/20"
                       : "border-border bg-background hover:border-accent/50"
                   }`}
                 />
-                {errors.email && <p className="text-red-500 text-xs">{errors.email}</p>}
+                {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
+                {mode === "signup" && (
+                  <p className="text-xs text-muted-foreground">For M-PESA payments, order updates and password resets on WhatsApp</p>
+                )}
               </div>
-
-              {/* Phone Field (Sign Up Only) */}
-              {mode === "signup" && (
-                <div className="space-y-2">
-                  <label className="text-sm font-medium text-foreground flex items-center gap-2">
-                    <Phone className="h-4 w-4" />
-                    Phone Number
-                  </label>
-                  <input 
-                    required 
-                    value={phone} 
-                    onChange={(e) => {
-                      setPhone(e.target.value);
-                      if (errors.phone) setErrors(prev => ({ ...prev, phone: "" }));
-                    }}
-                    type="tel" 
-                    placeholder="+254 712 345 678 or 0712 345 678" 
-                    className={`w-full rounded-xl border px-4 py-3 text-sm transition-all focus:ring-2 focus:ring-accent/40 outline-none ${
-                      errors.phone 
-                        ? "border-red-500 bg-red-50 dark:bg-red-950/20" 
-                        : "border-border bg-background hover:border-accent/50"
-                    }`}
-                  />
-                  {errors.phone && <p className="text-red-500 text-xs">{errors.phone}</p>}
-                  <p className="text-xs text-muted-foreground">For M-PESA payments and order notifications</p>
-                </div>
-              )}
 
               {/* Password Field */}
               <div className="space-y-2">
@@ -206,18 +174,18 @@ const AuthPage = () => {
                   Password
                 </label>
                 <div className="relative">
-                  <input 
-                    required 
+                  <input
+                    required
                     value={password}
                     onChange={(e) => {
                       setPassword(e.target.value);
                       if (errors.password) setErrors(prev => ({ ...prev, password: "" }));
                     }}
-                    type={showPassword ? "text" : "password"} 
-                    placeholder="Enter your password" 
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
                     className={`w-full rounded-xl border px-4 py-3 pr-12 text-sm transition-all focus:ring-2 focus:ring-accent/40 outline-none ${
-                      errors.password 
-                        ? "border-red-500 bg-red-50 dark:bg-red-950/20" 
+                      errors.password
+                        ? "border-red-500 bg-red-50 dark:bg-red-950/20"
                         : "border-border bg-background hover:border-accent/50"
                     }`}
                   />
@@ -230,6 +198,13 @@ const AuthPage = () => {
                   </button>
                 </div>
                 {errors.password && <p className="text-red-500 text-xs">{errors.password}</p>}
+                {mode === "signin" && (
+                  <div className="text-right">
+                    <Link to="/auth/forgot-password" className="text-xs font-semibold text-accent hover:underline">
+                      Forgot password?
+                    </Link>
+                  </div>
+                )}
               </div>
 
               {/* Confirm Password Field (Sign Up Only) */}
@@ -240,18 +215,18 @@ const AuthPage = () => {
                     Confirm Password
                   </label>
                   <div className="relative">
-                    <input 
-                      required 
+                    <input
+                      required
                       value={confirmPassword}
                       onChange={(e) => {
                         setConfirmPassword(e.target.value);
                         if (errors.confirmPassword) setErrors(prev => ({ ...prev, confirmPassword: "" }));
                       }}
-                      type={showConfirmPassword ? "text" : "password"} 
-                      placeholder="Confirm your password" 
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm your password"
                       className={`w-full rounded-xl border px-4 py-3 pr-12 text-sm transition-all focus:ring-2 focus:ring-accent/40 outline-none ${
-                        errors.confirmPassword 
-                          ? "border-red-500 bg-red-50 dark:bg-red-950/20" 
+                        errors.confirmPassword
+                          ? "border-red-500 bg-red-50 dark:bg-red-950/20"
                           : "border-border bg-background hover:border-accent/50"
                       }`}
                     />
@@ -268,12 +243,12 @@ const AuthPage = () => {
               )}
 
               {/* Submit Button */}
-              <button 
+              <button
                 type="submit"
                 disabled={isLoading}
                 className={`w-full mt-6 rounded-xl py-3.5 text-sm font-bold shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 ${
-                  mode === "signin" 
-                    ? "gradient-accent text-accent-foreground" 
+                  mode === "signin"
+                    ? "gradient-accent text-accent-foreground"
                     : "bg-green-600 hover:bg-green-700 text-white"
                 }`}
               >
@@ -289,18 +264,17 @@ const AuthPage = () => {
 
               {/* Mode Toggle */}
               <div className="text-center pt-4">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   onClick={() => {
                     setMode(mode === "signin" ? "signup" : "signin");
                     setErrors({});
                     setPassword("");
                     setConfirmPassword("");
-                    setPhone("");
                   }}
                   className="text-sm text-muted-foreground hover:text-accent transition-colors"
                 >
-                  {mode === "signin" 
+                  {mode === "signin"
                     ? <span>New to CampusMart? <span className="text-green-600 font-semibold">Create account</span></span>
                     : "Already have an account? Sign in"
                   }

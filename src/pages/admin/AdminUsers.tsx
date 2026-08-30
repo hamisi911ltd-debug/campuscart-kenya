@@ -72,9 +72,16 @@ const AdminUsers = () => {
     }
   };
 
+  // Phone-only signups get a synthetic, never-shown email under the hood
+  // (see functions/api/auth/register.ts) so the users.email NOT NULL UNIQUE
+  // constraint is satisfied without a live-database migration - don't
+  // surface or search against that placeholder here.
+  const isRealEmail = (email: string) => !email.endsWith('@phone.campusmart.local');
+
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.full_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
+                         (isRealEmail(user.email) && user.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+                         (user.phone_number || '').includes(searchQuery);
     const matchesFilter = filterType === 'all' ||
                          (filterType === 'active' && user.is_active) ||
                          (filterType === 'inactive' && !user.is_active);
@@ -191,10 +198,12 @@ const AdminUsers = () => {
                       </td>
                       <td className="p-3 md:p-4">
                         <div className="space-y-1">
-                          <div className="text-xs flex items-center gap-1">
-                            <Mail className="h-3 w-3" />
-                            {user.email}
-                          </div>
+                          {isRealEmail(user.email) && (
+                            <div className="text-xs flex items-center gap-1">
+                              <Mail className="h-3 w-3" />
+                              {user.email}
+                            </div>
+                          )}
                           {user.phone_number && (
                             <div className="text-xs flex items-center gap-1">
                               <Phone className="h-3 w-3" />
@@ -271,10 +280,12 @@ const AdminUsers = () => {
                 </div>
 
                 <div className="space-y-2 mb-3">
-                  <div className="text-xs flex items-center gap-1 text-muted-foreground">
-                    <Mail className="h-3 w-3" />
-                    {user.email}
-                  </div>
+                  {isRealEmail(user.email) && (
+                    <div className="text-xs flex items-center gap-1 text-muted-foreground">
+                      <Mail className="h-3 w-3" />
+                      {user.email}
+                    </div>
+                  )}
                   {user.phone_number && (
                     <div className="text-xs flex items-center gap-1 text-muted-foreground">
                       <Phone className="h-3 w-3" />

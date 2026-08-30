@@ -149,7 +149,7 @@ const CheckoutPage = () => {
       delivery_latitude: location.lat,
       delivery_longitude: location.lng,
       buyer_phone: user.phone || 'Not provided',
-      notes: `Customer: ${user.name} | Email: ${user.email}`,
+      notes: `Customer: ${user.name}`,
     };
 
     try {
@@ -299,10 +299,6 @@ const CheckoutPage = () => {
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Customer:</span>
                   <span className="font-semibold truncate ml-2 max-w-[200px]">{user?.name}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Email:</span>
-                  <span className="font-semibold truncate ml-2 max-w-[200px]">{user?.email}</span>
                 </div>
                 {user?.phone && (
                   <div className="flex justify-between">

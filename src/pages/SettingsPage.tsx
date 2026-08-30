@@ -166,15 +166,6 @@ const SettingsPage = () => {
               />
             </div>
             <div>
-              <label className="text-sm font-medium mb-1 block">Email</label>
-              <input
-                type="email"
-                value={user.email}
-                readOnly
-                className="w-full rounded-xl border border-border bg-muted px-4 py-2.5 text-sm outline-none"
-              />
-            </div>
-            <div>
               <label className="text-sm font-medium mb-1 block">Phone</label>
               <input
                 type="tel"

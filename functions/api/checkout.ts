@@ -27,13 +27,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     // Get buyer information
     let buyerInfo = {
       name: 'Guest',
-      email: 'N/A',
       phone: body.buyer_phone || 'N/A'
     };
 
     if (body.buyer_id && body.buyer_id !== 'guest') {
       const buyer = await context.env.DB.prepare(`
-        SELECT full_name, email, phone_number
+        SELECT full_name, phone_number
         FROM users
         WHERE id = ?
       `).bind(body.buyer_id).first();
@@ -41,7 +40,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       if (buyer) {
         buyerInfo = {
           name: buyer.full_name as string || 'Guest',
-          email: buyer.email as string || 'N/A',
           phone: buyer.phone_number as string || body.buyer_phone || 'N/A'
         };
       }
@@ -140,7 +138,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     const whatsappMessage = `🛒 *New Order - #CM${Date.now().toString().slice(-8)}*\n\n` +
       `👤 *Customer Details:*\n` +
       `Name: ${buyerInfo.name}\n` +
-      `Email: ${buyerInfo.email}\n` +
       `Phone: ${buyerInfo.phone}\n` +
       `Delivery: ${body.delivery_address}\n\n` +
       `${mapsLink}` +
