@@ -224,6 +224,11 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
       });
     }
 
+    // See the matching comment in clear-products.ts: order_items.product_id
+    // is NOT NULL but its own foreign key tries to null it out on delete -
+    // deleting a product that was ever ordered fails outright without this.
+    await env.DB.prepare("DELETE FROM order_items WHERE product_id = ?").bind(productId).run();
+
     // Delete the product from database
     await env.DB.prepare("DELETE FROM products WHERE id = ?").bind(productId).run();
 

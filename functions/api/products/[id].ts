@@ -38,9 +38,25 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 };
 
-// DELETE product by ID
+function isAdmin(request: Request): boolean {
+  const cookie = request.headers.get("Cookie") || "";
+  if (cookie.includes("admin_session=true")) return true;
+  const authHeader = request.headers.get("Authorization");
+  if (authHeader === "Bearer admin_session_true") return true;
+  return request.headers.get("X-Admin-Session") === "true";
+}
+
+// DELETE product by ID (admin-only - this was previously reachable by
+// anyone with no authentication check at all)
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
   try {
+    if (!isAdmin(context.request)) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const id = context.params.id as string;
 
     if (!id) {
@@ -62,7 +78,14 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
       });
     }
 
-    // Delete the product (CASCADE will handle related records)
+    // order_items.product_id is NOT NULL but its foreign key tries to null
+    // it out on product deletion - deleting an ordered product fails
+    // outright without this (see the matching fix in admin/products.ts).
+    await context.env.DB.prepare(
+      "DELETE FROM order_items WHERE product_id = ?"
+    ).bind(id).run();
+
+    // Delete the product (CASCADE handles reviews/cart/favorites)
     await context.env.DB.prepare(
       "DELETE FROM products WHERE id = ?"
     ).bind(id).run();
@@ -86,8 +109,16 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
 };
 
 // PATCH product by ID (update availability)
+// PATCH product by ID (admin-only - same missing-auth issue as DELETE above)
 export const onRequestPatch: PagesFunction<Env> = async (context) => {
   try {
+    if (!isAdmin(context.request)) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const id = context.params.id as string;
 
     if (!id) {

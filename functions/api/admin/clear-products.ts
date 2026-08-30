@@ -70,7 +70,18 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       }
     }
 
-    const deleted = await env.DB.prepare("DELETE FROM products").run();
+    // order_items.product_id is NOT NULL but its foreign key tries to null
+    // it out on product deletion ("ON DELETE SET NULL") - a contradiction
+    // in the original schema that makes DELETE FROM products fail outright
+    // for any product that was ever ordered. Clearing every product means
+    // every one of these references is about to be removed anyway, so
+    // dropping the line-items here avoids that conflict entirely without
+    // requiring the schema migration to have been run first. The orders
+    // themselves (buyer, total, status, tracking, waybill) are untouched -
+    // only the itemized per-product breakdown inside past orders is lost.
+    await env.DB.prepare("DELETE FROM order_items WHERE product_id IS NOT NULL").run();
+
+    await env.DB.prepare("DELETE FROM products").run();
 
     return new Response(JSON.stringify({
       success: true,
