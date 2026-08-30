@@ -96,19 +96,21 @@ const CategoryPage = () => {
 
   return (
     <PageShell title={cat?.name ?? "Category"}>
-      {/* Hero banner */}
+      {/* Hero banner — taller on larger screens so a wide desktop container
+          doesn't force such a short/wide crop that the photo is barely
+          recognizable; object-cover centers the interesting part either way. */}
       {cat && (
-        <div className="relative mb-4 h-28 overflow-hidden rounded-2xl shadow-card sm:h-36">
+        <div className="relative mb-4 h-28 overflow-hidden rounded-2xl shadow-card sm:h-36 md:h-48 lg:h-60">
           <img
             src={items[0]?.image || catImages[slug] || cat.img}
             alt=""
             aria-hidden="true"
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover object-center"
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/60 to-primary/10" />
-          <div className="absolute inset-0 flex flex-col justify-center px-5">
-            <span className="text-xl font-extrabold text-primary-foreground sm:text-2xl">{cat.name}</span>
-            <span className="mt-1 text-xs font-medium text-primary-foreground/85 sm:text-sm">
+          <div className="absolute inset-0 flex flex-col justify-center px-5 md:px-8">
+            <span className="text-xl font-extrabold text-primary-foreground sm:text-2xl md:text-3xl">{cat.name}</span>
+            <span className="mt-1 text-xs font-medium text-primary-foreground/85 sm:text-sm md:text-base">
               {loading
                 ? "Loading products…"
                 : items.length === 0

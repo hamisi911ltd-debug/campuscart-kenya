@@ -185,12 +185,15 @@ const Index = () => {
               See all <ChevronRight className="h-3.5 w-3.5" />
             </Link>
           </div>
-          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
-            <div className="flex gap-4">
+          {/* Mobile keeps the horizontal-scroll strip; from md up there's
+              plenty of width, so the circles spread out with even gaps to
+              fill the whole row instead of staying bunched on one side. */}
+          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4 md:mx-0 md:overflow-visible md:px-0">
+            <div className="flex gap-4 md:w-full md:justify-between md:gap-2">
               {categories.map((c) => (
-                <Link key={c.slug} to={`/category/${c.slug}`} className="group flex w-16 shrink-0 flex-col items-center gap-1.5">
+                <Link key={c.slug} to={`/category/${c.slug}`} className="group flex w-16 shrink-0 flex-col items-center gap-1.5 md:w-auto">
                   <div className="rounded-full bg-gradient-to-br from-accent/60 to-primary/40 p-[2px] shadow-sm transition-transform group-active:scale-95">
-                    <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-background bg-muted">
+                    <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-background bg-muted md:h-16 md:w-16">
                       <img
                         src={categoryImages[c.slug] || c.img}
                         alt={c.name}
@@ -202,8 +205,8 @@ const Index = () => {
                   <span className="text-center text-[11px] font-medium text-foreground leading-tight">{c.name}</span>
                 </Link>
               ))}
-              <Link to="/categories" className="flex w-16 shrink-0 flex-col items-center gap-1.5">
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-border bg-muted text-muted-foreground transition group-hover:border-accent">
+              <Link to="/categories" className="flex w-16 shrink-0 flex-col items-center gap-1.5 md:w-auto">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-dashed border-border bg-muted text-muted-foreground transition group-hover:border-accent md:h-16 md:w-16">
                   <ChevronRight className="h-5 w-5" />
                 </div>
                 <span className="text-center text-[11px] font-medium text-foreground leading-tight">See all</span>
