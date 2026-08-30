@@ -35,7 +35,6 @@ import AdminProductForm from "./pages/admin/AdminProductForm";
 import AdminCJImport from "./pages/admin/AdminCJImport";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCoupons from "./pages/admin/AdminCoupons";
-import AdminLuckyCodes from "./pages/admin/AdminLuckyCodes";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AuthDebug from "./pages/admin/AuthDebug";
 import AdminRoute from "./components/AdminRoute";
@@ -90,7 +89,6 @@ const App = () => {
               <Route path="/admin/products/import-cj" element={<AdminRoute><AdminCJImport /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
               <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
-              <Route path="/admin/lucky-codes" element={<AdminRoute><AdminLuckyCodes /></AdminRoute>} />
               <Route path="/admin/test" element={<AdminRoute><DirectApiTest /></AdminRoute>} />
               <Route path="/admin/debug" element={<AdminRoute><AuthDebug /></AdminRoute>} />
               <Route path="/admin/diagnostic" element={<AdminRoute><TempDashboard /></AdminRoute>} />

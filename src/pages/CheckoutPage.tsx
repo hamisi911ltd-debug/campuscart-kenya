@@ -5,7 +5,6 @@ import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
-import { CouponRedemption } from "@/components/CouponRedemption";
 
 interface Order {
   id: string;
@@ -48,8 +47,6 @@ const CheckoutPage = () => {
   const [locationLoading, setLocationLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
   const [locationError, setLocationError] = useState<string>("");
-  const [appliedCoupon, setAppliedCoupon] = useState<string>("");
-  const [couponDiscount, setCouponDiscount] = useState<number>(0);
 
   const ADMIN_WHATSAPP = "254108254465";
 
@@ -65,20 +62,9 @@ const CheckoutPage = () => {
   };
 
   const deliveryFee = getDeliveryFee(cartTotal);
-  const subtotalAfterDiscount = cartTotal - couponDiscount;
-  const orderTotal = subtotalAfterDiscount + deliveryFee;
+  const orderTotal = cartTotal + deliveryFee;
   const walletBalance = user?.walletBalance || 0;
   const walletCovers = walletBalance >= orderTotal;
-
-  const handleCouponApplied = (discount: number, couponCode: string) => {
-    setCouponDiscount(discount);
-    setAppliedCoupon(couponCode);
-  };
-
-  const handleCouponRemoved = () => {
-    setCouponDiscount(0);
-    setAppliedCoupon("");
-  };
 
   // No longer needed: getCurrentLocation and openLocationSettings are handled by LocationPicker
 
@@ -163,9 +149,7 @@ const CheckoutPage = () => {
       delivery_latitude: location.lat,
       delivery_longitude: location.lng,
       buyer_phone: user.phone || 'Not provided',
-      notes: `Customer: ${user.name} | Email: ${user.email}${appliedCoupon ? ` | Coupon: ${appliedCoupon} (KES ${couponDiscount.toLocaleString()} discount)` : ''}`,
-      coupon_code: appliedCoupon || undefined,
-      coupon_discount: couponDiscount || undefined,
+      notes: `Customer: ${user.name} | Email: ${user.email}`,
     };
 
     try {
@@ -257,16 +241,6 @@ const CheckoutPage = () => {
                   setShowMap(true);
                 }} 
                 initialLocation={location}
-              />
-            </div>
-
-            {/* Coupon Section */}
-            <div className="rounded-lg lg:rounded-xl bg-card p-3 lg:p-4 shadow-card">
-              <CouponRedemption
-                onCouponApplied={handleCouponApplied}
-                onCouponRemoved={handleCouponRemoved}
-                appliedCoupon={appliedCoupon}
-                orderTotal={cartTotal}
               />
             </div>
 
@@ -368,12 +342,6 @@ const CheckoutPage = () => {
                 <span className="text-muted-foreground">Subtotal</span>
                 <span className="font-semibold">KES {cartTotal.toLocaleString()}</span>
               </div>
-              {couponDiscount > 0 && (
-                <div className="flex justify-between text-green-600 dark:text-green-400">
-                  <span className="text-xs">Coupon ({appliedCoupon})</span>
-                  <span className="font-semibold">-KES {couponDiscount.toLocaleString()}</span>
-                </div>
-              )}
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Delivery</span>
                 <span className="font-semibold">KES {deliveryFee}</span>

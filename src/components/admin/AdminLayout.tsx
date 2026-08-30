@@ -1,7 +1,7 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { 
-  LayoutDashboard, Users, Package, ShoppingBag, Gift, Sparkles,
+  LayoutDashboard, Users, Package, ShoppingBag, Sparkles,
   LogOut, Menu, X, Bell, Search, ChevronDown, Shield,
   Activity, Settings, BarChart3, Database
 } from "lucide-react";
@@ -73,16 +73,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       description: 'Order Management'
     },
     {
-      icon: Gift, 
-      label: 'Coupons', 
+      icon: Sparkles,
+      label: 'Coupons',
       path: '/admin/coupons',
-      description: 'Discount Codes'
-    },
-    { 
-      icon: Sparkles, 
-      label: 'Lucky Codes', 
-      path: '/admin/lucky-codes',
-      description: 'Wallet Points'
+      description: 'Wallet Credit Codes'
     },
   ];
 

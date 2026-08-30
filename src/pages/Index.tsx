@@ -6,7 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { SignInModal } from "@/components/SignInModal";
-import { LuckyCodeModal } from "@/components/LuckyCodeModal";
+import { CouponModal } from "@/components/CouponModal";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
@@ -18,7 +18,7 @@ const VOUCHERS = [
   { code: "WELCOME50", label: "KES 50 OFF", sub: "New shoppers" },
   { code: "FLASH30", label: "KES 30 OFF", sub: "Flash sale" },
   { code: "SHOP20", label: "KES 20 OFF", sub: "Any order" },
-  { code: "LUCKY25", label: "KES 25 OFF", sub: "Lucky draw" },
+  { code: "LUCKY25", label: "KES 25 OFF", sub: "Limited time" },
 ];
 
 const Index = () => {
@@ -27,7 +27,7 @@ const Index = () => {
   const [productsHasMore, setProductsHasMore] = useState(false);
   const [productsPage, setProductsPage] = useState(1);
   const [showSignInModal, setShowSignInModal] = useState(false);
-  const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
   const [flashDeals, setFlashDeals] = useState<ProductWithCategory[]>([]);
   const [categoryImageSample, setCategoryImageSample] = useState<ProductWithCategory[]>([]);
@@ -149,7 +149,7 @@ const Index = () => {
         onClose={() => setShowSignInModal(false)}
         message="Welcome to CampusMart! Sign in to start shopping and selling."
       />
-      <LuckyCodeModal isOpen={showLuckyCodeModal} onClose={() => setShowLuckyCodeModal(false)} />
+      <CouponModal isOpen={showCouponModal} onClose={() => setShowCouponModal(false)} />
       <CelebrationModal
         isOpen={showLoginCelebration}
         onClose={() => setShowLoginCelebration(false)}
@@ -219,7 +219,7 @@ const Index = () => {
               {VOUCHERS.map((v) => (
                 <button
                   key={v.code}
-                  onClick={() => (user ? setShowLuckyCodeModal(true) : setShowSignInModal(true))}
+                  onClick={() => (user ? setShowCouponModal(true) : setShowSignInModal(true))}
                   className="flex shrink-0 items-center gap-2 rounded-lg border border-dashed border-accent bg-accent/5 px-3 py-2 text-left"
                 >
                   <Ticket className="h-4 w-4 text-accent" />

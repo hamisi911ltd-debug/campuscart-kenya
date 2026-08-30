@@ -5,7 +5,7 @@ import { Heart, LogOut, Package, Settings, ShoppingBag, Wallet, Download, Messag
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { CelebrationModal } from "@/components/CelebrationModal";
-import { LuckyCodeModal } from "@/components/LuckyCodeModal";
+import { CouponModal } from "@/components/CouponModal";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -19,7 +19,7 @@ const ProfilePage = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
-  const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
 
   useEffect(() => {
     // Check if user just logged in
@@ -119,9 +119,9 @@ const ProfilePage = () => {
 
   return (
     <>
-      <LuckyCodeModal
-        isOpen={showLuckyCodeModal}
-        onClose={() => setShowLuckyCodeModal(false)}
+      <CouponModal
+        isOpen={showCouponModal}
+        onClose={() => setShowCouponModal(false)}
       />
       
       <CelebrationModal
@@ -177,7 +177,7 @@ const ProfilePage = () => {
             <Wallet className="h-4 w-4" /> Top Up
           </Link>
           <button
-            onClick={() => setShowLuckyCodeModal(true)}
+            onClick={() => setShowCouponModal(true)}
             className="flex items-center justify-center gap-1.5 py-2.5 bg-white/15 text-primary-foreground rounded-xl font-bold text-sm hover:bg-white/25 transition"
           >
             Redeem Code

@@ -3,35 +3,35 @@ import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, type FormEvent } from "react";
 import { useShop } from "@/store/shop";
-import { LuckyCodeModal } from "./LuckyCodeModal";
-import { LuckyCodeWelcomePopup } from "./LuckyCodeWelcomePopup";
+import { CouponModal } from "./CouponModal";
+import { CouponWelcomePopup } from "./CouponWelcomePopup";
 import { SignInModal } from "./SignInModal";
 
 export const TopBar = () => {
   const navigate = useNavigate();
   const { cartCount, user, unreadNotificationCount } = useShop();
   const [q, setQ] = useState("");
-  const [showLuckyCodeModal, setShowLuckyCodeModal] = useState(false);
+  const [showCouponModal, setShowCouponModal] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
 
   useEffect(() => {
-    // Listen for custom event to open lucky code modal
-    const handleOpenLuckyCodeModal = () => {
-      setShowLuckyCodeModal(true);
+    // Listen for custom event to open the coupon modal
+    const handleOpenCouponModal = () => {
+      setShowCouponModal(true);
     };
 
-    window.addEventListener('openLuckyCodeModal', handleOpenLuckyCodeModal);
-    
+    window.addEventListener('openCouponModal', handleOpenCouponModal);
+
     return () => {
-      window.removeEventListener('openLuckyCodeModal', handleOpenLuckyCodeModal);
+      window.removeEventListener('openCouponModal', handleOpenCouponModal);
     };
   }, []);
 
-  const handleLuckyCodeClick = () => {
+  const handleCouponClick = () => {
     if (!user) {
       setShowSignInModal(true);
     } else {
-      setShowLuckyCodeModal(true);
+      setShowCouponModal(true);
     }
   };
 
@@ -57,11 +57,11 @@ export const TopBar = () => {
 
   return (
     <>
-      <LuckyCodeModal 
-        isOpen={showLuckyCodeModal} 
-        onClose={() => setShowLuckyCodeModal(false)}
+      <CouponModal
+        isOpen={showCouponModal}
+        onClose={() => setShowCouponModal(false)}
       />
-      <LuckyCodeWelcomePopup />
+      <CouponWelcomePopup />
       <SignInModal 
         isOpen={showSignInModal} 
         onClose={() => setShowSignInModal(false)}
@@ -98,11 +98,11 @@ export const TopBar = () => {
             <span className="hidden md:inline">KES {(user?.walletBalance || 0).toLocaleString()}</span>
           </Link>
 
-          {/* Desktop Lucky Code Button */}
+          {/* Desktop Coupon Button */}
           <button
-            onClick={handleLuckyCodeClick}
+            onClick={handleCouponClick}
             className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
-            aria-label="Lucky Code"
+            aria-label="Coupon"
           >
             <Star className="h-4 w-4" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
@@ -150,11 +150,11 @@ export const TopBar = () => {
             <Wallet className="h-4 w-4" />
           </Link>
 
-          {/* Mobile Lucky Code Button */}
+          {/* Mobile Coupon Button */}
           <button
-            onClick={handleLuckyCodeClick}
+            onClick={handleCouponClick}
             className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
-            aria-label="Lucky Code"
+            aria-label="Coupon"
           >
             <Star className="h-4 w-4" />
             <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
