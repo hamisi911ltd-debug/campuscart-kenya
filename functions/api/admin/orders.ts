@@ -36,6 +36,12 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
     });
   }
 
+  // has_dropship_items depends on products.sourced_from, added by
+  // migrations/add_dropship_fields.sql. That migration isn't guaranteed to
+  // have been run against this database yet, and a SELECT referencing a
+  // column that doesn't exist fails the whole query — so this tries the
+  // enhanced version first and falls back to the plain one instead of
+  // breaking order listing entirely for anyone who hasn't run it.
   try {
     const result = await env.DB.prepare(`
       SELECT
@@ -55,20 +61,46 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
       ORDER BY o.created_at DESC
     `).all();
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      orders: result.results 
+    return new Response(JSON.stringify({
+      success: true,
+      orders: result.results
     }), {
       headers: { "Content-Type": "application/json" }
     });
-  } catch (error) {
-    console.error("Error fetching orders:", error);
-    return new Response(JSON.stringify({ 
-      error: "Failed to fetch orders" 
-    }), {
-      status: 500,
-      headers: { "Content-Type": "application/json" }
-    });
+  } catch (enhancedError) {
+    try {
+      const fallback = await env.DB.prepare(`
+        SELECT
+          o.*,
+          buyer.full_name as buyer_name,
+          buyer.email as buyer_email,
+          seller.full_name as seller_name,
+          seller.email as seller_email,
+          COUNT(oi.id) as item_count,
+          0 as has_dropship_items
+        FROM orders o
+        LEFT JOIN users buyer ON o.buyer_id = buyer.id
+        LEFT JOIN users seller ON o.seller_id = seller.id
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+      `).all();
+
+      return new Response(JSON.stringify({
+        success: true,
+        orders: fallback.results
+      }), {
+        headers: { "Content-Type": "application/json" }
+      });
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      return new Response(JSON.stringify({
+        error: "Failed to fetch orders"
+      }), {
+        status: 500,
+        headers: { "Content-Type": "application/json" }
+      });
+    }
   }
 }
 
