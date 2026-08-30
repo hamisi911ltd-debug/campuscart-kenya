@@ -10,7 +10,7 @@ import { LuckyCodeModal } from "@/components/LuckyCodeModal";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
-import { useSEO } from "@/hooks/useSEO";
+import { useSEO, SITE_URL } from "@/hooks/useSEO";
 import { Pagination } from "@/components/Pagination";
 import { categories, getProducts, getProductsPage, getProductsSync, transformDatabaseProduct, type ProductWithCategory } from "@/data/products";
 
@@ -23,7 +23,6 @@ const VOUCHERS = [
 
 const Index = () => {
   const { user } = useShop();
-  useSEO({ title: "", path: "/" });
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [productsHasMore, setProductsHasMore] = useState(false);
   const [productsPage, setProductsPage] = useState(1);
@@ -112,6 +111,36 @@ const Index = () => {
       }
     }
   }, [user]);
+
+  useSEO({
+    title: "",
+    path: "/",
+    // Lists the real products currently showing in "More To Love" as
+    // Product entities — the more pages Google can see are full of
+    // genuine, distinct products with real prices/images, the more of them
+    // it has a reason to index and surface individually in search results.
+    structuredData: products.length > 0 ? [{
+      "@context": "https://schema.org",
+      "@type": "ItemList",
+      itemListElement: products.map((p, i) => ({
+        "@type": "ListItem",
+        position: i + 1,
+        item: {
+          "@type": "Product",
+          name: p.title,
+          image: p.image ? (p.image.startsWith("http") ? p.image : `${SITE_URL}${p.image}`) : undefined,
+          url: `${SITE_URL}/product/${p.id}`,
+          offers: {
+            "@type": "Offer",
+            price: p.price,
+            priceCurrency: "KES",
+            availability: "https://schema.org/InStock",
+            url: `${SITE_URL}/product/${p.id}`,
+          },
+        },
+      })),
+    }] : undefined,
+  });
 
   return (
     <div className="min-h-screen bg-background pb-24">

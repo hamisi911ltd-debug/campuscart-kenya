@@ -4,7 +4,7 @@ import { ArrowDownAZ } from "lucide-react";
 import { PageShell } from "@/components/PageShell";
 import { ProductCard } from "@/components/ProductCard";
 import { Pagination } from "@/components/Pagination";
-import { useSEO } from "@/hooks/useSEO";
+import { useSEO, SITE_URL } from "@/hooks/useSEO";
 import { categories, productsByCategory, getCategoryImages, DEFAULT_PAGE_SIZE, type GetProductsParams } from "@/data/products";
 import type { ProductWithCategory } from "@/data/products";
 
@@ -55,15 +55,43 @@ const CategoryPage = () => {
       ? `Shop ${cat.name} on CampusMart Kenya — quality products, fast delivery and secure M-Pesa payments across Kenya.`
       : undefined,
     path: `/category/${slug}`,
-    structuredData: cat ? [{
-      "@context": "https://schema.org",
-      "@type": "BreadcrumbList",
-      itemListElement: [
-        { "@type": "ListItem", position: 1, name: "Home", item: "https://campusmart.co.ke/" },
-        { "@type": "ListItem", position: 2, name: "All Categories", item: "https://campusmart.co.ke/categories" },
-        { "@type": "ListItem", position: 3, name: cat.name, item: `https://campusmart.co.ke/category/${slug}` },
-      ],
-    }] : undefined,
+    structuredData: cat ? [
+      {
+        "@context": "https://schema.org",
+        "@type": "BreadcrumbList",
+        itemListElement: [
+          { "@type": "ListItem", position: 1, name: "Home", item: "https://campusmart.co.ke/" },
+          { "@type": "ListItem", position: 2, name: "All Categories", item: "https://campusmart.co.ke/categories" },
+          { "@type": "ListItem", position: 3, name: cat.name, item: `https://campusmart.co.ke/category/${slug}` },
+        ],
+      },
+      // Lists the real products actually shown on this page (this page of
+      // results, not the whole category) as Product entities — the more
+      // pages Google can see are full of genuine, distinct products with
+      // real prices/images, the more of them it has a reason to index and
+      // surface individually.
+      ...(items.length > 0 ? [{
+        "@context": "https://schema.org",
+        "@type": "ItemList",
+        itemListElement: items.map((p, i) => ({
+          "@type": "ListItem",
+          position: i + 1,
+          item: {
+            "@type": "Product",
+            name: p.title,
+            image: p.image ? (p.image.startsWith("http") ? p.image : `${SITE_URL}${p.image}`) : undefined,
+            url: `${SITE_URL}/product/${p.id}`,
+            offers: {
+              "@type": "Offer",
+              price: p.price,
+              priceCurrency: "KES",
+              availability: "https://schema.org/InStock",
+              url: `${SITE_URL}/product/${p.id}`,
+            },
+          },
+        })),
+      }] : []),
+    ] : undefined,
   });
 
   return (
