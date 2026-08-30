@@ -27,17 +27,36 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       });
     }
 
-    // Get orders with items
-    const { results: orders } = await context.env.DB.prepare(`
-      SELECT o.*, 
-             GROUP_CONCAT(oi.product_id || ':' || oi.quantity || ':' || oi.price || ':' || p.title) as items
-      FROM orders o
-      LEFT JOIN order_items oi ON o.id = oi.order_id
-      LEFT JOIN products p ON oi.product_id = p.id
-      WHERE o.buyer_id = ?
-      GROUP BY o.id
-      ORDER BY o.created_at DESC
-    `).bind(userId).all();
+    // Get orders with items. oi.product_title is a purchase-time snapshot
+    // (added by migrations/fix_order_items_product_delete.sql) preferred
+    // over the live products join, so a line item stays readable even
+    // after the product itself is deleted from the catalog - falls back to
+    // the plain join (pre-migration/pre-snapshot orders) if that column
+    // doesn't exist yet or is null for older rows.
+    let orders: any[];
+    try {
+      ({ results: orders } = await context.env.DB.prepare(`
+        SELECT o.*,
+               GROUP_CONCAT(oi.product_id || ':' || oi.quantity || ':' || oi.price_at_purchase || ':' || COALESCE(oi.product_title, p.title, 'Unknown Product')) as items
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN products p ON oi.product_id = p.id
+        WHERE o.buyer_id = ?
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+      `).bind(userId).all());
+    } catch {
+      ({ results: orders } = await context.env.DB.prepare(`
+        SELECT o.*,
+               GROUP_CONCAT(oi.product_id || ':' || oi.quantity || ':' || oi.price_at_purchase || ':' || COALESCE(p.title, 'Unknown Product')) as items
+        FROM orders o
+        LEFT JOIN order_items oi ON o.id = oi.order_id
+        LEFT JOIN products p ON oi.product_id = p.id
+        WHERE o.buyer_id = ?
+        GROUP BY o.id
+        ORDER BY o.created_at DESC
+      `).bind(userId).all());
+    }
 
     // Parse items for each order
     const ordersWithItems = (orders as any[]).map(order => ({

@@ -63,17 +63,20 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     const total_amount = subtotal + delivery_fee;
 
-    // Get product details for the order confirmation
+    // Get product details for the order confirmation. title/image are also
+    // snapshotted onto order_items below so this order's history stays
+    // readable even if the product is later deleted from the catalog.
     const productDetails = await Promise.all(
       body.items.map(async (item) => {
         const product = await context.env.DB.prepare(`
-          SELECT id, title, category FROM products WHERE id = ?
+          SELECT id, title, category, image_url FROM products WHERE id = ?
         `).bind(item.product_id).first();
 
         return {
           ...item,
           title: product?.title || 'Unknown Product',
           category: product?.category || 'N/A',
+          image_url: (product?.image_url as string | undefined) || null,
         };
       })
     );
@@ -99,15 +102,19 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body.notes || null
     ).run();
 
-    // Create order items
-    for (const item of body.items) {
+    // Create order items, snapshotting product title/image at purchase time
+    for (let i = 0; i < body.items.length; i++) {
+      const item = body.items[i];
+      const detail = productDetails[i];
       await context.env.DB.prepare(`
-        INSERT INTO order_items (id, order_id, product_id, quantity, price_at_purchase)
-        VALUES (?, ?, ?, ?, ?)
+        INSERT INTO order_items (id, order_id, product_id, product_title, product_image, quantity, price_at_purchase)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
       `).bind(
         crypto.randomUUID(),
         orderId,
         item.product_id,
+        detail?.title || null,
+        detail?.image_url || null,
         item.quantity,
         item.price
       ).run();
