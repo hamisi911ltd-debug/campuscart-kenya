@@ -1,4 +1,4 @@
-import { Star, Plus } from "lucide-react";
+import { Star, Plus, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useShop } from "@/store/shop";
 
@@ -13,6 +13,10 @@ export interface Product {
   rating?: number;
   sold?: number;
   location?: { lat: number; lng: number };
+  /** Set when sourced on order from a dropship supplier — different delivery
+   * timeline than stock already in hand, so it's called out distinctly
+   * rather than presented the same as a same-day-available item. */
+  shippingNote?: string;
 }
 
 const badgeStyles: Record<string, string> = {
@@ -62,6 +66,13 @@ export const ProductCard = ({ p }: { p: Product }) => {
       <div className="flex flex-1 flex-col p-2">
         {/* Fixed two-line title keeps every card's white area the same height */}
         <h3 className="line-clamp-2 h-[34px] text-[13px] font-medium text-foreground leading-[17px]">{p.title}</h3>
+
+        {p.shippingNote && (
+          <div className="mt-1 flex items-center gap-1 text-[10px] font-semibold text-accent">
+            <Truck className="h-3 w-3 shrink-0" />
+            <span className="truncate">Ships in 2-4 weeks</span>
+          </div>
+        )}
 
         {/* Price row — single line so every card's white area matches */}
         <div className="mt-1.5 flex items-end gap-1 overflow-hidden whitespace-nowrap">

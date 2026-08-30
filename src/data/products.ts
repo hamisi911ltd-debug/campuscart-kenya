@@ -85,6 +85,7 @@ export const transformDatabaseProduct = (dbProduct: any): ProductWithCategory =>
     description: dbProduct.description,
     images,
     totalReviews: dbProduct.reviews_count || 0,
+    shippingNote: dbProduct.shipping_note || undefined,
   };
 };
 

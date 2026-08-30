@@ -11,6 +11,7 @@ interface Order {
   seller_name: string;
   seller_email: string;
   item_count: number;
+  has_dropship_items: number;
   total_amount: number;
   status: 'pending' | 'pending_confirmation' | 'confirmed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'payment_failed';
   created_at: string;
@@ -326,6 +327,11 @@ const AdminOrders = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm text-foreground">{order.item_count} items</span>
+                        {!!order.has_dropship_items && (
+                          <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-accent">
+                            <Truck className="h-3 w-3" /> Includes supplier-sourced item
+                          </div>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className="font-bold text-accent text-sm">KES {order.total_amount.toLocaleString()}</span>
@@ -426,6 +432,12 @@ const AdminOrders = () => {
                     <div className="text-xs text-muted-foreground">Items</div>
                   </div>
                 </div>
+
+                {!!order.has_dropship_items && (
+                  <div className="mb-3 flex items-center gap-1.5 rounded-lg bg-accent/10 px-2 py-1.5 text-xs font-bold text-accent">
+                    <Truck className="h-3.5 w-3.5" /> Includes a supplier-sourced item — place the matching order with your supplier
+                  </div>
+                )}
 
                 <div className="space-y-2 mb-3">
                   <div className="text-xs text-muted-foreground flex items-center gap-2">

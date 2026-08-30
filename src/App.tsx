@@ -32,6 +32,7 @@ import DirectApiTest from "./pages/admin/DirectApiTest";
 import AdminUsers from "./pages/admin/AdminUsers";
 import AdminProducts from "./pages/admin/AdminProducts";
 import AdminProductForm from "./pages/admin/AdminProductForm";
+import AdminCJImport from "./pages/admin/AdminCJImport";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminLuckyCodes from "./pages/admin/AdminLuckyCodes";
@@ -86,6 +87,7 @@ const App = () => {
               <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
               <Route path="/admin/products/new" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
               <Route path="/admin/products/edit/:id" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
+              <Route path="/admin/products/import-cj" element={<AdminRoute><AdminCJImport /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
               <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
               <Route path="/admin/lucky-codes" element={<AdminRoute><AdminLuckyCodes /></AdminRoute>} />

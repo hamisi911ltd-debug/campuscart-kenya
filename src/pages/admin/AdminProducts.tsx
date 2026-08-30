@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus } from "lucide-react";
+import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Truck } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGet, adminPut, adminDelete } from "@/utils/adminApi";
 
@@ -162,13 +162,22 @@ const AdminProducts = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">Product Management</h1>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Add, edit and manage your store listings</p>
           </div>
-          <Link
-            to="/admin/products/new"
-            className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-primary text-primary-foreground text-xs md:text-sm font-bold hover:bg-primary-glow transition shrink-0"
-          >
-            <Plus className="h-4 w-4" />
-            <span className="hidden sm:inline">Add Product</span>
-          </Link>
+          <div className="flex gap-2 shrink-0">
+            <Link
+              to="/admin/products/import-cj"
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition"
+            >
+              <Truck className="h-4 w-4" />
+              <span className="hidden sm:inline">Import from CJ</span>
+            </Link>
+            <Link
+              to="/admin/products/new"
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-primary text-primary-foreground text-xs md:text-sm font-bold hover:bg-primary-glow transition"
+            >
+              <Plus className="h-4 w-4" />
+              <span className="hidden sm:inline">Add Product</span>
+            </Link>
+          </div>
         </div>
 
         {/* Filters */}

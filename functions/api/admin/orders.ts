@@ -38,17 +38,19 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
 
   try {
     const result = await env.DB.prepare(`
-      SELECT 
+      SELECT
         o.*,
         buyer.full_name as buyer_name,
         buyer.email as buyer_email,
         seller.full_name as seller_name,
         seller.email as seller_email,
-        COUNT(oi.id) as item_count
+        COUNT(oi.id) as item_count,
+        MAX(CASE WHEN p.sourced_from IS NOT NULL THEN 1 ELSE 0 END) as has_dropship_items
       FROM orders o
       LEFT JOIN users buyer ON o.buyer_id = buyer.id
       LEFT JOIN users seller ON o.seller_id = seller.id
       LEFT JOIN order_items oi ON o.id = oi.order_id
+      LEFT JOIN products p ON oi.product_id = p.id
       GROUP BY o.id
       ORDER BY o.created_at DESC
     `).all();

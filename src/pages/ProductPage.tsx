@@ -297,7 +297,15 @@ const ProductPage = () => {
                 <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {p.campus}</span>
               </div>
             </div>
-          <div 
+
+            {p.shippingNote && (
+              <div className="flex items-start gap-2 rounded-xl bg-accent/10 p-3 text-xs font-semibold text-accent">
+                <Truck className="h-4 w-4 shrink-0 mt-0.5" />
+                <span>{p.shippingNote}</span>
+              </div>
+            )}
+
+          <div
             className={`rounded-2xl p-3 text-white transition-all duration-300 cursor-pointer ${
               priceCardClicked 
                 ? 'bg-gradient-to-r from-red-500 to-red-600' 
