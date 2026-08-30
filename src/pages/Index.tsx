@@ -162,7 +162,7 @@ const Index = () => {
         <TopBar />
         <div className="bg-primary">
           <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs text-primary-foreground">
-            <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> Fast delivery across Kenya</span>
+            <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> <span aria-hidden="true">🇰🇪</span> We deliver countrywide</span>
             <div className="flex items-center gap-4">
               <span className="hidden items-center gap-1.5 sm:flex"><Shield className="h-3.5 w-3.5" /> Buyer protection</span>
               <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> Pay with M-PESA or Wallet</span>
