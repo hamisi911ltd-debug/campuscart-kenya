@@ -8,6 +8,17 @@ interface Env {
   STORAGE: R2Bucket;
 }
 
+// R2 keys are stored with a folder prefix (e.g. "products/xxxx.jpg") and
+// served at /api/images/<key>. Taking just the URL's last path segment (the
+// previous approach) drops that "products/" prefix, so the delete call
+// never actually matched the real object and silently no-opped, leaving
+// orphaned files in R2 on every product deletion.
+function extractR2Key(url: string): string | null {
+  const marker = "/api/images/";
+  const index = url.indexOf(marker);
+  return index === -1 ? null : url.slice(index + marker.length);
+}
+
 interface Product {
   id: string;
   seller_id: string;
@@ -220,8 +231,7 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
     const imagesToDelete: string[] = [];
     
     if (product.image_url) {
-      // Extract the key from the URL (assuming format: https://domain/key)
-      const imageKey = product.image_url.split('/').pop();
+      const imageKey = extractR2Key(product.image_url);
       if (imageKey) imagesToDelete.push(imageKey);
     }
 
@@ -229,7 +239,7 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
       try {
         const imageArray = JSON.parse(product.images);
         imageArray.forEach((url: string) => {
-          const key = url.split('/').pop();
+          const key = extractR2Key(url);
           if (key) imagesToDelete.push(key);
         });
       } catch (e) {

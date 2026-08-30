@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Truck } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
-import { adminGet, adminPut, adminDelete } from "@/utils/adminApi";
+import { adminGet, adminPost, adminPut, adminDelete } from "@/utils/adminApi";
 
 interface Product {
   id: string;
@@ -27,6 +27,7 @@ const AdminProducts = () => {
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -76,6 +77,41 @@ const AdminProducts = () => {
       const errorMessage = err instanceof Error ? err.message : 'Failed to delete product';
       alert(`Error: ${errorMessage}`);
       console.error('Error deleting product:', err);
+    }
+  };
+
+  const handleClearAllProducts = async () => {
+    if (products.length === 0) {
+      alert('There are no products to clear.');
+      return;
+    }
+
+    const typed = prompt(
+      `This permanently deletes all ${products.length} product(s) and their photos — there is no undo.\n\n` +
+      `Type DELETE ALL to confirm.`
+    );
+    if (typed !== 'DELETE ALL') {
+      if (typed !== null) alert('Did not match "DELETE ALL" exactly — nothing was deleted.');
+      return;
+    }
+
+    setClearing(true);
+    try {
+      const response = await adminPost('/api/admin/clear-products', {});
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to clear products');
+      }
+
+      setProducts([]);
+      alert(data.message || 'All products cleared.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to clear products';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error clearing products:', err);
+    } finally {
+      setClearing(false);
     }
   };
 
@@ -162,7 +198,15 @@ const AdminProducts = () => {
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">Product Management</h1>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Add, edit and manage your store listings</p>
           </div>
-          <div className="flex gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2 shrink-0">
+            <button
+              onClick={handleClearAllProducts}
+              disabled={clearing}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+            >
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden sm:inline">{clearing ? 'Clearing…' : 'Clear All'}</span>
+            </button>
             <Link
               to="/admin/products/import-cj"
               className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition"

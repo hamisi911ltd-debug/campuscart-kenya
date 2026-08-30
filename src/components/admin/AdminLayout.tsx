@@ -161,11 +161,14 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
       {/* Sidebar - Desktop */}
       <aside
-        className={`hidden lg:block fixed left-0 top-12 md:top-16 bottom-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40 ${
+        className={`hidden lg:flex lg:flex-col fixed left-0 top-12 md:top-16 bottom-0 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 z-40 ${
           sidebarOpen ? 'w-64' : 'w-16 md:w-20'
         }`}
       >
-        <nav className="p-2 md:p-4 space-y-1 md:space-y-2">
+        {/* min-h-0 lets this scroll within the flex column instead of the
+            footer below overlapping it once there are enough menu items to
+            exceed the viewport height */}
+        <nav className="flex-1 min-h-0 overflow-y-auto p-2 md:p-4 space-y-1 md:space-y-2">
           {menuItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.path);
@@ -196,9 +199,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
           })}
         </nav>
 
-        {/* Sidebar Footer */}
+        {/* Sidebar Footer - a normal flex child now, not absolutely
+            positioned, so it can never sit on top of the nav list above */}
         {sidebarOpen && (
-          <div className="absolute bottom-0 left-0 right-0 p-2 md:p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="shrink-0 p-2 md:p-4 border-t border-gray-200 dark:border-gray-700">
             <button
               onClick={handleLogout}
               className="w-full flex items-center gap-2 md:gap-3 px-2 md:px-4 py-2 md:py-3 rounded-lg md:rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
@@ -214,10 +218,10 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       {mobileMenuOpen && (
         <div className="lg:hidden fixed inset-0 z-40 bg-black/50" onClick={() => setMobileMenuOpen(false)}>
           <aside
-            className="fixed left-0 top-12 md:top-16 bottom-0 w-72 sm:w-80 bg-white dark:bg-gray-800 shadow-xl overflow-y-auto"
+            className="fixed left-0 top-12 md:top-16 bottom-0 w-72 sm:w-80 bg-white dark:bg-gray-800 shadow-xl flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            <nav className="p-3 md:p-4 space-y-1 md:space-y-2">
+            <nav className="flex-1 min-h-0 overflow-y-auto p-3 md:p-4 space-y-1 md:space-y-2">
               {menuItems.map((item) => {
                 const Icon = item.icon;
                 const active = isActive(item.path);
@@ -244,7 +248,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
               })}
             </nav>
 
-            <div className="absolute bottom-0 left-0 right-0 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
+            <div className="shrink-0 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="mb-3 px-3 md:px-4">
                 <p className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">Admin</p>
                 <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{adminEmail}</p>
