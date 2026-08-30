@@ -215,15 +215,17 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Voucher / coupon strip */}
+        {/* Voucher / coupon strip — same treatment as the category circles:
+            horizontal scroll on mobile, but from md up the cards grow to
+            fill the whole row evenly instead of staying bunched on one side. */}
         <section className="mb-3">
-          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4">
-            <div className="flex gap-2">
+          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4 md:mx-0 md:overflow-visible md:px-0">
+            <div className="flex gap-2 md:gap-3">
               {VOUCHERS.map((v) => (
                 <button
                   key={v.code}
                   onClick={() => (user ? setShowCouponModal(true) : setShowSignInModal(true))}
-                  className="flex shrink-0 items-center gap-2 rounded-lg border border-dashed border-accent bg-accent/5 px-3 py-2 text-left"
+                  className="flex shrink-0 items-center gap-2 rounded-lg border border-dashed border-accent bg-accent/5 px-3 py-2 text-left md:flex-1 md:shrink md:justify-center md:py-3"
                 >
                   <Ticket className="h-4 w-4 text-accent" />
                   <div>
