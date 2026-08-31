@@ -5,7 +5,7 @@ import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
 import { useShop } from "@/store/shop";
 import { useSEO, SITE_URL } from "@/hooks/useSEO";
-import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight } from "lucide-react";
+import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight, Boxes } from "lucide-react";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -80,7 +80,7 @@ const ProductPage = () => {
   useSEO({
     title: p ? p.title : "",
     description: p
-      ? (p.description ? p.description.slice(0, 155) : `Buy ${p.title} on CampusMart Kenya for KES ${p.price?.toLocaleString()}. Fast delivery and secure M-Pesa payments.`)
+      ? (p.description ? p.description.slice(0, 155) : `Buy ${p.title} at wholesale prices on CampusMart Kenya for KES ${p.price?.toLocaleString()}. Fast delivery and secure M-Pesa payments.`)
       : undefined,
     path: `/product/${id}`,
     image: absoluteImage,
@@ -304,10 +304,16 @@ const ProductPage = () => {
               </div>
             )}
 
+          <div className="flex items-center gap-1.5">
+            <span className="inline-flex items-center gap-1 rounded-full bg-accent/10 px-2.5 py-1 text-[11px] font-bold text-accent">
+              <Boxes className="h-3 w-3" /> Wholesale Price
+            </span>
+          </div>
+
           <div
             className={`rounded-2xl p-3 text-white transition-all duration-300 cursor-pointer ${
-              priceCardClicked 
-                ? 'bg-gradient-to-r from-red-500 to-red-600' 
+              priceCardClicked
+                ? 'bg-gradient-to-r from-red-500 to-red-600'
                 : 'gradient-flash'
             }`}
             onClick={() => setPriceCardClicked(true)}

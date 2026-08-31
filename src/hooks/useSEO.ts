@@ -3,7 +3,7 @@ import { useEffect } from "react";
 const SITE_URL = "https://campusmart.co.ke";
 const SITE_NAME = "CampusMart Kenya";
 const DEFAULT_DESCRIPTION =
-  "CampusMart Kenya - Shop Local. Live Better. Buy electronics, fashion, food, furniture, books & more with fast delivery and secure M-Pesa payments across Kenya.";
+  "CampusMart Kenya - Wholesale Prices, Real Savings. Shop phones, electronics, fashion, appliances, home & kitchen and more at wholesale prices, with fast delivery and secure M-Pesa payments across Kenya.";
 const DEFAULT_IMAGE = `${SITE_URL}/logo.png`;
 
 interface SEOOptions {
@@ -72,7 +72,7 @@ function setStructuredData(objects: Record<string, unknown>[] | undefined) {
  */
 export function useSEO({ title, description = DEFAULT_DESCRIPTION, path, image = DEFAULT_IMAGE, structuredData, noindex = false }: SEOOptions) {
   useEffect(() => {
-    const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} - Shop Local. Live Better.`;
+    const fullTitle = title ? `${title} | ${SITE_NAME}` : `${SITE_NAME} - Wholesale Prices, Real Savings`;
     const url = `${SITE_URL}${path ?? window.location.pathname}`;
 
     document.title = fullTitle;

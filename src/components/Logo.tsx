@@ -12,7 +12,7 @@ export const Logo = () => (
         CAMPUS<span className="text-[#7CB342]">MART</span>
       </span>
       <span className="mt-[3px] whitespace-nowrap text-[7px] font-semibold uppercase tracking-[0.12em] text-muted-foreground sm:text-[8px] sm:tracking-[0.15em]">
-        Shop Local. Live Better.
+        Wholesale Prices, Real Savings
       </span>
     </div>
   </div>

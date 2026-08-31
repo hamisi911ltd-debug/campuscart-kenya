@@ -52,7 +52,7 @@ const CategoryPage = () => {
   useSEO({
     title: cat?.name ?? "Category",
     description: cat
-      ? `Shop ${cat.name} on CampusMart Kenya — quality products, fast delivery and secure M-Pesa payments across Kenya.`
+      ? `Shop ${cat.name} at wholesale prices on CampusMart Kenya — quality products, fast delivery and secure M-Pesa payments across Kenya.`
       : undefined,
     path: `/category/${slug}`,
     structuredData: cat ? [

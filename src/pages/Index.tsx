@@ -1,4 +1,4 @@
-import { Zap, Truck, Shield, Wallet, Ticket, ChevronRight, ThumbsUp } from "lucide-react";
+import { Zap, Truck, Shield, Wallet, Ticket, ChevronRight, ThumbsUp, Boxes } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
@@ -147,7 +147,7 @@ const Index = () => {
       <SignInModal
         isOpen={showSignInModal}
         onClose={() => setShowSignInModal(false)}
-        message="Welcome to CampusMart! Sign in to start shopping and selling."
+        message="Welcome to CampusMart! Sign in to shop at wholesale prices."
       />
       <CouponModal isOpen={showCouponModal} onClose={() => setShowCouponModal(false)} />
       <CelebrationModal
@@ -175,7 +175,23 @@ const Index = () => {
         {/* Real <h1> for the homepage — visually hidden (the header logo/tagline
             already carries this visually) but every page should have exactly
             one, and the homepage previously had none at all. */}
-        <h1 className="sr-only">CampusMart Kenya — Shop Local, Live Better, Buy &amp; Sell Online</h1>
+        <h1 className="sr-only">CampusMart Kenya — Wholesale Prices, Real Savings, Shop Online</h1>
+
+        {/* Wholesale pricing banner — the site's core positioning, right at
+            the top of the page content. */}
+        <section className="py-3">
+          <div className="flex items-center gap-3 overflow-hidden rounded-2xl gradient-hero p-4 text-primary-foreground shadow-elevated sm:p-5">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 sm:h-12 sm:w-12">
+              <Boxes className="h-5 w-5 sm:h-6 sm:w-6" />
+            </div>
+            <div>
+              <h2 className="text-base font-extrabold leading-tight sm:text-lg">Wholesale Prices, Every Day</h2>
+              <p className="mt-0.5 text-xs text-primary-foreground/85 sm:text-sm">
+                Find quality products at true wholesale prices — buy more, save more.
+              </p>
+            </div>
+          </div>
+        </section>
 
         {/* Category tiles */}
         <section className="py-3">
