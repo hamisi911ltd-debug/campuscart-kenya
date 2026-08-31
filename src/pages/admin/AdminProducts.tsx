@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Truck, Upload } from "lucide-react";
+import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Truck, Upload, Sparkles } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGet, adminPost, adminPut, adminDelete } from "@/utils/adminApi";
 
@@ -213,6 +213,13 @@ const AdminProducts = () => {
             >
               <Truck className="h-4 w-4" />
               <span className="hidden sm:inline">Import from CJ</span>
+            </Link>
+            <Link
+              to="/admin/products/import-photos"
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs md:text-sm font-bold hover:shadow-lg transition"
+            >
+              <Sparkles className="h-4 w-4" />
+              <span className="hidden sm:inline">Import from Photos</span>
             </Link>
             <Link
               to="/admin/products/bulk-import"
