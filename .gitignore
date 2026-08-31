@@ -35,3 +35,4 @@ build/
 # OS files
 Thumbs.db
 .env.google
+products/

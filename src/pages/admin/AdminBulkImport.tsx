@@ -1,8 +1,9 @@
 import { useState, useRef } from "react";
 import { Link } from "react-router-dom";
-import { Upload, Download, ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2 } from "lucide-react";
+import { Upload, Download, ArrowLeft, CheckCircle2, XCircle, AlertTriangle, Loader2, Image as ImageIcon } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminPost } from "@/utils/adminApi";
+import { uploadImage } from "@/lib/uploadImage";
 import { toast } from "sonner";
 
 // Kept in sync with src/data/products.ts's `categories` array.
@@ -21,7 +22,7 @@ const VALID_CATEGORIES = [
 const VALID_SLUGS = new Set(VALID_CATEGORIES.map((c) => c.slug));
 
 const TEMPLATE_COLUMNS = [
-  "title", "description", "category", "price", "original_price", "image_url", "quantity_available", "location",
+  "title", "description", "category", "price", "original_price", "image_url", "quantity_available", "location", "images",
 ];
 
 interface ParsedRow {
@@ -33,6 +34,10 @@ interface ParsedRow {
   image_url?: string;
   quantity_available?: number;
   location?: string;
+  /** Original filenames (from the "images" column) to match against the
+   * photo files picked in step 2b - matched by exact File.name, then
+   * uploaded to R2 right before this row is sent to the server. */
+  imageFilenames: string[];
   rowNum: number;
   issue?: string;
 }
@@ -80,9 +85,12 @@ function parseCSV(text: string): string[][] {
 
 const AdminBulkImport = () => {
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const imagesInputRef = useRef<HTMLInputElement>(null);
   const [fileName, setFileName] = useState("");
   const [rows, setRows] = useState<ParsedRow[]>([]);
+  const [imageFiles, setImageFiles] = useState<Map<string, File>>(new Map());
   const [isImporting, setIsImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState({ done: 0, total: 0 });
   const [result, setResult] = useState<ImportResult | null>(null);
 
   const downloadTemplate = () => {
@@ -97,6 +105,7 @@ const AdminBulkImport = () => {
         "",
         "10",
         "Nairobi",
+        "",
       ].join(","),
     ].join("\n");
 
@@ -144,6 +153,8 @@ const AdminBulkImport = () => {
         else if (!VALID_SLUGS.has(category)) issue = `Unknown category "${category}"`;
         else if (!price || price <= 0) issue = "Missing or invalid price";
 
+        const imagesCell = get("images");
+
         return {
           title,
           description: get("description"),
@@ -153,6 +164,7 @@ const AdminBulkImport = () => {
           image_url: get("image_url") || undefined,
           quantity_available: get("quantity_available") ? parseInt(get("quantity_available"), 10) : undefined,
           location: get("location") || undefined,
+          imageFilenames: imagesCell ? imagesCell.split(",").map((f) => f.trim()).filter(Boolean) : [],
           rowNum: i + 2,
           issue,
         };
@@ -165,15 +177,47 @@ const AdminBulkImport = () => {
 
   const validRows = rows.filter((r) => !r.issue);
   const invalidRows = rows.filter((r) => r.issue);
+  const rowsNeedingPhotos = validRows.filter((r) => r.imageFilenames.length > 0);
+  const matchedPhotoCount = rowsNeedingPhotos.filter((r) =>
+    r.imageFilenames.some((f) => imageFiles.has(f))
+  ).length;
+
+  const handleImageFiles = (files: FileList) => {
+    setImageFiles((prev) => {
+      const next = new Map(prev);
+      for (const file of Array.from(files)) next.set(file.name, file);
+      return next;
+    });
+  };
 
   const runImport = async () => {
     if (validRows.length === 0) return;
     setIsImporting(true);
     setResult(null);
+    setImportProgress({ done: 0, total: validRows.length });
+
     try {
-      const response = await adminPost("/api/admin/bulk-import", {
-        products: validRows.map(({ rowNum, issue, ...rest }) => rest),
-      });
+      // Upload each row's matched local photo (if any) to R2 first, so the
+      // product is created with a real hosted URL rather than the filename.
+      const products = [];
+      for (const row of validRows) {
+        const { rowNum, issue, imageFilenames, ...rest } = row;
+        let image_url = rest.image_url;
+
+        const matchedFile = imageFilenames.map((f) => imageFiles.get(f)).find(Boolean);
+        if (matchedFile && !image_url) {
+          try {
+            image_url = await uploadImage(matchedFile);
+          } catch (err) {
+            console.error(`Failed to upload image for "${row.title}":`, err);
+          }
+        }
+
+        products.push({ ...rest, image_url });
+        setImportProgress((p) => ({ ...p, done: p.done + 1 }));
+      }
+
+      const response = await adminPost("/api/admin/bulk-import", { products });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || "Import failed");
 
@@ -227,16 +271,21 @@ const AdminBulkImport = () => {
             ))}
           </div>
           <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">* required. Prices are in KES. Valid category values:</p>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2 mb-3">
             {VALID_CATEGORIES.map((c) => (
               <span key={c.slug} className="px-2 py-1 rounded-full bg-accent/10 text-accent text-xs font-semibold">
                 {c.slug} <span className="opacity-70">({c.name})</span>
               </span>
             ))}
           </div>
+          <p className="text-xs text-gray-500 dark:text-gray-400">
+            <span className="font-mono">images</span> is optional: put the original photo filename there (e.g. from
+            a folder of product photos) and attach the matching files in step 2b below - no need to host them
+            anywhere first.
+          </p>
         </div>
 
-        {/* Upload */}
+        {/* Upload CSV */}
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
           <h2 className="font-bold text-gray-900 dark:text-white mb-4">2. Upload your file</h2>
           <input
@@ -255,6 +304,35 @@ const AdminBulkImport = () => {
           </button>
         </div>
 
+        {/* Attach photos - only relevant once a CSV with an "images" column is loaded */}
+        {rowsNeedingPhotos.length > 0 && (
+          <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
+            <h2 className="font-bold text-gray-900 dark:text-white mb-1">2b. Attach product photos</h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Select every photo referenced in the "images" column (you can select a whole folder's worth at once) -
+              they're matched to rows by filename and uploaded automatically when you import.
+            </p>
+            <input
+              ref={imagesInputRef}
+              type="file"
+              accept="image/*"
+              multiple
+              className="hidden"
+              onChange={(e) => { if (e.target.files) handleImageFiles(e.target.files); }}
+            />
+            <button
+              onClick={() => imagesInputRef.current?.click()}
+              className="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-dashed border-border py-8 text-sm font-semibold text-muted-foreground hover:border-accent hover:text-accent transition-colors"
+            >
+              <ImageIcon className="h-5 w-5" />
+              {imageFiles.size > 0 ? `${imageFiles.size} photo${imageFiles.size === 1 ? "" : "s"} selected` : "Click to choose photos"}
+            </button>
+            <p className="mt-3 text-xs text-gray-500 dark:text-gray-400">
+              {matchedPhotoCount} of {rowsNeedingPhotos.length} rows with an "images" value have a matching photo selected.
+            </p>
+          </div>
+        )}
+
         {/* Preview */}
         {rows.length > 0 && (
           <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6">
@@ -268,7 +346,9 @@ const AdminBulkImport = () => {
                 className="flex items-center justify-center gap-2 px-5 py-2.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 font-semibold text-sm"
               >
                 {isImporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
-                {isImporting ? "Importing..." : `Import ${validRows.length} product${validRows.length === 1 ? "" : "s"}`}
+                {isImporting
+                  ? `Importing... (${importProgress.done}/${importProgress.total})`
+                  : `Import ${validRows.length} product${validRows.length === 1 ? "" : "s"}`}
               </button>
             </div>
 
@@ -280,6 +360,7 @@ const AdminBulkImport = () => {
                     <th className="p-2">Title</th>
                     <th className="p-2">Category</th>
                     <th className="p-2">Price</th>
+                    <th className="p-2">Photo</th>
                     <th className="p-2">Status</th>
                   </tr>
                 </thead>
@@ -290,6 +371,17 @@ const AdminBulkImport = () => {
                       <td className="p-2 max-w-[220px] truncate">{r.title || "—"}</td>
                       <td className="p-2">{r.category || "—"}</td>
                       <td className="p-2">{r.price ? `KES ${r.price.toLocaleString()}` : "—"}</td>
+                      <td className="p-2">
+                        {r.image_url ? (
+                          <span className="text-green-600">URL set</span>
+                        ) : r.imageFilenames.length === 0 ? (
+                          <span className="text-gray-400">—</span>
+                        ) : r.imageFilenames.some((f) => imageFiles.has(f)) ? (
+                          <span className="text-green-600">Matched</span>
+                        ) : (
+                          <span className="text-amber-600">Not selected</span>
+                        )}
+                      </td>
                       <td className="p-2">
                         {r.issue ? (
                           <span className="flex items-center gap-1 text-red-600">
