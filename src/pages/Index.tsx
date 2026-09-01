@@ -1,4 +1,4 @@
-import { Zap, Truck, Shield, Wallet, Ticket, ChevronRight, ThumbsUp, Boxes } from "lucide-react";
+import { Zap, Ticket, ChevronRight, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect, useMemo } from "react";
 import { TopBar } from "@/components/TopBar";
@@ -160,15 +160,6 @@ const Index = () => {
 
       <div className="sticky top-0 z-30">
         <TopBar />
-        <div className="bg-primary">
-          <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4 py-2 text-xs text-primary-foreground">
-            <span className="flex items-center gap-1.5"><Truck className="h-3.5 w-3.5" /> <span aria-hidden="true">🇰🇪</span> We deliver countrywide</span>
-            <div className="flex items-center gap-4">
-              <span className="hidden items-center gap-1.5 sm:flex"><Shield className="h-3.5 w-3.5" /> Buyer protection</span>
-              <span className="flex items-center gap-1.5"><Wallet className="h-3.5 w-3.5" /> Pay with M-PESA or Wallet</span>
-            </div>
-          </div>
-        </div>
       </div>
 
       <main className="mx-auto max-w-7xl px-4">
@@ -176,22 +167,6 @@ const Index = () => {
             already carries this visually) but every page should have exactly
             one, and the homepage previously had none at all. */}
         <h1 className="sr-only">CampusMart Kenya — Wholesale Prices, Real Savings, Shop Online</h1>
-
-        {/* Wholesale pricing banner — the site's core positioning, right at
-            the top of the page content. */}
-        <section className="py-3">
-          <div className="flex items-center gap-3 overflow-hidden rounded-2xl gradient-hero p-4 text-primary-foreground shadow-elevated sm:p-5">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/15 sm:h-12 sm:w-12">
-              <Boxes className="h-5 w-5 sm:h-6 sm:w-6" />
-            </div>
-            <div>
-              <h2 className="text-base font-extrabold leading-tight sm:text-lg">Wholesale Prices, Every Day</h2>
-              <p className="mt-0.5 text-xs text-primary-foreground/85 sm:text-sm">
-                Find quality products at true wholesale prices — buy more, save more.
-              </p>
-            </div>
-          </div>
-        </section>
 
         {/* Category tiles */}
         <section className="py-3">
