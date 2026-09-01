@@ -5,6 +5,7 @@ import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
+import { HotSaleBanner } from "@/components/HotSaleBanner";
 import { SignInModal } from "@/components/SignInModal";
 import { CouponModal } from "@/components/CouponModal";
 import { CelebrationModal } from "@/components/CelebrationModal";
@@ -160,6 +161,7 @@ const Index = () => {
 
       <div className="sticky top-0 z-30">
         <TopBar />
+        <HotSaleBanner />
       </div>
 
       <main className="mx-auto max-w-7xl px-4">

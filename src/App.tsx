@@ -35,7 +35,6 @@ import AdminProducts from "./pages/admin/AdminProducts";
 import AdminProductForm from "./pages/admin/AdminProductForm";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminPhotoImport from "./pages/admin/AdminPhotoImport";
-import AdminCJImport from "./pages/admin/AdminCJImport";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminLogin from "./pages/admin/AdminLogin";
@@ -90,7 +89,6 @@ const App = () => {
               <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
               <Route path="/admin/products/new" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
               <Route path="/admin/products/edit/:id" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
-              <Route path="/admin/products/import-cj" element={<AdminRoute><AdminCJImport /></AdminRoute>} />
               <Route path="/admin/products/bulk-import" element={<AdminRoute><AdminBulkImport /></AdminRoute>} />
               <Route path="/admin/products/import-photos" element={<AdminRoute><AdminPhotoImport /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />

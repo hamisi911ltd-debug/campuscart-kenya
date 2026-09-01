@@ -1,9 +1,8 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Truck, Upload, Images, Copy } from "lucide-react";
+import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Upload, Images, Copy, CheckSquare, Square } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGet, adminPost, adminPut, adminDelete } from "@/utils/adminApi";
-import { isOwnerAdmin } from "@/utils/adminAuth";
 
 interface Product {
   id: string;
@@ -30,7 +29,8 @@ const AdminProducts = () => {
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
   const [dedupeChecking, setDedupeChecking] = useState(false);
-  const isOwner = isOwnerAdmin();
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkDeleting, setBulkDeleting] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -154,6 +154,52 @@ const AdminProducts = () => {
     }
   };
 
+  const toggleSelected = (productId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
+  const toggleSelectAllFiltered = () => {
+    setSelectedIds(prev => {
+      const allSelected = filteredProducts.length > 0 && filteredProducts.every(p => prev.has(p.id));
+      if (allSelected) return new Set();
+      return new Set(filteredProducts.map(p => p.id));
+    });
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+
+    const confirmed = confirm(
+      `Delete ${selectedIds.size} selected product(s) and their photos? This cannot be undone.`
+    );
+    if (!confirmed) return;
+
+    setBulkDeleting(true);
+    try {
+      const response = await adminPost('/api/admin/bulk-delete', { ids: Array.from(selectedIds) });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to delete selected products');
+      }
+
+      setProducts(prev => prev.filter(p => !selectedIds.has(p.id)));
+      setSelectedIds(new Set());
+      alert(data.message || 'Selected products deleted.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to delete selected products';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error bulk-deleting products:', err);
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   const handleToggleAvailability = async (productId: string, currentStatus: boolean) => {
     try {
       const response = await adminPut('/api/admin/products', {
@@ -238,33 +284,22 @@ const AdminProducts = () => {
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Add, edit and manage your store listings</p>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
-            {isOwner && (
-              <button
-                onClick={handleClearAllProducts}
-                disabled={clearing}
-                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
-              >
-                <Trash2 className="h-4 w-4" />
-                <span className="hidden sm:inline">{clearing ? 'Clearing…' : 'Clear All'}</span>
-              </button>
-            )}
-            {isOwner && (
-              <button
-                onClick={handleRemoveDuplicates}
-                disabled={dedupeChecking}
-                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-amber-500 text-white text-xs md:text-sm font-bold hover:bg-amber-600 transition disabled:opacity-50"
-              >
-                <Copy className="h-4 w-4" />
-                <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
-              </button>
-            )}
-            <Link
-              to="/admin/products/import-cj"
-              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition"
+            <button
+              onClick={handleClearAllProducts}
+              disabled={clearing}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
             >
-              <Truck className="h-4 w-4" />
-              <span className="hidden sm:inline">Import from CJ</span>
-            </Link>
+              <Trash2 className="h-4 w-4" />
+              <span className="hidden sm:inline">{clearing ? 'Clearing…' : 'Clear All'}</span>
+            </button>
+            <button
+              onClick={handleRemoveDuplicates}
+              disabled={dedupeChecking}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-amber-500 text-white text-xs md:text-sm font-bold hover:bg-amber-600 transition disabled:opacity-50"
+            >
+              <Copy className="h-4 w-4" />
+              <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
+            </button>
             <Link
               to="/admin/products/import-photos"
               className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition"
@@ -337,11 +372,49 @@ const AdminProducts = () => {
           </div>
         </div>
 
+        {/* Bulk selection bar */}
+        {filteredProducts.length > 0 && (
+          <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
+            <button
+              onClick={toggleSelectAllFiltered}
+              className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-foreground hover:text-accent"
+            >
+              {filteredProducts.every(p => selectedIds.has(p.id)) ? (
+                <CheckSquare className="h-4 w-4" />
+              ) : (
+                <Square className="h-4 w-4" />
+              )}
+              {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
+            </button>
+            {selectedIds.size > 0 && (
+              <button
+                onClick={handleBulkDelete}
+                disabled={bulkDeleting}
+                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                {bulkDeleting ? 'Deleting…' : `Delete Selected (${selectedIds.size})`}
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Products Grid - Mobile Responsive */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 md:gap-6">
           {filteredProducts.map((product) => (
-            <div key={product.id} className="bg-card rounded-xl md:rounded-2xl shadow-lg border border-border/50 overflow-hidden hover:shadow-xl transition-all">
-              <div className="h-36 sm:h-40 md:h-48 bg-secondary flex items-center justify-center">
+            <div key={product.id} className={`bg-card rounded-xl md:rounded-2xl shadow-lg border overflow-hidden hover:shadow-xl transition-all ${selectedIds.has(product.id) ? 'border-accent ring-2 ring-accent' : 'border-border/50'}`}>
+              <div className="relative h-36 sm:h-40 md:h-48 bg-secondary flex items-center justify-center">
+                <button
+                  onClick={() => toggleSelected(product.id)}
+                  className="absolute top-2 left-2 z-10 flex h-6 w-6 items-center justify-center rounded-md bg-white/90 dark:bg-gray-900/90 shadow"
+                  title="Select"
+                >
+                  {selectedIds.has(product.id) ? (
+                    <CheckSquare className="h-4 w-4 text-accent" />
+                  ) : (
+                    <Square className="h-4 w-4 text-muted-foreground" />
+                  )}
+                </button>
                 {product.image_url ? (
                   <img src={product.image_url} alt={product.title} className="h-full w-full object-cover" />
                 ) : (
