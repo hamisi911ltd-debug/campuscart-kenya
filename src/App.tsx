@@ -38,6 +38,7 @@ import AdminPhotoImport from "./pages/admin/AdminPhotoImport";
 import AdminCJImport from "./pages/admin/AdminCJImport";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCoupons from "./pages/admin/AdminCoupons";
+import AdminTeam from "./pages/admin/AdminTeam";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AuthDebug from "./pages/admin/AuthDebug";
 import AdminRoute from "./components/AdminRoute";
@@ -82,23 +83,27 @@ const App = () => {
 
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminRoute><ComprehensiveMonitor /></AdminRoute>} />
-              <Route path="/admin/activity" element={<AdminRoute><ActivityMonitor /></AdminRoute>} />
-              <Route path="/admin/control" element={<AdminRoute><SystemControl /></AdminRoute>} />
-              <Route path="/admin/database" element={<AdminRoute><DatabaseViewer /></AdminRoute>} />
-              <Route path="/admin/users" element={<AdminRoute><AdminUsers /></AdminRoute>} />
+              {/* Product-posting pages: open to the main admin AND team
+                  members (product-only accounts, see Admin -> Team). */}
               <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
               <Route path="/admin/products/new" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
               <Route path="/admin/products/edit/:id" element={<AdminRoute><AdminProductForm /></AdminRoute>} />
               <Route path="/admin/products/import-cj" element={<AdminRoute><AdminCJImport /></AdminRoute>} />
               <Route path="/admin/products/bulk-import" element={<AdminRoute><AdminBulkImport /></AdminRoute>} />
               <Route path="/admin/products/import-photos" element={<AdminRoute><AdminPhotoImport /></AdminRoute>} />
-              <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
-              <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
-              <Route path="/admin/test" element={<AdminRoute><DirectApiTest /></AdminRoute>} />
-              <Route path="/admin/debug" element={<AdminRoute><AuthDebug /></AdminRoute>} />
-              <Route path="/admin/diagnostic" element={<AdminRoute><TempDashboard /></AdminRoute>} />
-              <Route path="/admin/test-lucky-codes" element={<AdminRoute><TestLuckyCodes /></AdminRoute>} />
+              {/* Everything else: main admin only. */}
+              <Route path="/admin" element={<AdminRoute ownerOnly><ComprehensiveMonitor /></AdminRoute>} />
+              <Route path="/admin/activity" element={<AdminRoute ownerOnly><ActivityMonitor /></AdminRoute>} />
+              <Route path="/admin/control" element={<AdminRoute ownerOnly><SystemControl /></AdminRoute>} />
+              <Route path="/admin/database" element={<AdminRoute ownerOnly><DatabaseViewer /></AdminRoute>} />
+              <Route path="/admin/users" element={<AdminRoute ownerOnly><AdminUsers /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute ownerOnly><AdminOrders /></AdminRoute>} />
+              <Route path="/admin/coupons" element={<AdminRoute ownerOnly><AdminCoupons /></AdminRoute>} />
+              <Route path="/admin/team" element={<AdminRoute ownerOnly><AdminTeam /></AdminRoute>} />
+              <Route path="/admin/test" element={<AdminRoute ownerOnly><DirectApiTest /></AdminRoute>} />
+              <Route path="/admin/debug" element={<AdminRoute ownerOnly><AuthDebug /></AdminRoute>} />
+              <Route path="/admin/diagnostic" element={<AdminRoute ownerOnly><TempDashboard /></AdminRoute>} />
+              <Route path="/admin/test-lucky-codes" element={<AdminRoute ownerOnly><TestLuckyCodes /></AdminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
