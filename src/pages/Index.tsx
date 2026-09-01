@@ -302,17 +302,10 @@ const Index = () => {
             </>
           )}
         </section>
-        {/* SEO footer: real, crawlable text and internal links (not just
-            structured-data hints) linking every category, so both search
-            engines and shoppers can find the whole catalog from the
-            homepage. */}
+        {/* SEO footer: real, crawlable internal links to every category, so
+            both search engines and shoppers can find the whole catalog from
+            the homepage. */}
         <footer className="mt-2 border-t border-border pt-4 pb-6 text-xs text-muted-foreground">
-          <p className="mb-3">
-            <strong className="text-foreground">CampusMart Kenya</strong> is
-            Kenya's online marketplace to shop local and live better — buy and sell phones, electronics, computing,
-            appliances, fashion, home &amp; kitchen, health &amp; beauty, baby &amp; kids items, gaming and watches
-            &amp; jewellery, with fast delivery and secure M-Pesa payments across Nairobi, Mombasa, Kisumu and beyond.
-          </p>
           <nav aria-label="Categories" className="flex flex-wrap gap-x-3 gap-y-1">
             {categories.map((c, i) => (
               <span key={c.slug} className="flex items-center gap-3">

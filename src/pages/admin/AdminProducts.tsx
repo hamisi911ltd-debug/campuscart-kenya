@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
-import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Truck, Upload, Images } from "lucide-react";
+import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Truck, Upload, Images, Copy } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminGet, adminPost, adminPut, adminDelete } from "@/utils/adminApi";
+import { isOwnerAdmin } from "@/utils/adminAuth";
 
 interface Product {
   id: string;
@@ -28,6 +29,8 @@ const AdminProducts = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [clearing, setClearing] = useState(false);
+  const [dedupeChecking, setDedupeChecking] = useState(false);
+  const isOwner = isOwnerAdmin();
 
   const fetchProducts = async () => {
     try {
@@ -115,6 +118,42 @@ const AdminProducts = () => {
     }
   };
 
+  const handleRemoveDuplicates = async () => {
+    setDedupeChecking(true);
+    try {
+      const checkRes = await adminGet('/api/admin/dedupe-products');
+      const checkData = await checkRes.json();
+      if (!checkRes.ok) throw new Error(checkData.error || 'Failed to check for duplicates');
+
+      if (checkData.productsToRemove === 0) {
+        alert('No repeating inventory found — every product title is unique within its category.');
+        return;
+      }
+
+      const list = checkData.groups
+        .map((g: { title: string; count: number }) => `• "${g.title}" — ${g.count} copies`)
+        .join('\n');
+      const confirmed = confirm(
+        `Found ${checkData.duplicateGroups} repeated product(s), ${checkData.productsToRemove} extra listing(s) to remove ` +
+        `(the oldest copy of each is kept):\n\n${list}\n\nThis cannot be undone. Remove them now?`
+      );
+      if (!confirmed) return;
+
+      const removeRes = await adminPost('/api/admin/dedupe-products', {});
+      const removeData = await removeRes.json();
+      if (!removeRes.ok) throw new Error(removeData.error || 'Failed to remove duplicates');
+
+      alert(removeData.message || 'Duplicates removed.');
+      fetchProducts();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to check/remove duplicates';
+      alert(`Error: ${errorMessage}`);
+      console.error('Error removing duplicates:', err);
+    } finally {
+      setDedupeChecking(false);
+    }
+  };
+
   const handleToggleAvailability = async (productId: string, currentStatus: boolean) => {
     try {
       const response = await adminPut('/api/admin/products', {
@@ -199,14 +238,26 @@ const AdminProducts = () => {
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Add, edit and manage your store listings</p>
           </div>
           <div className="flex flex-wrap gap-2 shrink-0">
-            <button
-              onClick={handleClearAllProducts}
-              disabled={clearing}
-              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
-            >
-              <Trash2 className="h-4 w-4" />
-              <span className="hidden sm:inline">{clearing ? 'Clearing…' : 'Clear All'}</span>
-            </button>
+            {isOwner && (
+              <button
+                onClick={handleClearAllProducts}
+                disabled={clearing}
+                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+              >
+                <Trash2 className="h-4 w-4" />
+                <span className="hidden sm:inline">{clearing ? 'Clearing…' : 'Clear All'}</span>
+              </button>
+            )}
+            {isOwner && (
+              <button
+                onClick={handleRemoveDuplicates}
+                disabled={dedupeChecking}
+                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-amber-500 text-white text-xs md:text-sm font-bold hover:bg-amber-600 transition disabled:opacity-50"
+              >
+                <Copy className="h-4 w-4" />
+                <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
+              </button>
+            )}
             <Link
               to="/admin/products/import-cj"
               className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition"
