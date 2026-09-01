@@ -87,8 +87,8 @@ const CheckoutPage = () => {
           </p>
           <p className="mt-2 text-sm text-muted-foreground">
             {paidWithWallet
-              ? "Paid from your wallet balance. The seller is being notified to prepare your order."
-              : "Your order details and location have been sent to the admin via WhatsApp."}
+              ? "Paid from your wallet balance. We're preparing your order now."
+              : "We'll send an M-Pesa payment request to your phone once the order is confirmed, and message you on WhatsApp as soon as payment goes through."}
           </p>
           <div className="mt-5 flex gap-3 justify-center">
             <button 
@@ -190,21 +190,15 @@ const CheckoutPage = () => {
         return;
       }
 
-      // --- M-Pesa: notify admin via WhatsApp, payment prompt sent on confirmation ---
-      const whatsappMessage = result.whatsapp_message;
-      const adminPhone = result.admin_phone;
-      const encodedMessage = encodeURIComponent(whatsappMessage);
-      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
-      const whatsappUrl = isMobile
-        ? `whatsapp://send?phone=${adminPhone}&text=${encodedMessage}`
-        : `https://wa.me/${adminPhone}?text=${encodedMessage}`;
-      window.location.href = whatsappUrl;
-
+      // --- M-Pesa: the order now just lands in Admin → Orders for the
+      // admin to confirm and trigger the M-Pesa STK push. Nothing
+      // WhatsApp-related touches the customer's device at this point -
+      // that only happens once PayHero confirms their payment
+      // (see functions/api/_lib/settlePayment.ts). ---
       toast.success("Order placed successfully!");
-      setTimeout(async () => {
-        await clearCart();
-        setDone(true);
-      }, 800);
+      await clearCart();
+      setDone(true);
+      setSubmitting(false);
 
     } catch (error) {
       console.error('Error placing order:', error);
