@@ -1,13 +1,12 @@
 import { useState, useEffect, type FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
-import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
+import { Eye, EyeOff, Lock, Shield } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { setAdminSession, setTeamAdminSession } from "@/utils/adminAuth";
+import { setAdminSession } from "@/utils/adminAuth";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -35,46 +34,24 @@ const AdminLogin = () => {
     
     setIsLoading(true);
     setError("");
-
+    
     try {
-      // Leave email blank to sign in as the main admin (unchanged password
-      // check); fill it in to sign in as a team member (an account created
-      // in Admin -> Team, with product-posting-only access).
-      if (!email.trim()) {
-        const ADMIN_PASSWORD = "LUCYISOKORE@2026";
-
-        if (password !== ADMIN_PASSWORD) {
-          setError("Invalid password");
-          toast.error('Invalid password');
-          setIsLoading(false);
-          return;
-        }
-
-        setAdminSession();
-        toast.success('Welcome, Admin!');
-        navigate("/admin");
-        return;
-      }
-
-      const response = await fetch('/api/admin/team-login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-      const data = await response.json();
-
-      if (!response.ok) {
-        setError(data.error || 'Invalid email or password');
-        toast.error(data.error || 'Invalid email or password');
+      // Check against the unique admin password
+      const ADMIN_PASSWORD = "LUCYISOKORE@2026";
+      
+      if (password !== ADMIN_PASSWORD) {
+        setError("Invalid password");
+        toast.error('Invalid password');
         setIsLoading(false);
         return;
       }
-
-      setTeamAdminSession(data.admin);
-      toast.success(`Welcome, ${data.admin.full_name || data.admin.email}!`);
-      navigate("/admin/products");
-
+      
+      // Success - store session and cookie for API authentication
+      setAdminSession();
+      
+      toast.success('Welcome, Admin!');
+      navigate("/admin");
+      
     } catch (error) {
       toast.error('Authentication failed. Please try again.');
       console.error('Login error:', error);
@@ -106,47 +83,29 @@ const AdminLogin = () => {
           </div>
           <h1 className="text-4xl font-bold text-white mb-2">Admin Access</h1>
           <p className="text-white/80 text-sm">
-            Main admin: leave email blank. Team member: enter your email.
+            Enter the unique admin password to continue
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={submit} className="bg-white/95 backdrop-blur-sm rounded-3xl p-8 shadow-2xl border border-white/20">
           <div className="space-y-6">
-            {/* Email Field (team members only) */}
-            <div className="space-y-3">
-              <label className="text-lg font-semibold text-gray-800 flex items-center gap-3">
-                <Mail className="h-5 w-5 text-red-600" />
-                Team Email <span className="text-sm font-normal text-gray-500">(leave blank if you're the main admin)</span>
-              </label>
-              <input
-                value={email}
-                onChange={(e) => {
-                  setEmail(e.target.value);
-                  if (error) setError("");
-                }}
-                type="email"
-                placeholder="you@campusmart.co.ke"
-                className="w-full rounded-2xl border-2 border-gray-300 bg-white px-6 py-4 text-lg transition-all hover:border-red-400 focus:border-red-500 focus:ring-4 focus:ring-red-500/20 outline-none"
-              />
-            </div>
-
             {/* Password Field */}
             <div className="space-y-3">
               <label className="text-lg font-semibold text-gray-800 flex items-center gap-3">
                 <Lock className="h-5 w-5 text-red-600" />
-                Password
+                Admin Password
               </label>
               <div className="relative">
-                <input
-                  required
+                <input 
+                  required 
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
                     if (error) setError("");
                   }}
-                  type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  type={showPassword ? "text" : "password"} 
+                  placeholder="Enter the unique admin password" 
                   className={`w-full rounded-2xl border-2 px-6 py-4 pr-14 text-lg transition-all focus:ring-4 focus:ring-red-500/20 outline-none ${
                     error 
                       ? "border-red-500 bg-red-50 focus:border-red-600" 

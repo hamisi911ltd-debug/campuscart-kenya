@@ -1,15 +1,11 @@
 import { Navigate } from "react-router-dom";
 import { ReactNode, useEffect, useState } from "react";
-import { toast } from "sonner";
 
 interface AdminRouteProps {
   children: ReactNode;
-  /** Restrict this page to the main admin - a logged-in team member
-   * (product-posting-only account) is bounced to /admin/products instead. */
-  ownerOnly?: boolean;
 }
 
-const AdminRoute = ({ children, ownerOnly = false }: AdminRouteProps) => {
+const AdminRoute = ({ children }: AdminRouteProps) => {
   const [isRedirecting, setIsRedirecting] = useState(false);
   
   // More flexible domain checking - allow admin access on mobile and development
@@ -52,23 +48,14 @@ const AdminRoute = ({ children, ownerOnly = false }: AdminRouteProps) => {
     );
   }
 
-  // Check if user is authenticated as admin (check both session and cookie).
-  // Two identities: the owner (full access) or a team member restricted to
-  // product-posting pages - see src/utils/adminAuth.ts.
+  // Check if user is authenticated as admin (check both session and cookie)
   const hasSessionAuth = sessionStorage.getItem('isAdmin') === 'true';
   const hasCookieAuth = document.cookie.includes('admin_session=true');
-  const isOwner = hasSessionAuth || hasCookieAuth;
-  const isTeam = sessionStorage.getItem('isTeamAdmin') === 'true' || document.cookie.includes('product_admin_session=');
-  const isAdmin = isOwner || isTeam;
-
+  const isAdmin = hasSessionAuth || hasCookieAuth;
+  
   if (!isAdmin) {
     // Redirect to admin login if not authenticated
     return <Navigate to="/admin/login" replace />;
-  }
-
-  if (ownerOnly && !isOwner) {
-    toast.error("That page is only available to the main admin");
-    return <Navigate to="/admin/products" replace />;
   }
 
   // For development and mobile access, allow admin access even if not on exact admin domain

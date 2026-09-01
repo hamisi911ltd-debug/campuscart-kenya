@@ -1,16 +1,11 @@
 // Admin API utility functions with proper authentication
 
 export const adminFetch = async (url: string, options: RequestInit = {}) => {
-  // Get authentication from sessionStorage and cookies. Two identities can
-  // be logged in: the owner (admin_session cookie / isAdmin flag, full
-  // access) or a restricted team member (product_admin_session cookie /
-  // isTeamAdmin flag, product endpoints only) - either is enough to make
-  // this call, the server decides per-endpoint what it's actually allowed to do.
+  // Get authentication from sessionStorage and cookies
   const hasSessionAuth = sessionStorage.getItem('isAdmin') === 'true';
   const hasCookieAuth = document.cookie.includes('admin_session=true');
-  const hasTeamAuth = sessionStorage.getItem('isTeamAdmin') === 'true' || document.cookie.includes('product_admin_session=');
-
-  if (!hasSessionAuth && !hasCookieAuth && !hasTeamAuth) {
+  
+  if (!hasSessionAuth && !hasCookieAuth) {
     throw new Error('Not authenticated as admin');
   }
 
@@ -39,15 +34,10 @@ export const adminFetch = async (url: string, options: RequestInit = {}) => {
   });
 
   if (response.status === 401) {
-    // Clear invalid session (either identity) and redirect to login
+    // Clear invalid session and redirect to login
     sessionStorage.removeItem('isAdmin');
     sessionStorage.removeItem('adminEmail');
-    sessionStorage.removeItem('isTeamAdmin');
-    sessionStorage.removeItem('teamAdminEmail');
-    sessionStorage.removeItem('teamAdminName');
-    sessionStorage.removeItem('teamAdminRole');
     document.cookie = 'admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'product_admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
     window.location.href = '/admin/login';
     throw new Error('Authentication expired');
   }
