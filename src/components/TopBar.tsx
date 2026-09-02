@@ -74,14 +74,18 @@ export const TopBar = () => {
           <Logo />
         </Link>
         <form onSubmit={submit} className="relative ml-auto hidden flex-1 max-w-xl md:block">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search products, brands and categories..."
-            className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-24 text-sm outline-none ring-primary/40 focus:ring-2"
-          />
-          <button type="submit" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full gradient-accent px-4 py-1.5 text-xs font-bold text-accent-foreground shadow-accent">
+          <div className="group rounded-full bg-gradient-to-r from-accent/50 via-primary/30 to-accent/50 p-[1.5px] shadow-sm transition-all focus-within:shadow-accent focus-within:from-accent focus-within:to-accent">
+            <div className="flex items-center rounded-full bg-background">
+              <Search className="ml-4 h-4 w-4 shrink-0 text-accent" />
+              <input
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+                placeholder="Find wholesale deals, brands, categories…"
+                className="w-full bg-transparent py-2.5 pl-2.5 pr-24 text-sm outline-none placeholder:text-muted-foreground/70"
+              />
+            </div>
+          </div>
+          <button type="submit" className="absolute right-1 top-1/2 -translate-y-1/2 rounded-full gradient-accent px-4 py-1.5 text-xs font-bold text-accent-foreground shadow-accent hover:scale-105 transition-transform">
             Search
           </button>
         </form>
@@ -193,14 +197,16 @@ export const TopBar = () => {
       </div>
       {/* Mobile search */}
       <form onSubmit={submit} className="px-4 pb-3 md:hidden">
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="Search products, brands and categories..."
-            className="w-full rounded-full border border-border bg-background py-2.5 pl-10 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-          />
+        <div className="rounded-full bg-gradient-to-r from-accent/50 via-primary/30 to-accent/50 p-[1.5px] shadow-sm transition-all focus-within:shadow-accent focus-within:from-accent focus-within:to-accent">
+          <div className="flex items-center rounded-full bg-background">
+            <Search className="ml-4 h-4 w-4 shrink-0 text-accent" />
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="Find wholesale deals, brands…"
+              className="w-full bg-transparent py-2.5 pl-2.5 pr-3 text-sm outline-none placeholder:text-muted-foreground/70"
+            />
+          </div>
         </div>
       </form>
     </header>

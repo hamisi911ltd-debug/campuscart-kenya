@@ -6,6 +6,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { HotSaleBanner } from "@/components/HotSaleBanner";
+import { HotDealsCarousel } from "@/components/HotDealsCarousel";
 import { SignInModal } from "@/components/SignInModal";
 import { CouponModal } from "@/components/CouponModal";
 import { CelebrationModal } from "@/components/CelebrationModal";
@@ -30,14 +31,33 @@ const Index = () => {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
+  const [hotDeals, setHotDeals] = useState<ProductWithCategory[]>([]);
   const [flashDeals, setFlashDeals] = useState<ProductWithCategory[]>([]);
   const [categoryImageSample, setCategoryImageSample] = useState<ProductWithCategory[]>([]);
 
-  // Flash deals = trending products
+  // Hot Deals carousel — freshest listings, auto-plays through them.
+  useEffect(() => {
+    const fetchHotDeals = async () => {
+      try {
+        const res = await fetch('/api/products?sort=newest&limit=20', { headers: { 'Cache-Control': 'no-cache' } });
+        if (res.ok) {
+          const data = await res.json();
+          setHotDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
+        }
+      } catch (e) {
+        console.error('Error fetching hot deals:', e);
+      }
+    };
+    fetchHotDeals();
+  }, []);
+
+  // Flash deals = trending products, fetched broadly enough to spread
+  // across several categories so they can be shown as one batch per
+  // category below rather than a single flat row.
   useEffect(() => {
     const fetchFlash = async () => {
       try {
-        const res = await fetch('/api/products?sort=trending&limit=10', { headers: { 'Cache-Control': 'no-cache' } });
+        const res = await fetch('/api/products?sort=trending&limit=48', { headers: { 'Cache-Control': 'no-cache' } });
         if (res.ok) {
           const data = await res.json();
           setFlashDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
@@ -48,6 +68,18 @@ const Index = () => {
     };
     fetchFlash();
   }, []);
+
+  // Flash deals grouped by category, in the site's category order, each
+  // becoming its own independently side-scrollable batch.
+  const flashByCategory = useMemo(() => {
+    const map: Record<string, ProductWithCategory[]> = {};
+    for (const p of flashDeals) {
+      (map[p.category] ||= []).push(p);
+    }
+    return categories
+      .map((c) => ({ category: c, items: (map[c.slug] || []).slice(0, 12) }))
+      .filter((group) => group.items.length > 0);
+  }, [flashDeals]);
 
   // "More to love" feed — one page at a time (see Pagination below) rather
   // than one long scrolling grid, refreshed on focus/visibility so a page
@@ -161,7 +193,6 @@ const Index = () => {
 
       <div className="sticky top-0 z-30">
         <TopBar />
-        <HotSaleBanner />
       </div>
 
       <main className="mx-auto max-w-7xl px-4">
@@ -170,7 +201,7 @@ const Index = () => {
             one, and the homepage previously had none at all. */}
         <h1 className="sr-only">CampusMart Kenya — Wholesale Prices, Real Savings, Shop Online</h1>
 
-        {/* Category tiles */}
+        {/* Category circles — right below the search bar */}
         <section className="py-3">
           <div className="mb-2.5 flex items-center justify-between">
             <h2 className="text-sm font-extrabold text-foreground">Shop by Category</h2>
@@ -208,9 +239,55 @@ const Index = () => {
           </div>
         </section>
 
-        {/* Voucher / coupon strip — same treatment as the category circles:
-            horizontal scroll on mobile, but from md up the cards grow to
-            fill the whole row evenly instead of staying bunched on one side. */}
+        {/* Hot Sale countdown banner */}
+        <div className="-mx-4 mb-3 overflow-hidden md:mx-0 md:rounded-xl">
+          <HotSaleBanner />
+        </div>
+
+        {/* Hot Deals — auto-advancing strip, right below the Hot Sale banner */}
+        <HotDealsCarousel products={hotDeals} />
+
+        {/* Flash deals — one horizontally-scrollable batch per category */}
+        {flashByCategory.length > 0 && (
+          <section className="mb-4 rounded-xl bg-card p-3 shadow-card">
+            <div className="mb-3 flex items-center justify-between gap-2">
+              <div className="flex min-w-0 items-center gap-2">
+                <div className="flex shrink-0 items-center gap-1 rounded-md bg-destructive px-2 py-1">
+                  <Zap className="h-3.5 w-3.5 fill-destructive-foreground text-destructive-foreground" />
+                  <span className="whitespace-nowrap text-xs font-extrabold text-destructive-foreground">Flash Deals</span>
+                </div>
+                <FlashCountdown />
+              </div>
+              <Link to="/search?sort=trending" className="flex shrink-0 items-center text-xs font-bold text-accent">
+                More <ChevronRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+
+            <div className="space-y-4">
+              {flashByCategory.map(({ category, items }) => (
+                <div key={category.slug}>
+                  <div className="mb-1.5 flex items-center justify-between">
+                    <h3 className="text-xs font-bold text-foreground">{category.name}</h3>
+                    <Link to={`/category/${category.slug}`} className="text-[11px] font-semibold text-accent">
+                      See all
+                    </Link>
+                  </div>
+                  <div className="-mx-1 overflow-x-auto scrollbar-hide px-1">
+                    <div className="flex gap-2">
+                      {items.map((p) => (
+                        <div key={p.id} className="w-[142px] shrink-0">
+                          <ProductCard p={p} />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Voucher / coupon strip */}
         <section className="mb-3">
           <div className="-mx-4 overflow-x-auto scrollbar-hide px-4 md:mx-0 md:overflow-visible md:px-0">
             <div className="flex gap-2 md:gap-3">
@@ -230,33 +307,6 @@ const Index = () => {
             </div>
           </div>
         </section>
-
-        {/* Flash deals */}
-        {flashDeals.length > 0 && (
-          <section className="mb-4 rounded-xl bg-card p-3 shadow-card">
-            <div className="mb-2 flex items-center justify-between gap-2">
-              <div className="flex min-w-0 items-center gap-2">
-                <div className="flex shrink-0 items-center gap-1 rounded-md bg-destructive px-2 py-1">
-                  <Zap className="h-3.5 w-3.5 fill-destructive-foreground text-destructive-foreground" />
-                  <span className="whitespace-nowrap text-xs font-extrabold text-destructive-foreground">Flash Deals</span>
-                </div>
-                <FlashCountdown />
-              </div>
-              <Link to="/search?sort=trending" className="flex shrink-0 items-center text-xs font-bold text-accent">
-                More <ChevronRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-            <div className="-mx-1 overflow-x-auto scrollbar-hide px-1">
-              <div className="flex gap-2">
-                {flashDeals.map((p) => (
-                  <div key={p.id} className="w-[142px] shrink-0">
-                    <ProductCard p={p} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </section>
-        )}
 
         {/* More to love feed */}
         <section className="pb-6">
@@ -279,21 +329,6 @@ const Index = () => {
             </>
           )}
         </section>
-        {/* SEO footer: real, crawlable internal links to every category, so
-            both search engines and shoppers can find the whole catalog from
-            the homepage. */}
-        <footer className="mt-2 border-t border-border pt-4 pb-6 text-xs text-muted-foreground">
-          <nav aria-label="Categories" className="flex flex-wrap gap-x-3 gap-y-1">
-            {categories.map((c, i) => (
-              <span key={c.slug} className="flex items-center gap-3">
-                <Link to={`/category/${c.slug}`} className="hover:text-foreground hover:underline">
-                  {c.name}
-                </Link>
-                {i < categories.length - 1 && <span aria-hidden="true">·</span>}
-              </span>
-            ))}
-          </nav>
-        </footer>
       </main>
 
       <BottomNav />
