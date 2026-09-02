@@ -320,7 +320,7 @@ const Index = () => {
             <p className="py-10 text-center text-sm text-muted-foreground">Loading products…</p>
           ) : (
             <>
-              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
                 {products.map((p) => (
                   <ProductCard key={p.id} p={p} />
                 ))}

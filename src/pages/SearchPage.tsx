@@ -59,7 +59,7 @@ const SearchPage = () => {
         <p className="rounded-xl bg-card p-8 text-center text-sm text-muted-foreground shadow-card">No matches. Try a different keyword.</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 gap-1 md:grid-cols-6 md:gap-2">
+          <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-6 md:gap-2">
             {results.map((p) => <ProductCard key={p.id} p={p} />)}
           </div>
           <Pagination page={page} hasMore={hasMore} onChange={setPage} loading={loading} />
