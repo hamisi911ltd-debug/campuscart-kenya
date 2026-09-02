@@ -3,6 +3,7 @@
 // category - the oldest listing in each group is kept, the rest are
 // deleted. GET returns a dry-run preview; POST actually deletes.
 import { enforceAdminDomain } from "../_lib/adminDomain";
+import { hasPermission } from "../_lib/teamAuth";
 
 interface Env {
   DB: D1Database;
@@ -16,14 +17,6 @@ interface ProductRow {
   image_url: string | null;
   images: string | null;
   created_at: string;
-}
-
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) return true;
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") return true;
-  return request.headers.get("X-Admin-Session") === "true";
 }
 
 function extractR2Key(url: string): string | null {
@@ -70,7 +63,7 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
 
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
-  if (!isAdmin(request)) {
+  if (!(await hasPermission(request, env, "products"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },
@@ -103,7 +96,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
-  if (!isAdmin(request)) {
+  if (!(await hasPermission(request, env, "products"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

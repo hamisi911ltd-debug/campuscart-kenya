@@ -3,6 +3,7 @@
 // match what functions/api/_lib/payhero.ts expects.
 import { checkTransactionStatus, parseCallbackPayload } from "../_lib/payhero";
 import { settleOrderPayment } from "../_lib/settlePayment";
+import { hasPermission } from "../_lib/teamAuth";
 
 interface Env {
   DB: D1Database;
@@ -10,21 +11,10 @@ interface Env {
   PAYHERO_CHANNEL_ID: string;
 }
 
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) return true;
-
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") return true;
-
-  const sessionHeader = request.headers.get("X-Admin-Session");
-  return sessionHeader === "true";
-}
-
 export async function onRequestGet(context: { env: Env; request: Request }) {
   const { env, request } = context;
 
-  if (!isAdmin(request)) {
+  if (!(await hasPermission(request, env, "orders"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

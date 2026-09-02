@@ -1,11 +1,20 @@
 import { Navigate } from "react-router-dom";
 import { ReactNode, useEffect, useState } from "react";
+import { toast } from "sonner";
+import { canAccess, getTeamPermissions, type PermissionArea } from "@/utils/adminAuth";
 
 interface AdminRouteProps {
   children: ReactNode;
+  /** Restrict this page to a specific permission area - the owner always
+   * passes; a team member needs that area granted in Admin -> Team. */
+  requirePermission?: PermissionArea;
+  /** Restrict this page to the main admin outright - no permission a team
+   * member holds can open it (Dashboard, System Control, Team, etc). Only
+   * needed when requirePermission isn't set; the two are never combined. */
+  ownerOnly?: boolean;
 }
 
-const AdminRoute = ({ children }: AdminRouteProps) => {
+const AdminRoute = ({ children, requirePermission, ownerOnly }: AdminRouteProps) => {
   const [isRedirecting, setIsRedirecting] = useState(false);
   
   // More flexible domain checking - allow admin access on mobile and development
@@ -48,14 +57,26 @@ const AdminRoute = ({ children }: AdminRouteProps) => {
     );
   }
 
-  // Check if user is authenticated as admin (check both session and cookie)
+  // Check if user is authenticated as admin (check both session and cookie).
+  // Two identities: the owner (full access) or a team member restricted to
+  // whichever permission areas they were granted - see src/utils/adminAuth.ts.
   const hasSessionAuth = sessionStorage.getItem('isAdmin') === 'true';
   const hasCookieAuth = document.cookie.includes('admin_session=true');
-  const isAdmin = hasSessionAuth || hasCookieAuth;
-  
+  const isOwner = hasSessionAuth || hasCookieAuth;
+  const isTeam = sessionStorage.getItem('isTeamAdmin') === 'true' || document.cookie.includes('product_admin_session=');
+  const isAdmin = isOwner || isTeam;
+
   if (!isAdmin) {
     // Redirect to admin login if not authenticated
     return <Navigate to="/admin/login" replace />;
+  }
+
+  const teamPermissions = getTeamPermissions();
+  const denied = requirePermission ? !canAccess(requirePermission) : ownerOnly ? !isOwner : false;
+
+  if (denied) {
+    toast.error("You don't have access to that section");
+    return <Navigate to={teamPermissions[0] ? `/admin/${teamPermissions[0]}` : "/admin/login"} replace />;
   }
 
   // For development and mobile access, allow admin access even if not on exact admin domain

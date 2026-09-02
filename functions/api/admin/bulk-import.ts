@@ -6,6 +6,7 @@
 // onRequestPost in admin/products.ts.
 import { OWNER_ID, ensureOwnerUser } from "../_lib/owner";
 import { enforceAdminDomain } from "../_lib/adminDomain";
+import { hasPermission } from "../_lib/teamAuth";
 
 interface Env {
   DB: D1Database;
@@ -31,21 +32,13 @@ const VALID_CATEGORIES = new Set([
   "home", "beauty", "baby", "gaming", "watches",
 ]);
 
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) return true;
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") return true;
-  return request.headers.get("X-Admin-Session") === "true";
-}
-
 export async function onRequestPost(context: { env: Env; request: Request }) {
   const { env, request } = context;
 
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
 
-  if (!isAdmin(request)) {
+  if (!(await hasPermission(request, env, "products"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

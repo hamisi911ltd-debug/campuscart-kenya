@@ -1,13 +1,13 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { 
-  LayoutDashboard, Users, Package, ShoppingBag, Sparkles,
+import {
+  LayoutDashboard, Users, Package, ShoppingBag, Sparkles, Users2,
   LogOut, Menu, X, Bell, Search, ChevronDown, Shield,
   Activity, Settings, BarChart3, Database
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { clearAdminSession } from "@/utils/adminAuth";
+import { clearAdminSession, isOwnerAdmin, getAdminDisplayName, canAccess, type PermissionArea } from "@/utils/adminAuth";
 
 interface AdminLayoutProps {
   children: ReactNode;
@@ -19,7 +19,8 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  const adminEmail = sessionStorage.getItem('adminEmail') || 'Admin';
+  const isOwner = isOwnerAdmin();
+  const adminEmail = getAdminDisplayName();
 
   const handleLogout = () => {
     // Clear admin session
@@ -29,56 +30,74 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
     navigate('/admin/login');
   };
 
+  // Team members only see the nav items for permission areas they've been
+  // granted (see Admin -> Team); everything else here is gated at the
+  // route level too, but hiding the links avoids a confusing bounce.
   const menuItems = [
-    { 
-      icon: LayoutDashboard, 
-      label: 'Dashboard', 
+    {
+      icon: LayoutDashboard,
+      label: 'Dashboard',
       path: '/admin',
-      description: 'Overview & Analytics'
+      description: 'Overview & Analytics',
+      permission: null as PermissionArea | null,
     },
-    { 
-      icon: Activity, 
-      label: 'Activity Monitor', 
+    {
+      icon: Activity,
+      label: 'Activity Monitor',
       path: '/admin/activity',
-      description: 'Live Activity Feed'
+      description: 'Live Activity Feed',
+      permission: null,
     },
-    { 
-      icon: Settings, 
-      label: 'System Control', 
+    {
+      icon: Settings,
+      label: 'System Control',
       path: '/admin/control',
-      description: 'Admin Actions'
+      description: 'Admin Actions',
+      permission: null,
     },
-    { 
-      icon: Database, 
-      label: 'Database Viewer', 
+    {
+      icon: Database,
+      label: 'Database Viewer',
       path: '/admin/database',
-      description: 'Direct DB Access'
+      description: 'Direct DB Access',
+      permission: null,
     },
-    { 
-      icon: Users, 
-      label: 'Users', 
+    {
+      icon: Users,
+      label: 'Users',
       path: '/admin/users',
-      description: 'Manage Users'
+      description: 'Manage Users',
+      permission: 'users' as PermissionArea,
     },
-    { 
-      icon: Package, 
-      label: 'Products', 
+    {
+      icon: Package,
+      label: 'Products',
       path: '/admin/products',
-      description: 'Product Listings'
+      description: 'Product Listings',
+      permission: 'products' as PermissionArea,
     },
     {
       icon: ShoppingBag,
       label: 'Orders',
       path: '/admin/orders',
-      description: 'Order Management'
+      description: 'Order Management',
+      permission: 'orders' as PermissionArea,
     },
     {
       icon: Sparkles,
       label: 'Coupons',
       path: '/admin/coupons',
-      description: 'Wallet Credit Codes'
+      description: 'Wallet Credit Codes',
+      permission: 'coupons' as PermissionArea,
     },
-  ];
+    {
+      icon: Users2,
+      label: 'Team',
+      path: '/admin/team',
+      description: 'Manage Admin Access',
+      permission: null,
+    },
+  ].filter((item) => isOwner || (item.permission && canAccess(item.permission)));
 
   const isActive = (path: string) => {
     if (path === '/admin') {
@@ -130,7 +149,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
             </button>
             <div className="hidden md:flex items-center gap-2 md:gap-3 pl-2 md:pl-3 border-l border-gray-200 dark:border-gray-700">
               <div className="text-right">
-                <p className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">Admin</p>
+                <p className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white">{isOwner ? 'Main Admin' : 'Team Member'}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400">{adminEmail}</p>
               </div>
               <button
@@ -244,7 +263,7 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
 
             <div className="shrink-0 p-3 md:p-4 border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
               <div className="mb-3 px-3 md:px-4">
-                <p className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">Admin</p>
+                <p className="text-sm md:text-base font-semibold text-gray-900 dark:text-white">{isOwner ? 'Main Admin' : 'Team Member'}</p>
                 <p className="text-xs md:text-sm text-gray-500 dark:text-gray-400">{adminEmail}</p>
               </div>
               <button

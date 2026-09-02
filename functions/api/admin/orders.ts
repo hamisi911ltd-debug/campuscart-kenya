@@ -1,35 +1,14 @@
 // Cloudflare Pages Function for Admin Orders Management
+import { hasPermission } from "../_lib/teamAuth";
 
 interface Env {
   DB: D1Database;
 }
 
-function isAdmin(request: Request): boolean {
-  // Check cookie first
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) {
-    return true;
-  }
-  
-  // Check Authorization header as fallback
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") {
-    return true;
-  }
-  
-  // Check for session storage indicator in custom header
-  const sessionHeader = request.headers.get("X-Admin-Session");
-  if (sessionHeader === "true") {
-    return true;
-  }
-  
-  return false;
-}
-
 export async function onRequestGet(context: { env: Env; request: Request }) {
   const { env, request } = context;
 
-  if (!isAdmin(request)) {
+  if (!(await hasPermission(request, env, "orders"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" }
@@ -107,7 +86,7 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
 export async function onRequestPut(context: { env: Env; request: Request }) {
   const { env, request } = context;
 
-  if (!isAdmin(request)) {
+  if (!(await hasPermission(request, env, "orders"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" }

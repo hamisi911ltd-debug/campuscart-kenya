@@ -2,18 +2,11 @@
 // Distinct from clear-products.ts (deletes everything) - this deletes only
 // the ids the admin selected on the Products page.
 import { enforceAdminDomain } from "../_lib/adminDomain";
+import { hasPermission } from "../_lib/teamAuth";
 
 interface Env {
   DB: D1Database;
   STORAGE: R2Bucket;
-}
-
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) return true;
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") return true;
-  return request.headers.get("X-Admin-Session") === "true";
 }
 
 function extractR2Key(url: string): string | null {
@@ -28,7 +21,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
 
-  if (!isAdmin(request)) {
+  if (!(await hasPermission(request, env, "products"))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

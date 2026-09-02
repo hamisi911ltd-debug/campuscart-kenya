@@ -1,6 +1,17 @@
-// Cloudflare Pages Function to upload images to R2
-export const onRequestPost: PagesFunction<{ STORAGE: R2Bucket }> = async (context) => {
+// Cloudflare Pages Function to upload images to R2 (requires at least the
+// "products" permission - this was previously reachable by anyone with no
+// authentication check at all).
+import { hasPermission } from "./_lib/teamAuth";
+
+export const onRequestPost: PagesFunction<{ STORAGE: R2Bucket; DB: D1Database }> = async (context) => {
   try {
+    if (!(await hasPermission(context.request, context.env, "products"))) {
+      return new Response(JSON.stringify({ error: "Unauthorized" }), {
+        status: 401,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     const formData = await context.request.formData();
     const file = formData.get("image") as File;
     
