@@ -15,19 +15,26 @@ export async function findImportedListingIds(
   if (listingIds.length === 0) return imported;
 
   await ensureSourceTables(env);
-  const marks = listingIds.map(() => "?").join(",");
-  const tracked = await env.DB.prepare(`SELECT listing_id FROM product_sources WHERE listing_id IN (${marks})`)
-    .bind(...listingIds)
-    .all<{ listing_id: string }>();
-  for (const row of tracked.results || []) imported.add(String(row.listing_id));
 
-  const clauses = listingIds.map(() => "images LIKE ?").join(" OR ");
-  const { results } = await env.DB.prepare(`SELECT images FROM products WHERE ${clauses}`)
-    .bind(...listingIds.map((id) => `%/${prefix}-${id}-%`))
-    .all<{ images: string | null }>();
-  for (const row of results || []) {
-    for (const id of listingIds) {
-      if (row.images && row.images.includes(`/${prefix}-${id}-`)) imported.add(id);
+  // A query can carry at most ~100 bound values, and a batch is now up to 200
+  // listings - so look them up 80 at a time.
+  for (let i = 0; i < listingIds.length; i += 80) {
+    const chunk = listingIds.slice(i, i + 80);
+
+    const marks = chunk.map(() => "?").join(",");
+    const tracked = await env.DB.prepare(`SELECT listing_id FROM product_sources WHERE listing_id IN (${marks})`)
+      .bind(...chunk)
+      .all<{ listing_id: string }>();
+    for (const row of tracked.results || []) imported.add(String(row.listing_id));
+
+    const clauses = chunk.map(() => "images LIKE ?").join(" OR ");
+    const { results } = await env.DB.prepare(`SELECT images FROM products WHERE ${clauses}`)
+      .bind(...chunk.map((id) => `%/${prefix}-${id}-%`))
+      .all<{ images: string | null }>();
+    for (const row of results || []) {
+      for (const id of chunk) {
+        if (row.images && row.images.includes(`/${prefix}-${id}-`)) imported.add(id);
+      }
     }
   }
   return imported;

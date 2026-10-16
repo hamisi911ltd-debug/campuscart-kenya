@@ -67,10 +67,12 @@ const AdminKilimallImport = () => {
         const known = new Set(prev.map((p) => p.listingId));
         return [...prev, ...found.filter((f) => !known.has(f.listingId))];
       });
-      setPage(nextPage);
+      // The server reads several Kilimall pages per load and says where to continue.
+      setPage(data.nextPage ?? nextPage + 1);
       setSearched(true);
       if (!append) setSelected(new Set());
       if (found.length === 0) toast.info("No more products found");
+      else toast.success(`Loaded ${found.length} products`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Search failed");
     } finally {
@@ -82,13 +84,14 @@ const AdminKilimallImport = () => {
   const runDiscover = async () => {
     setSearching(true);
     try {
-      const res = await adminPost("/api/admin/kilimall-discover", { perCategory: 5 });
+      const res = await adminPost("/api/admin/kilimall-discover", { perCategory: 20 });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Discover failed");
       setItems(data.items as KilimallItem[]);
       setPage(1);
       setSearched(true);
       setDiscovered(true);
+      toast.success(`Found ${data.items.length} products across all categories`);
       setSelected(new Set());
       setProgress({});
     } catch (err) {
@@ -116,7 +119,10 @@ const AdminKilimallImport = () => {
     setProgress(Object.fromEntries(ids.map((i) => [i.listingId, { status: "pending" } as ImportState])));
 
     let ok = 0;
-    for (const item of ids) {
+    // Three imports run at a time: 200 products one-by-one would take far too long.
+    const queue = [...ids];
+    const worker = async () => {
+      for (let item = queue.shift(); item; item = queue.shift()) {
       setProgress((p) => ({ ...p, [item.listingId]: { status: "running" } }));
       try {
         const res = await adminPost("/api/admin/kilimall-import", {
@@ -135,7 +141,9 @@ const AdminKilimallImport = () => {
           [item.listingId]: { status: "failed", message: err instanceof Error ? err.message : "Failed" },
         }));
       }
-    }
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
 
     setSelected(new Set());
     setImporting(false);
@@ -155,8 +163,8 @@ const AdminKilimallImport = () => {
         <div className="mb-6">
           <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">Import from Kilimall</h1>
           <p className="text-sm lg:text-base text-gray-600 dark:text-gray-400">
-            Search Kilimall, tick the products you want, and they're added to your store with their photos, description and
-            specs. Photos are copied to your own storage.
+            Search Kilimall and it loads 200 products at a time. Tick the ones you want (or Select all) and they're added
+            to your store with their photos and details, three at a time. Photos are copied to your own storage.
           </p>
         </div>
 
@@ -188,7 +196,7 @@ const AdminKilimallImport = () => {
 
           <div className="flex flex-col gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-sm text-gray-700 dark:text-gray-300">
-              <span className="font-bold">Not sure what to add?</span> Pull a random mix of general products from every
+              <span className="font-bold">Not sure what to add?</span> Pull 200 random general products - 20 from each
               category - different each time. Each one is filed under its own category.
             </p>
             <button
@@ -197,7 +205,7 @@ const AdminKilimallImport = () => {
               disabled={searching || importing}
               className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
             >
-              {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />} Discover random mix
+              {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />} Discover random mix (200)
             </button>
           </div>
 
@@ -300,11 +308,11 @@ const AdminKilimallImport = () => {
             {items.length > 0 && !discovered && (
               <div className="mt-6 flex justify-center">
                 <button
-                  onClick={() => runSearch(page + 1, true)}
+                  onClick={() => runSearch(page, true)}
                   disabled={searching || importing}
                   className="flex items-center gap-2 rounded-xl bg-secondary px-6 py-2.5 text-sm font-bold text-foreground hover:bg-secondary/80 transition disabled:opacity-50"
                 >
-                  {searching && <Loader2 className="h-4 w-4 animate-spin" />} Load more
+                  {searching && <Loader2 className="h-4 w-4 animate-spin" />} Load 200 more
                 </button>
               </div>
             )}

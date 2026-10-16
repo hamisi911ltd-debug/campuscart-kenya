@@ -30,24 +30,33 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
   try {
     const body = await request.json() as { perCategory?: number; categories?: string[] };
-    const perCategory = Math.min(Math.max(Number(body.perCategory) || 5, 1), 12);
+    // 20 from each of the 10 categories = a batch of 200.
+    const perCategory = Math.min(Math.max(Number(body.perCategory) || 20, 1), 20);
     const wanted = Object.keys(DISCOVER_KEYWORDS).filter(
       (slug) => !Array.isArray(body.categories) || body.categories.length === 0 || body.categories.includes(slug)
     );
 
-    // One search per category (at most 10 subrequests, well inside Workers'
-    // limit), all in parallel. A category that fails is skipped, not fatal.
+    // Two searches per category (two different keywords, each on a random page):
+    // 20 requests in all, well inside Workers' limit, run in parallel. Sampling from
+    // both gives a varied pool to draw the 20 from. A search that fails is skipped.
     const perCategoryResults = await Promise.all(
       wanted.map(async (category): Promise<DiscoveredItem[]> => {
-        try {
-          const keyword = pickRandom(DISCOVER_KEYWORDS[category], 1)[0];
-          const page = 1 + Math.floor(Math.random() * 2);
-          const listings = parseListingPage(await fetchKilimallHtml(buildListingUrl({ query: keyword, page })));
-          return pickRandom(listings, perCategory).map((item) => ({ ...item, category, keyword }));
-        } catch (err) {
-          console.error(`Kilimall discover failed for ${category}:`, err);
-          return [];
-        }
+        const keywords = pickRandom(DISCOVER_KEYWORDS[category], 2);
+        const pools = await Promise.all(
+          keywords.map(async (keyword) => {
+            try {
+              const page = 1 + Math.floor(Math.random() * 3);
+              const listings = parseListingPage(await fetchKilimallHtml(buildListingUrl({ query: keyword, page })));
+              return listings.map((item) => ({ ...item, category, keyword }));
+            } catch (err) {
+              console.error(`Kilimall discover failed for ${category} / ${keyword}:`, err);
+              return [] as DiscoveredItem[];
+            }
+          })
+        );
+        const seenInCategory = new Set<string>();
+        const merged = pools.flat().filter((item) => !seenInCategory.has(item.listingId) && seenInCategory.add(item.listingId));
+        return pickRandom(merged, perCategory);
       })
     );
 
