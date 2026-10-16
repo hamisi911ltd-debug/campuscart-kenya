@@ -278,7 +278,7 @@ const Index = () => {
                   <div className="-mx-1 overflow-x-auto scrollbar-hide px-1">
                     <div className="flex gap-2">
                       {items.map((p) => (
-                        <div key={p.id} className="w-[116px] shrink-0">
+                        <div key={p.id} className="w-[148px] shrink-0">
                           <ProductCard p={p} />
                         </div>
                       ))}
