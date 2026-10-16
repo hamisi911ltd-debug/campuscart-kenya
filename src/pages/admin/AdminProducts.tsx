@@ -46,6 +46,7 @@ const AdminProducts = () => {
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [optimizing, setOptimizing] = useState<{ done: number; total: number } | null>(null);
   const [tidying, setTidying] = useState(false);
+  const [repricing, setRepricing] = useState<{ done: number; total: number } | null>(null);
 
   const fetchProducts = async () => {
     try {
@@ -71,6 +72,32 @@ const AdminProducts = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Put every supplier product on the fixed 10% markup: re-reads each one's current
+  // supplier price and sets the selling price to that + 10%. Products you added
+  // yourself (no supplier cost) are left alone.
+  const handleApplyMarkup = async () => {
+    const queue = products.filter((p) => p.src_listing_id);
+    if (queue.length === 0) { toast.info('No supplier products to price'); return; }
+    if (!window.confirm(`Set the price of ${queue.length} supplier product(s) to their current supplier price + 10%?`)) return;
+    setRepricing({ done: 0, total: queue.length });
+    let ok = 0;
+    let failed = 0;
+    for (let i = 0; i < queue.length; i++) {
+      try {
+        const res = await adminPost('/api/admin/kilimall-check', { productId: queue[i].id, apply: true });
+        const data = await res.json();
+        if (res.ok && data.success) ok++; else failed++;
+      } catch {
+        failed++;
+      }
+      setRepricing({ done: i + 1, total: queue.length });
+    }
+    setRepricing(null);
+    if (failed === 0) toast.success(`10% markup applied to ${ok} product${ok === 1 ? '' : 's'}`);
+    else toast.warning(`Applied to ${ok}; ${failed} couldn't be updated (the Kilimall listing may be gone)`);
+    fetchProducts();
+  };
 
   // Move every product into the category its name says it belongs in, and shorten
   // keyword-stuffed names to brand + model.
@@ -362,6 +389,15 @@ const AdminProducts = () => {
             >
               <Copy className="h-4 w-4" />
               <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
+            </button>
+            <button
+              onClick={handleApplyMarkup}
+              disabled={!!repricing}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition disabled:opacity-60"
+              title="Set every supplier product to its supplier price + 10%"
+            >
+              <CheckCircle className="h-4 w-4" />
+              <span>{repricing ? `Pricing ${repricing.done}/${repricing.total}…` : 'Apply 10% markup'}</span>
             </button>
             <button
               onClick={handleTidy}

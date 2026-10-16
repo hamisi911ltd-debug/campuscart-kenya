@@ -4,6 +4,7 @@ import { ArrowLeft, Search, Loader2, CheckCircle2, XCircle, Download, Star, Shuf
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminPost } from "@/utils/adminApi";
 import { toast } from "sonner";
+import { MARKUP_PERCENT } from "@/data/pricing";
 
 // Kept in sync with src/data/products.ts's `categories` array.
 const CATEGORIES = [
@@ -40,7 +41,7 @@ const AdminKilimallImport = () => {
   const [query, setQuery] = useState("");
   const [url, setUrl] = useState("");
   const [category, setCategory] = useState("auto");
-  const [markup, setMarkup] = useState(15);
+  const markup = MARKUP_PERCENT; // fixed for every product
   const [items, setItems] = useState<KilimallItem[]>([]);
   const [page, setPage] = useState(1);
   const [searching, setSearching] = useState(false);
@@ -121,7 +122,6 @@ const AdminKilimallImport = () => {
         const res = await adminPost("/api/admin/kilimall-import", {
           listingId: item.listingId,
           category: item.category || category,
-          markupPercent: markup,
           fallbackPrice: item.price,
         });
         const data = await res.json();
@@ -214,14 +214,11 @@ const AdminKilimallImport = () => {
               </select>
             </label>
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Your markup on Kilimall's price (%)
+              Markup on Kilimall's price
               <input
-                type="number"
-                min={0}
-                max={500}
-                value={markup}
-                onChange={(e) => setMarkup(Math.max(0, Number(e.target.value) || 0))}
-                className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-normal"
+                value={`${markup}% on every product`}
+                readOnly
+                className="mt-1 w-full cursor-not-allowed rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-normal"
               />
             </label>
           </div>

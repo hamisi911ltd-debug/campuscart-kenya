@@ -115,14 +115,14 @@ export const ProductSourcePanel = ({ product, onPriceApplied }: {
           Kilimall now: <strong>{ksh(live.live.price)}</strong>
           {priceChanged && cost != null && <> (was {ksh(cost)}) - your margin has changed</>}
           {!priceChanged && <> - price unchanged</>}
-          {priceChanged && live.suggestedPrice && (
+          {live.suggestedPrice != null && live.suggestedPrice !== live.storePrice && (
             <button
               type="button"
               onClick={() => check(true)}
               disabled={applying}
               className="mt-1 flex w-full items-center justify-center gap-1 rounded bg-amber-600 px-2 py-1 font-bold text-white hover:bg-amber-700 disabled:opacity-60"
             >
-              {applying && <Loader2 className="h-3 w-3 animate-spin" />} Update my price to {ksh(live.suggestedPrice)}
+              {applying && <Loader2 className="h-3 w-3 animate-spin" />} Set to 10% markup: {ksh(live.suggestedPrice)}
             </button>
           )}
         </div>

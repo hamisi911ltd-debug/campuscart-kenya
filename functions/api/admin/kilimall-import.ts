@@ -14,6 +14,7 @@ import { ensureSourceTables, kilimallListingUrl } from "../_lib/productSources";
 import { findImportedListingIds } from "../_lib/kilimallDiscover";
 import { pickCategory } from "../_lib/categorize";
 import { shortProductTitle } from "../_lib/productTitle";
+import { MARKUP_PERCENT, sellPriceFor } from "../_lib/pricing";
 import { MIN_COVER_WIDTH, copyPhotoToStorage } from "../_lib/imageStore";
 
 interface Env {
@@ -43,12 +44,11 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     const body = await request.json() as {
       listingId?: string;
       category?: string;
-      markupPercent?: number;
       fallbackPrice?: number;
     };
     const listingId = String(body.listingId || "").trim();
     const hint = body.category || "";
-    const markup = Math.min(Math.max(Number(body.markupPercent) || 0, 0), 500);
+    const markup = MARKUP_PERCENT; // fixed for every product, whatever the page sends
 
     if (!/^\d{3,15}$/.test(listingId)) return json({ error: "Invalid Kilimall listing id" }, 400);
     // "auto" (or nothing) is fine; anything else must at least be a real category,
@@ -75,7 +75,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     const sourcePrice = product.price ?? Number(body.fallbackPrice) ?? 0;
     if (!(sourcePrice > 0)) return json({ error: "Could not determine a price for this product" }, 422);
-    const sellPrice = Math.round(sourcePrice * (1 + markup / 100));
+    const sellPrice = sellPriceFor(sourcePrice);
 
     if (product.images.length === 0) return json({ error: "This listing has no photos" }, 422);
 

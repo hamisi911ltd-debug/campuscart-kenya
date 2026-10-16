@@ -6,12 +6,11 @@ import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
 import { fetchKilimallHtml, parseProductPage } from "../_lib/kilimall";
 import { ensureSourceTables, getSourceForProduct } from "../_lib/productSources";
+import { MARKUP_PERCENT, sellPriceFor } from "../_lib/pricing";
 
 interface Env {
   DB: D1Database;
 }
-
-const DEFAULT_MARKUP = 15;
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
@@ -43,8 +42,8 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     const live = parseProductPage(await fetchKilimallHtml(`/listing/${source.listing_id}`), source.listing_id);
     const now = new Date().toISOString();
-    const markup = source.markup_percent ?? DEFAULT_MARKUP;
-    const suggestedPrice = live.price ? Math.round(live.price * (1 + markup / 100)) : null;
+    const markup = MARKUP_PERCENT;
+    const suggestedPrice = live.price ? sellPriceFor(live.price) : null;
 
     // Always record what Kilimall says right now; make sure legacy products
     // (imported before tracking existed) get a row so they're tracked too.
