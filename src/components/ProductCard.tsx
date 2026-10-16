@@ -1,6 +1,7 @@
 import { Star, Plus, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useShop } from "@/store/shop";
+import { handleImageError } from "@/lib/imageFallback";
 
 export interface Product {
   id: string;
@@ -42,12 +43,11 @@ export const ProductCard = ({ p }: { p: Product }) => {
           src={p.image}
           alt={p.title}
           loading="lazy"
+          decoding="async"
           width={400}
           height={400}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={(e) => {
-            (e.target as HTMLImageElement).src = '/placeholder.svg';
-          }}
+          onError={handleImageError}
         />
         {p.badge && (
           <span

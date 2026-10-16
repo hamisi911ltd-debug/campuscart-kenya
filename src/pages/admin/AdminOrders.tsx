@@ -23,8 +23,20 @@ interface Order {
   delivered_at?: string;
 }
 
+interface OrderLine {
+  order_id: string;
+  product_id: string;
+  product_title: string | null;
+  quantity: number;
+  price_at_purchase: number;
+  source_url: string | null;
+  src_price: number | null;
+  src_in_stock: number | null;
+}
+
 const AdminOrders = () => {
   const [orders, setOrders] = useState<Order[]>([]);
+  const [orderItems, setOrderItems] = useState<Record<string, OrderLine[]>>({});
   const [searchQuery, setSearchQuery] = useState("");
   const [filterStatus, setFilterStatus] = useState<string>("all");
   const [loading, setLoading] = useState(true);
@@ -39,6 +51,22 @@ const AdminOrders = () => {
       if (response.ok) setRevenue(data);
     } catch (err) {
       console.error('Error fetching platform revenue:', err);
+    }
+  };
+
+  // Line items per order, with the original listing to buy each from.
+  const fetchOrderItems = async () => {
+    try {
+      const response = await adminGet('/api/admin/order-items');
+      const data = await response.json();
+      if (!response.ok) return;
+      const grouped: Record<string, OrderLine[]> = {};
+      for (const item of (data.items || []) as OrderLine[]) {
+        (grouped[item.order_id] ||= []).push(item);
+      }
+      setOrderItems(grouped);
+    } catch (err) {
+      console.error('Error fetching order items:', err);
     }
   };
 
@@ -66,6 +94,7 @@ const AdminOrders = () => {
   useEffect(() => {
     fetchOrders();
     fetchRevenue();
+    fetchOrderItems();
   }, []);
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
@@ -458,6 +487,30 @@ const AdminOrders = () => {
                   {order.notes && (
                     <div className="text-xs text-muted-foreground">
                       <strong>Delivery info:</strong> {order.notes}
+                    </div>
+                  )}
+                  {(orderItems[order.id] || []).length > 0 && (
+                    <div className="mt-2 space-y-1 rounded-lg bg-secondary/50 p-2 text-xs">
+                      <strong className="text-foreground">Items to buy:</strong>
+                      {orderItems[order.id].map((line, i) => (
+                        <div key={i} className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 flex-1 text-muted-foreground">
+                            {line.quantity}× {line.product_title || line.product_id}
+                            <span className="ml-1 font-semibold text-foreground">KES {Number(line.price_at_purchase).toLocaleString()}</span>
+                            {line.src_price ? <span className="ml-1">(cost KES {Math.round(line.src_price).toLocaleString()})</span> : null}
+                          </span>
+                          {line.source_url && (
+                            <a
+                              href={line.source_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="shrink-0 font-bold text-accent hover:underline"
+                            >
+                              Buy on Kilimall ↗
+                            </a>
+                          )}
+                        </div>
+                      ))}
                     </div>
                   )}
                 </div>

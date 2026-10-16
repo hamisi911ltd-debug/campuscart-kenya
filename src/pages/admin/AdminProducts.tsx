@@ -2,6 +2,9 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Upload, Images, Download, Copy, CheckSquare, Square } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { ProductSourcePanel } from "@/components/admin/ProductSourcePanel";
+import { ShareProduct } from "@/components/ShareProduct";
+import { toast } from "sonner";
 import { adminGet, adminPost, adminPut, adminDelete } from "@/utils/adminApi";
 
 interface Product {
@@ -19,6 +22,16 @@ interface Product {
   is_available: boolean;
   created_at: string;
   updated_at: string;
+  description?: string;
+  // Where it was imported from (see functions/api/admin/products.ts)
+  src_source?: string | null;
+  src_listing_id?: string | null;
+  src_url?: string | null;
+  src_price?: number | null;
+  src_markup?: number | null;
+  src_stock?: number | null;
+  src_in_stock?: number | null;
+  src_checked_at?: string | null;
 }
 
 const AdminProducts = () => {
@@ -31,6 +44,7 @@ const AdminProducts = () => {
   const [dedupeChecking, setDedupeChecking] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [optimizing, setOptimizing] = useState<{ done: number; total: number } | null>(null);
 
   const fetchProducts = async () => {
     try {
@@ -56,6 +70,35 @@ const AdminProducts = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Imported products saved before photo compression existed: still heavy.
+  const needsOptimizing = products.filter(
+    (p) => p.src_listing_id && !/\/km-\d+-\d+o-/.test(p.images || '')
+  );
+
+  // Re-downloads each product's photos in a compressed form, one product at
+  // a time (each call is small and well inside the server's request limits).
+  const handleOptimizeImages = async () => {
+    const queue = [...needsOptimizing];
+    if (queue.length === 0) return;
+    setOptimizing({ done: 0, total: queue.length });
+    let ok = 0;
+    let failed = 0;
+    for (let i = 0; i < queue.length; i++) {
+      try {
+        const res = await adminPost('/api/admin/optimize-images', { productId: queue[i].id });
+        const data = await res.json();
+        if (res.ok && (data.success || data.skipped)) ok++; else failed++;
+      } catch {
+        failed++;
+      }
+      setOptimizing({ done: i + 1, total: queue.length });
+    }
+    setOptimizing(null);
+    if (failed === 0) toast.success(`Optimized photos on ${ok} product${ok === 1 ? '' : 's'}`);
+    else toast.warning(`Optimized ${ok}, ${failed} couldn't be re-downloaded (listing may be gone)`);
+    fetchProducts();
+  };
 
   const handleDeleteProduct = async (productId: string) => {
     if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
@@ -300,6 +343,21 @@ const AdminProducts = () => {
               <Copy className="h-4 w-4" />
               <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
             </button>
+            {(needsOptimizing.length > 0 || optimizing) && (
+              <button
+                onClick={handleOptimizeImages}
+                disabled={!!optimizing}
+                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-green-600 text-white text-xs md:text-sm font-bold hover:bg-green-700 transition disabled:opacity-70"
+                title="Re-download heavy photos in a much smaller size so pages load fast"
+              >
+                <Images className="h-4 w-4" />
+                <span>
+                  {optimizing
+                    ? `Optimizing ${optimizing.done}/${optimizing.total}…`
+                    : `Speed up photos (${needsOptimizing.length})`}
+                </span>
+              </button>
+            )}
             <Link
               to="/admin/products/import-kilimall"
               className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition"
@@ -448,6 +506,11 @@ const AdminProducts = () => {
                   </div>
                   <span className="text-xs text-muted-foreground bg-secondary px-2 py-1 rounded">{product.category}</span>
                 </div>
+                <ProductSourcePanel
+                  product={product}
+                  onPriceApplied={(productId, newPrice) =>
+                    setProducts((prev) => prev.map((x) => (x.id === productId ? { ...x, price: newPrice } : x)))}
+                />
                 <div className="flex items-center justify-between text-xs text-muted-foreground mb-3 md:mb-4">
                   <span>{new Date(product.created_at).toLocaleDateString()}</span>
                   <span className="flex items-center gap-1">
@@ -455,6 +518,14 @@ const AdminProducts = () => {
                     Qty: {product.quantity_available}
                   </span>
                 </div>
+                <ShareProduct
+                  id={product.id}
+                  title={product.title}
+                  price={product.price}
+                  description={product.description}
+                  variant="icon"
+                  className="mb-2"
+                />
                 <div className="flex gap-2">
                   <Link
                     to={`/admin/products/edit/${product.id}`}

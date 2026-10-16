@@ -10,6 +10,7 @@ import { OWNER_ID, ensureOwnerUser } from "../_lib/owner";
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
 import { fetchKilimallHtml, parseProductPage } from "../_lib/kilimall";
+import { ensureSourceTables, kilimallListingUrl } from "../_lib/productSources";
 
 interface Env {
   DB: D1Database;
@@ -32,7 +33,8 @@ async function rehostImage(env: Env, listingId: string, sourceUrl: string, index
     const contentType = (response.headers.get("Content-Type") || "image/jpeg").split(";")[0];
     if (!contentType.startsWith("image/")) return null;
     const extension = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-    const key = `products/km-${listingId}-${index}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
+    // "o" after the index marks the photo as already compressed (see optimize-images.ts).
+    const key = `products/km-${listingId}-${index}o-${Math.random().toString(36).slice(2, 8)}.${extension}`;
 
     await env.STORAGE.put(key, response.body, { httpMetadata: { contentType } });
     return `/api/images/${key}`;
@@ -85,6 +87,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     if (hosted.length === 0) return json({ error: "Could not download any product images" }, 502);
 
     await ensureOwnerUser(env);
+    await ensureSourceTables(env);
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -103,6 +106,24 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       JSON.stringify(hosted),
       10,
       now,
+      now
+    ).run();
+
+    // Remember where it came from and what it cost, so the admin can open the
+    // original listing, see the margin, and re-check price/stock before buying.
+    await env.DB.prepare(
+      `INSERT OR REPLACE INTO product_sources
+        (product_id, source, listing_id, source_url, source_price, source_list_price, markup_percent, source_stock, in_stock, checked_at)
+       VALUES (?, 'kilimall', ?, ?, ?, ?, ?, ?, ?, ?)`
+    ).bind(
+      id,
+      listingId,
+      kilimallListingUrl(listingId),
+      sourcePrice,
+      product.listPrice,
+      markup,
+      product.stock,
+      product.inStock === null ? null : product.inStock ? 1 : 0,
       now
     ).run();
 

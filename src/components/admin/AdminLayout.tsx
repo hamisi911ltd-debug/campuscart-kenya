@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard, Users, Package, ShoppingBag, Sparkles, Users2,
   LogOut, Menu, X, Bell, Search, ChevronDown, Shield,
-  Activity, Settings, BarChart3, Database
+  Activity, Settings, BarChart3, Database, PackageSearch
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
@@ -74,6 +74,13 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       label: 'Products',
       path: '/admin/products',
       description: 'Product Listings',
+      permission: 'products' as PermissionArea,
+    },
+    {
+      icon: PackageSearch,
+      label: 'Stock Enquiries',
+      path: '/admin/enquiries',
+      description: 'Customer Stock Questions',
       permission: 'products' as PermissionArea,
     },
     {

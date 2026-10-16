@@ -1,10 +1,23 @@
 // Cloudflare Pages Function - Checkout API
 import { OWNER_ID, ensureOwnerUser } from "./_lib/owner";
 import { normalizeKenyanPhone } from "./_lib/phone";
+import { sendWhatsAppMessage } from "./_lib/sendWhatsApp";
+import { ensureSourceTables, kilimallListingUrl, listingIdFromImages } from "./_lib/productSources";
 
 interface Env {
   DB: D1Database;
+  TWILIO_ACCOUNT_SID?: string;
+  TWILIO_AUTH_TOKEN?: string;
+  TWILIO_WHATSAPP_FROM?: string;
 }
+
+// Flat delivery fee for every order. Keep in sync with DELIVERY_FEE in
+// src/data/deliveryAreas.ts (the frontend can't import from functions/).
+const DELIVERY_FEE = 129;
+
+const ADMIN_PHONE_E164 = "+254108254465";
+const ADMIN_PHONE_WA = "254108254465";
+const SITE_URL = "https://campusmart.co.ke";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
@@ -16,6 +29,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       delivery_longitude?: number;
       buyer_phone: string;
       notes?: string;
+      order_number?: string;
+      payment_method?: string;
       // Kilimall-style delivery details
       recipient_name?: string;
       alt_phone?: string;
@@ -87,36 +102,44 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body.notes && !body.notes.startsWith("Customer:") ? body.notes : "",
     ].filter(Boolean).join(" | ");
 
-    // Calculate delivery fee
+    // Flat delivery fee
     const subtotal = body.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-
-    let delivery_fee: number;
-    if (subtotal <= 100) {
-      delivery_fee = 40;
-    } else if (subtotal <= 200) {
-      delivery_fee = 70;
-    } else if (subtotal <= 400) {
-      delivery_fee = 90;
-    } else {
-      delivery_fee = 100;
-    }
-
+    const delivery_fee = DELIVERY_FEE;
     const total_amount = subtotal + delivery_fee;
 
     // Get product details for the order confirmation. title/image are also
     // snapshotted onto order_items below so this order's history stays
     // readable even if the product is later deleted from the catalog.
+    // Source info (original Kilimall listing + what it cost) is for the
+    // admin's eyes only - it goes in the admin WhatsApp message, never the
+    // customer-facing one.
+    try { await ensureSourceTables(context.env); } catch (err) { console.error("ensureSourceTables:", err); }
     const productDetails = await Promise.all(
       body.items.map(async (item) => {
         const product = await context.env.DB.prepare(`
-          SELECT id, title, category, image_url FROM products WHERE id = ?
+          SELECT id, title, category, image_url, images FROM products WHERE id = ?
         `).bind(item.product_id).first();
+
+        let sourceUrl: string | null = null;
+        let sourcePrice: number | null = null;
+        try {
+          const source = await context.env.DB.prepare(
+            "SELECT listing_id, source_price FROM product_sources WHERE product_id = ?"
+          ).bind(item.product_id).first<{ listing_id: string; source_price: number | null }>();
+          const listingId = source?.listing_id || listingIdFromImages(product?.images);
+          if (listingId) sourceUrl = kilimallListingUrl(listingId);
+          sourcePrice = source?.source_price ?? null;
+        } catch (err) {
+          console.error("Source lookup failed:", err);
+        }
 
         return {
           ...item,
-          title: product?.title || 'Unknown Product',
-          category: product?.category || 'N/A',
+          title: (product?.title as string | undefined) || 'Unknown Product',
+          category: (product?.category as string | undefined) || 'N/A',
           image_url: (product?.image_url as string | undefined) || null,
+          sourceUrl,
+          sourcePrice,
         };
       })
     );
@@ -125,6 +148,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     // Create the order
     const orderId = crypto.randomUUID();
+    const orderNumber = body.order_number || `CM${Date.now().toString().slice(-8)}`;
 
     await context.env.DB.prepare(`
       INSERT INTO orders (id, buyer_id, seller_id, total_amount, delivery_fee, delivery_address, delivery_latitude, delivery_longitude, buyer_phone, notes, status, payment_status)
@@ -165,55 +189,89 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       VALUES (?, ?, 'pending_confirmation', 'Order placed, awaiting seller/admin confirmation of stock availability')
     `).bind(crypto.randomUUID(), orderId).run();
 
-    // Build detailed WhatsApp message with buyer and order info
-    const itemsList = productDetails.map((item, i) =>
-      `${i + 1}. ${item.title}\n` +
-      `Price: KES ${item.price.toLocaleString()} × ${item.quantity} = KES ${(item.price * item.quantity).toLocaleString()}\n` +
-      `Category: ${item.category}`
-    ).join("\n\n");
+    // ---- WhatsApp message with full product + client details ----
+    const money = (n: number) => `KES ${n.toLocaleString("en-KE")}`;
+    const payLabel = body.payment_method === "wallet" ? "CampusMart Wallet" : "M-Pesa";
 
-    // Google Maps link if location provided
-    const mapsLink = (body.delivery_latitude && body.delivery_longitude) 
-      ? `📍 *Live Location:*\nhttps://www.google.com/maps?q=${body.delivery_latitude},${body.delivery_longitude}\nCoordinates: ${body.delivery_latitude.toFixed(6)}, ${body.delivery_longitude.toFixed(6)}\n\n`
+    const itemsFor = (internal: boolean) => productDetails.map((item, i) => {
+      const lines = [
+        `${i + 1}. *${item.title}*`,
+        `   Qty: ${item.quantity} × ${money(item.price)} = ${money(item.price * item.quantity)}`,
+        `   Category: ${item.category}`,
+        `   Product ID: ${item.product_id}`,
+        `   Page: ${SITE_URL}/product/${item.product_id}`,
+      ];
+      if (internal && item.sourceUrl) {
+        lines.push(`   🔗 Buy from: ${item.sourceUrl}`);
+        if (item.sourcePrice) {
+          const profit = (item.price - item.sourcePrice) * item.quantity;
+          lines.push(`   Cost: ${money(item.sourcePrice)} each · Profit: ${money(profit)}`);
+        }
+      }
+      return lines.join("\n");
+    }).join("\n\n");
+
+    const mapsLink = (body.delivery_latitude && body.delivery_longitude)
+      ? `📍 *Live Location:*\nhttps://www.google.com/maps?q=${body.delivery_latitude},${body.delivery_longitude}\n\n`
       : '';
 
-    const whatsappMessage = `🛒 *New Order - #CM${Date.now().toString().slice(-8)}*\n\n` +
-      `👤 *Customer Details:*\n` +
+    const buildMessage = (internal: boolean) =>
+      `🛒 *New Order - #${orderNumber}*\n\n` +
+      `👤 *Client Details:*\n` +
       `Account: ${buyerInfo.name}\n` +
       `Deliver to: ${recipientName}\n` +
       `Phone: ${buyerInfo.phone}\n` +
       `${altPhone ? `Alt phone: ${altPhone}\n` : ""}` +
-      `Delivery: ${fullAddress}\n` +
+      `Address: ${fullAddress}\n` +
       `${body.delivery_note ? `Rider note: ${body.delivery_note.trim()}\n` : ""}\n` +
       `${mapsLink}` +
-      `📦 *Order Items:*\n\n` +
-      `${itemsList}\n\n` +
-      `💰 *Order Summary:*\n` +
-      `Subtotal: KES ${subtotal.toLocaleString()}\n` +
-      `Delivery: KES ${delivery_fee}\n` +
-      `*Total: KES ${total_amount.toLocaleString()}*\n\n` +
-      `Admin Contact: +254108254465\n` +
-      `Order Time: ${new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}\n\n` +
-      `⚠️ Please confirm the item(s) are in stock, then open Admin → Orders ` +
-      `and tap "Confirm & Request Payment" to send the customer their M-Pesa payment prompt.`;
+      `📦 *Products:*\n\n` +
+      `${itemsFor(internal)}\n\n` +
+      `💰 *Payment:*\n` +
+      `Subtotal: ${money(subtotal)}\n` +
+      `Delivery: ${money(delivery_fee)}\n` +
+      `*Total: ${money(total_amount)}*\n` +
+      `Method: ${payLabel} (unpaid until confirmed)\n\n` +
+      `Order ID: ${orderId}\n` +
+      `Order Time: ${new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}` +
+      (internal
+        ? `\n\n⚠️ Check the item(s) are in stock (open the 🔗 link), then open Admin → Orders ` +
+          `and tap "Confirm & Request Payment" to send the customer their M-Pesa prompt.`
+        : "");
+
+    const adminMessage = buildMessage(true);
+    // Customer-safe copy: same details, no supplier link or cost price.
+    const customerMessage = buildMessage(false);
+
+    // Message the admin's WhatsApp directly (Twilio). Best-effort - if
+    // WhatsApp isn't configured or the send fails, the order is still saved
+    // and the client falls back to opening WhatsApp with the message.
+    let adminNotified = false;
+    try {
+      await sendWhatsAppMessage(context.env, ADMIN_PHONE_E164, adminMessage);
+      adminNotified = true;
+    } catch (err) {
+      console.error("Admin WhatsApp notification failed:", err);
+    }
 
     return new Response(JSON.stringify({
       success: true,
       order_id: orderId,
+      order_number: orderNumber,
       subtotal,
       delivery_fee,
       total_amount,
-      whatsapp_message: whatsappMessage,
-      admin_phone: "254108254465",
+      admin_notified: adminNotified,
+      whatsapp_message: customerMessage,
+      admin_phone: ADMIN_PHONE_WA,
     }), {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error: any) {
     console.error('Checkout error:', error);
-    return new Response(JSON.stringify({ 
+    return new Response(JSON.stringify({
       error: error.message,
-      details: "Checkout failed",
-      stack: error.stack
+      details: "Checkout failed"
     }), {
       status: 500,
       headers: { "Content-Type": "application/json" },

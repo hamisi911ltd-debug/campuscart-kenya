@@ -1,5 +1,33 @@
 // Image upload utility - uploads to Cloudflare R2
-export const uploadImage = async (file: File): Promise<string> => {
+
+const MAX_DIMENSION = 1000; // px - plenty for a product page, far lighter than a phone photo
+const COMPRESS_ABOVE_BYTES = 150 * 1024;
+
+// Phone photos are routinely 2-5 MB; shown in a product grid that makes pages
+// crawl. Downscale + re-encode as WebP in the browser before uploading. Falls
+// back to the original file if anything about that fails.
+const compressImage = async (file: File): Promise<File> => {
+  try {
+    if (file.size <= COMPRESS_ABOVE_BYTES || !file.type.startsWith('image/') || file.type === 'image/gif') return file;
+    const bitmap = await createImageBitmap(file);
+    const scale = Math.min(1, MAX_DIMENSION / Math.max(bitmap.width, bitmap.height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.round(bitmap.width * scale);
+    canvas.height = Math.round(bitmap.height * scale);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return file;
+    ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+    bitmap.close?.();
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/webp', 0.8));
+    if (!blob || blob.size >= file.size) return file;
+    return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
+  } catch {
+    return file;
+  }
+};
+
+export const uploadImage = async (original: File): Promise<string> => {
+  const file = await compressImage(original);
   // Upload to R2 via API
   const formData = new FormData();
   formData.append('image', file);

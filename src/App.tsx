@@ -36,6 +36,7 @@ import AdminProductForm from "./pages/admin/AdminProductForm";
 import AdminBulkImport from "./pages/admin/AdminBulkImport";
 import AdminPhotoImport from "./pages/admin/AdminPhotoImport";
 import AdminKilimallImport from "./pages/admin/AdminKilimallImport";
+import AdminEnquiries from "./pages/admin/AdminEnquiries";
 import AdminOrders from "./pages/admin/AdminOrders";
 import AdminCoupons from "./pages/admin/AdminCoupons";
 import AdminTeam from "./pages/admin/AdminTeam";
@@ -92,6 +93,7 @@ const App = () => {
               <Route path="/admin/products/edit/:id" element={<AdminRoute requirePermission="products"><AdminProductForm /></AdminRoute>} />
               <Route path="/admin/products/bulk-import" element={<AdminRoute requirePermission="products"><AdminBulkImport /></AdminRoute>} />
               <Route path="/admin/products/import-photos" element={<AdminRoute requirePermission="products"><AdminPhotoImport /></AdminRoute>} />
+              <Route path="/admin/enquiries" element={<AdminRoute requirePermission="products"><AdminEnquiries /></AdminRoute>} />
               <Route path="/admin/products/import-kilimall" element={<AdminRoute requirePermission="products"><AdminKilimallImport /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute requirePermission="orders"><AdminOrders /></AdminRoute>} />
               <Route path="/admin/coupons" element={<AdminRoute requirePermission="coupons"><AdminCoupons /></AdminRoute>} />

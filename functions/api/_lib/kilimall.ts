@@ -30,6 +30,9 @@ export interface KilimallProduct {
   images: string[];
   price: number | null;
   listPrice: number | null;
+  /** Units available across sellable variants, or null if Kilimall didn't say. */
+  stock: number | null;
+  inStock: boolean | null;
 }
 
 export async function fetchKilimallHtml(pathOrUrl: string): Promise<string> {
@@ -139,7 +142,7 @@ export function parseListingPage(html: string): KilimallListing[] {
     results.push({
       listingId: id,
       title: cleanText(String(item.title)),
-      image: cleanImageUrl(String(item.image), 400),
+      image: cleanImageUrl(String(item.image), 360),
       price: Number(item.price),
       listPrice: listPrice && listPrice > Number(item.price) ? listPrice : null,
       rating: Number(item.reviewStar) || 0,
@@ -168,8 +171,8 @@ export function parseProductPage(html: string, listingId: string): KilimallProdu
   // Gallery: de-duplicated, capped so a single import stays within Workers'
   // subrequest limit (1 page fetch + up to 8 image downloads).
   const gallery: string[] = Array.isArray(detail.imageUrls) ? detail.imageUrls : [];
-  const images = [...new Set(gallery.map((u: string) => cleanImageUrl(u, 800)).filter(Boolean))].slice(0, 8);
-  if (images.length === 0 && detail.imageUrl) images.push(cleanImageUrl(detail.imageUrl, 800));
+  const images = [...new Set(gallery.map((u: string) => cleanImageUrl(u, 720)).filter(Boolean))].slice(0, 8);
+  if (images.length === 0 && detail.imageUrl) images.push(cleanImageUrl(detail.imageUrl, 720));
 
   // Price of the selected variant.
   let price: number | null = null;
@@ -181,6 +184,11 @@ export function parseProductPage(html: string, listingId: string): KilimallProdu
     if (Number(selected.listPrice) > 0) listPrice = Number(selected.listPrice);
   }
 
+  // Live stock: units across every variant that is on sale.
+  let stock: number | null = null;
+  const sellable = skus.filter((s) => s && s.isSale !== false && s.inventory != null);
+  if (sellable.length > 0) stock = sellable.reduce((sum, s) => sum + skuStock(s.inventory), 0);
+
   return {
     listingId,
     title: cleanText(String(detail.title)),
@@ -188,7 +196,23 @@ export function parseProductPage(html: string, listingId: string): KilimallProdu
     images,
     price,
     listPrice,
+    stock,
+    inStock: stock === null ? null : stock > 0,
   };
+}
+
+// A variant's inventory is split across Kilimall's warehouses; each channel
+// (gs / ds / fbk) only counts when its has* flag is on.
+function skuStock(inventory: any): number {
+  if (typeof inventory === "number") return Math.max(0, inventory);
+  if (!inventory || typeof inventory !== "object") return 0;
+  let total = 0;
+  for (const channel of ["gs", "ds", "fbk"]) {
+    if (inventory[`has${channel[0].toUpperCase()}${channel.slice(1)}`]) {
+      total += Math.max(0, Number(inventory[`${channel}Available`]) || 0);
+    }
+  }
+  return total;
 }
 
 function buildDescription(detail: any): string {
@@ -258,11 +282,21 @@ function decodeEntities(value: string): string {
     .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)));
 }
 
-/** Drops the trailing "#" and requests the image at a given width. */
+/**
+ * Drops the trailing "#" and asks Kilimall's image CDN for a WebP at the given
+ * width AND a quality cap. Without the quality cap some images come back at
+ * 600-800 KB even when resized (a 797 KB original becomes ~60 KB at q_72),
+ * which made product grids slow and patchy to load.
+ */
+export const IMAGE_QUALITY = 72;
 function cleanImageUrl(url: string, width: number): string {
   if (!url) return "";
   let out = url.replace(/#.*$/, "");
   if (out.startsWith("//")) out = "https:" + out;
   if (out.startsWith("http://")) out = "https://" + out.slice(7);
-  return out.replace(/resize,w_\d+/, `resize,w_${width}`);
+  const base = out.split("?")[0];
+  return `${base}?x-image-process=image/format,webp/resize,w_${width}/quality,q_${IMAGE_QUALITY}`;
 }
+
+/** Same CDN transform, exposed for the image optimizer. */
+export const compressedImageUrl = cleanImageUrl;

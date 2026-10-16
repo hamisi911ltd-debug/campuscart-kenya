@@ -3,6 +3,8 @@ import { PageShell } from "@/components/PageShell";
 import { findProduct, products, categories } from "@/data/products";
 import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
+import { StockEnquiry } from "@/components/StockEnquiry";
+import { ShareProduct } from "@/components/ShareProduct";
 import { useShop } from "@/store/shop";
 import { useSEO, SITE_URL } from "@/hooks/useSEO";
 import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight, Boxes } from "lucide-react";
@@ -369,6 +371,8 @@ const ProductPage = () => {
             </div>
           </div>
 
+          <StockEnquiry productId={p.id} productTitle={p.title} user={user} />
+
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
@@ -386,6 +390,8 @@ const ProductPage = () => {
               Add to cart
             </button>
           </div>
+
+          <ShareProduct id={p.id} title={p.title} price={p.price} description={p.description} />
         </div>
       </div>
 

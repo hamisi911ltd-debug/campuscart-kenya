@@ -5,7 +5,7 @@ import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
-import { DELIVERY_COUNTIES, isValidKenyanPhone } from "@/data/deliveryAreas";
+import { DELIVERY_COUNTIES, DELIVERY_FEE, isValidKenyanPhone } from "@/data/deliveryAreas";
 
 const DETAILS_KEY = "campusmart_delivery_details";
 const fieldClass = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40";
@@ -58,6 +58,7 @@ const CheckoutPage = () => {
   const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("mpesa");
   const [submitting, setSubmitting] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [whatsappLink, setWhatsappLink] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
   const [showMap, setShowMap] = useState(false);
@@ -65,16 +66,8 @@ const CheckoutPage = () => {
 
   const ADMIN_WHATSAPP = "254108254465";
 
-  // Calculate delivery fee based on cart total with more accurate pricing
-  const getDeliveryFee = (subtotal: number): number => {
-    if (subtotal <= 0) return 0;
-    if (subtotal <= 100) return 40;
-    if (subtotal <= 200) return 70;
-    if (subtotal <= 400) return 90;
-    if (subtotal <= 800) return 120;
-    if (subtotal <= 1500) return 150;
-    return 200; // For orders above KES 1500
-  };
+  // Flat delivery fee on every order.
+  const getDeliveryFee = (subtotal: number): number => (subtotal > 0 ? DELIVERY_FEE : 0);
 
   const deliveryFee = getDeliveryFee(cartTotal);
   const orderTotal = cartTotal + deliveryFee;
@@ -105,6 +98,16 @@ const CheckoutPage = () => {
               ? "Paid from your wallet balance. We're preparing your order now."
               : "We'll send an M-Pesa payment request to your phone once the order is confirmed, and message you on WhatsApp as soon as payment goes through."}
           </p>
+          {whatsappLink && (
+            <a
+              href={whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mt-4 inline-block rounded-full bg-green-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-green-700"
+            >
+              Send order details on WhatsApp
+            </a>
+          )}
           <div className="mt-5 flex gap-3 justify-center">
             <button 
               onClick={() => navigate("/orders")} 
@@ -173,6 +176,8 @@ const CheckoutPage = () => {
         price: product.price,
       })),
       total_amount: orderTotal,
+      order_number: newOrderNumber,
+      payment_method: payMethod,
       delivery_address: address,
       recipient_name: recipientName.trim(),
       alt_phone: altPhone.trim() || undefined,
@@ -198,6 +203,17 @@ const CheckoutPage = () => {
       }
 
       const result = await response.json();
+
+      // The server messages the admin's WhatsApp itself. If that isn't set
+      // up (or the send failed), fall back to opening WhatsApp with the
+      // order details ready to send, so the admin always gets them.
+      if (result.whatsapp_message) {
+        const link = `https://wa.me/${result.admin_phone || ADMIN_WHATSAPP}?text=${encodeURIComponent(result.whatsapp_message)}`;
+        if (!result.admin_notified) {
+          setWhatsappLink(link);
+          window.open(link, '_blank');
+        }
+      }
 
       try {
         localStorage.setItem(DETAILS_KEY, JSON.stringify({
@@ -407,14 +423,7 @@ const CheckoutPage = () => {
                 <span className="text-muted-foreground">Delivery</span>
                 <span className="font-semibold">KES {deliveryFee}</span>
               </div>
-              <div className="text-xs text-muted-foreground">
-                {cartTotal <= 100 && "KES 0-100 → KES 40"}
-                {cartTotal > 100 && cartTotal <= 200 && "KES 101-200 → KES 70"}
-                {cartTotal > 200 && cartTotal <= 400 && "KES 201-400 → KES 90"}
-                {cartTotal > 400 && cartTotal <= 800 && "KES 401-800 → KES 120"}
-                {cartTotal > 800 && cartTotal <= 1500 && "KES 801-1500 → KES 150"}
-                {cartTotal > 1500 && "KES 1500+ → KES 200"}
-              </div>
+              <div className="text-xs text-muted-foreground">Flat delivery fee on every order</div>
             </div>
             
             {/* Total and button */}

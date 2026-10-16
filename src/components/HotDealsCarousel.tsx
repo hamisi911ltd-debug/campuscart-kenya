@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { Flame } from "lucide-react";
 import type { ProductWithCategory } from "@/data/products";
+import { handleImageError } from "@/lib/imageFallback";
 
 const SLOTS = 3;
 const FLIP_EVERY_MS = 3200;
@@ -75,8 +76,9 @@ const Face = ({ p, back }: { p?: ProductWithCategory; back?: boolean }) => {
         src={p.image}
         alt={p.title}
         loading="lazy"
+        decoding="async"
         className="h-full w-full object-cover"
-        onError={(e) => { (e.target as HTMLImageElement).src = '/placeholder.svg'; }}
+        onError={handleImageError}
       />
       {/* Price stamped on top of the image, ad-style - no title/rating/cart */}
       <div className="absolute inset-x-0 top-0 flex flex-col items-center bg-gradient-to-b from-black/70 to-transparent px-1 pb-2 pt-1">

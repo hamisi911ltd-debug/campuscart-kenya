@@ -16,6 +16,10 @@ export const DELIVERY_COUNTIES = [
   "Siaya", "Homa Bay", "Migori", "Kisii", "Nyamira",
 ] as const;
 
+// Flat delivery fee (KES) charged on every order. Keep in sync with
+// DELIVERY_FEE in functions/api/checkout.ts.
+export const DELIVERY_FEE = 129;
+
 export type DeliveryCounty = typeof DELIVERY_COUNTIES[number];
 
 // Kenyan mobile numbers: 07xx / 01xx / +2547xx / +2541xx (10 digits local).

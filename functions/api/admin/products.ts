@@ -3,6 +3,7 @@
 import { OWNER_ID, ensureOwnerUser } from "../_lib/owner";
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
+import { ensureSourceTables, kilimallListingUrl, listingIdFromImages } from "../_lib/productSources";
 
 interface Env {
   DB: D1Database;
@@ -58,20 +59,41 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
   }
 
   try {
-    // Get all products with seller information
+    await ensureSourceTables(env);
+
+    // Get all products with seller information, plus where each came from
     const result = await env.DB.prepare(`
       SELECT 
         p.*,
         u.full_name as seller_name,
-        u.email as seller_email
+        u.email as seller_email,
+        s.source as src_source,
+        s.listing_id as src_listing_id,
+        s.source_url as src_url,
+        s.source_price as src_price,
+        s.markup_percent as src_markup,
+        s.source_stock as src_stock,
+        s.in_stock as src_in_stock,
+        s.checked_at as src_checked_at
       FROM products p
       LEFT JOIN users u ON p.seller_id = u.id
+      LEFT JOIN product_sources s ON s.product_id = p.id
       ORDER BY p.created_at DESC
     `).all();
 
+    // Products imported before source tracking existed still carry the
+    // Kilimall listing id inside their photo keys - recover the link from that.
+    const products = (result.results as Record<string, unknown>[]).map((row) => {
+      if (row.src_listing_id) return row;
+      const listingId = listingIdFromImages(row.images);
+      return listingId
+        ? { ...row, src_source: "kilimall", src_listing_id: listingId, src_url: kilimallListingUrl(listingId) }
+        : row;
+    });
+
     return new Response(JSON.stringify({ 
       success: true, 
-      products: result.results 
+      products
     }), {
       headers: { "Content-Type": "application/json" }
     });
