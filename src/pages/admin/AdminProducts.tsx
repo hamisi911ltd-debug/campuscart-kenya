@@ -322,12 +322,12 @@ const AdminProducts = () => {
     <AdminLayout>
       <div className="max-w-7xl mx-auto">
         {/* Header */}
-        <div className="mb-6 md:mb-8 flex items-center justify-between gap-4">
+        <div className="mb-6 md:mb-8 flex flex-col gap-4 2xl:flex-row 2xl:items-center 2xl:justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-1 md:mb-2">Product Management</h1>
             <p className="text-sm md:text-base text-gray-600 dark:text-gray-400">Add, edit and manage your store listings</p>
           </div>
-          <div className="flex flex-wrap gap-2 shrink-0">
+          <div className="flex flex-wrap gap-2">
             <button
               onClick={handleClearAllProducts}
               disabled={clearing}

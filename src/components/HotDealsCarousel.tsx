@@ -80,7 +80,9 @@ const preload = (src: string) =>
   });
 
 const Face = ({ p, back }: { p?: ProductWithCategory; back?: boolean }) => {
-  if (!p) return <div className="absolute inset-0 bg-muted" style={{ backfaceVisibility: "hidden" }} />;
+  // A face with no product yet draws nothing. (It used to render an empty grey box that
+  // wasn't turned round, so the unfilled back face sat on top of the front photo and hid it.)
+  if (!p) return null;
   const discount = p.oldPrice && p.oldPrice > p.price
     ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100)
     : 0;
