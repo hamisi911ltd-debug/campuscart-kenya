@@ -45,7 +45,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
         const pools = await Promise.all(
           keywords.map(async (keyword) => {
             try {
-              const page = 1 + Math.floor(Math.random() * 3);
+              const page = 1 + Math.floor(Math.random() * 6);
               const listings = parseListingPage(await fetchKilimallHtml(buildListingUrl({ query: keyword, page })));
               return listings.map((item) => ({ ...item, category, keyword }));
             } catch (err) {

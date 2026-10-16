@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Link } from "react-router-dom";
 import { ArrowLeft, Search, Loader2, CheckCircle2, XCircle, Download, Star, Shuffle } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
@@ -50,6 +50,11 @@ const AdminKilimallImport = () => {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<Record<string, ImportState>>({});
   const [importing, setImporting] = useState(false);
+
+  // ---- Auto-import: keeps finding and importing until a target is reached ----
+  const [autoTarget, setAutoTarget] = useState(5000);
+  const [auto, setAuto] = useState({ running: false, imported: 0, failed: 0, rounds: 0, status: "" });
+  const stopAuto = useRef(false);
 
   const runSearch = async (nextPage: number, append: boolean) => {
     if (!query.trim() && !url.trim()) {
@@ -151,6 +156,90 @@ const AdminKilimallImport = () => {
     else toast.warning(`Imported ${ok} of ${ids.length} - see errors below`);
   };
 
+  const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+  // Hands-off mode for overnight: Discover a batch of 200 new products, import them
+  // (three at a time), and repeat until the target is reached or you press Stop.
+  // Failures are skipped; it gives up only if imports keep failing (e.g. you were
+  // signed out) or Kilimall has nothing new left to offer.
+  const runAuto = async () => {
+    if (auto.running) return;
+    stopAuto.current = false;
+    let imported = 0, failed = 0, rounds = 0, emptyRounds = 0, consecutiveFails = 0;
+    let reason = "";
+    const push = (status: string) => setAuto({ running: true, imported, failed, rounds, status });
+    push("Starting…");
+
+    // keep the screen (and so the computer) awake while it works
+    let wake: { release: () => Promise<void> } | null = null;
+    const getWake = async () => {
+      try { wake = await (navigator as unknown as { wakeLock?: { request: (t: string) => Promise<{ release: () => Promise<void> }> } }).wakeLock?.request("screen") ?? null; } catch { /* not supported */ }
+    };
+    await getWake();
+    const onVisible = () => { if (document.visibilityState === "visible" && !stopAuto.current) getWake(); };
+    const onBeforeUnload = (e: BeforeUnloadEvent) => { e.preventDefault(); e.returnValue = ""; };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("beforeunload", onBeforeUnload);
+
+    try {
+      while (!stopAuto.current && imported < autoTarget) {
+        rounds++;
+        push(`Round ${rounds}: finding new products…`);
+        let fresh: KilimallItem[] = [];
+        try {
+          const res = await adminPost("/api/admin/kilimall-discover", { perCategory: 20 });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error || "Discover failed");
+          fresh = (data.items as KilimallItem[]).filter((i) => !i.alreadyImported);
+        } catch {
+          push(`Round ${rounds}: couldn't reach Kilimall, retrying shortly…`);
+          if (++consecutiveFails >= 20) { reason = "Stopped: Kilimall kept failing"; break; }
+          await sleep(20000);
+          continue;
+        }
+
+        if (fresh.length === 0) {
+          if (++emptyRounds >= 12) { reason = "Finished: nothing new left to find"; break; }
+          continue;
+        }
+        emptyRounds = 0;
+
+        const queue = fresh.slice(0, autoTarget - imported);
+        const worker = async () => {
+          for (let item = queue.shift(); item && !stopAuto.current; item = queue.shift()) {
+            try {
+              const res = await adminPost("/api/admin/kilimall-import", {
+                listingId: item.listingId,
+                category: item.category || "auto",
+                fallbackPrice: item.price,
+              });
+              const data = await res.json();
+              if (!res.ok && res.status !== 409) throw new Error(data.error || "Import failed");
+              if (res.ok) imported++;
+              consecutiveFails = 0;
+            } catch {
+              failed++;
+              consecutiveFails++;
+            }
+            push(`Round ${rounds}: importing…`);
+            if (consecutiveFails >= 40) return;
+            await sleep(250);
+          }
+        };
+        await Promise.all([worker(), worker(), worker()]);
+        if (consecutiveFails >= 40) { reason = "Stopped: imports kept failing (signed out? out of storage?)"; break; }
+        await sleep(1500);
+      }
+      if (!reason) reason = stopAuto.current ? "Stopped" : imported >= autoTarget ? "Finished: target reached" : "Finished";
+    } finally {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+      try { await wake?.release(); } catch { /* ignore */ }
+      setAuto({ running: false, imported, failed, rounds, status: reason || "Stopped" });
+      try { localStorage.setItem("cm:auto-import-last", JSON.stringify({ imported, failed, rounds, status: reason, at: new Date().toISOString() })); } catch { /* optional */ }
+    }
+  };
+
   const previewSell = (price: number) => formatKsh(Math.round(price * (1 + markup / 100)));
 
   return (
@@ -207,6 +296,66 @@ const AdminKilimallImport = () => {
             >
               {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />} Discover random mix (200)
             </button>
+          </div>
+
+          {/* Auto-import: hands-off, for leaving running overnight */}
+          <div className="rounded-xl border-2 border-primary/40 bg-primary/5 p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-gray-900 dark:text-white">Auto-import (leave it running)</p>
+                <p className="text-xs text-gray-600 dark:text-gray-400">
+                  Keeps finding and importing mixed products until the target is reached. Keep this tab open and the computer
+                  plugged in (set Windows sleep to "Never"). Products are filed in their right categories automatically.
+                </p>
+              </div>
+              <div className="flex shrink-0 items-end gap-2">
+                <label className="text-xs font-semibold text-gray-700 dark:text-gray-300">
+                  How many
+                  <input
+                    type="number"
+                    min={50}
+                    max={20000}
+                    step={50}
+                    value={autoTarget}
+                    disabled={auto.running}
+                    onChange={(e) => setAutoTarget(Math.max(50, Number(e.target.value) || 50))}
+                    className="mt-1 block w-24 rounded-lg border border-border bg-background px-2 py-2 text-sm font-normal"
+                  />
+                </label>
+                {auto.running ? (
+                  <button
+                    type="button"
+                    onClick={() => { stopAuto.current = true; }}
+                    className="rounded-xl bg-red-600 px-5 py-2.5 text-sm font-bold text-white hover:bg-red-700"
+                  >
+                    Stop
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={runAuto}
+                    disabled={searching || importing}
+                    className="rounded-xl bg-primary px-5 py-2.5 text-sm font-bold text-primary-foreground hover:bg-primary-glow disabled:opacity-50"
+                  >
+                    Start auto-import
+                  </button>
+                )}
+              </div>
+            </div>
+            {(auto.running || auto.rounds > 0) && (
+              <div className="mt-3">
+                <div className="h-2.5 w-full overflow-hidden rounded-full bg-secondary">
+                  <div className="h-full rounded-full bg-green-600 transition-all" style={{ width: `${Math.min(100, (auto.imported / autoTarget) * 100)}%` }} />
+                </div>
+                <p className="mt-1.5 text-sm font-semibold text-gray-900 dark:text-white">
+                  {auto.imported.toLocaleString()} of {autoTarget.toLocaleString()} imported
+                  {auto.failed > 0 && <span className="ml-2 font-normal text-muted-foreground">({auto.failed} skipped)</span>}
+                </p>
+                <p className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  {auto.running && <Loader2 className="h-3 w-3 animate-spin" />} {auto.status}
+                </p>
+              </div>
+            )}
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
