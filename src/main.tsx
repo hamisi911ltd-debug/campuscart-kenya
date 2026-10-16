@@ -59,4 +59,14 @@ if (performance.navigation.type === 1) {
   }
 }
 
+// Vite fires this when a page's code (or CSS) fails to preload - e.g. a tab left
+// open across a deploy. Reload once to pick up the current version.
+window.addEventListener('vite:preloadError', (event) => {
+  event.preventDefault();
+  if (!sessionStorage.getItem('cm:chunk-reload')) {
+    sessionStorage.setItem('cm:chunk-reload', '1');
+    window.location.reload();
+  }
+});
+
 createRoot(document.getElementById("root")!).render(<App />);

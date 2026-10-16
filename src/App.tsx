@@ -6,46 +6,73 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ShopProvider } from "@/store/shop";
 import InstallPrompt from "@/components/InstallPrompt";
 import { initializeCacheManagement } from "@/utils/cacheUtils";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, type ComponentType } from "react";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-const CategoryPage = lazy(() => import("./pages/CategoryPage"));
-const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
-const ProductPage = lazy(() => import("./pages/ProductPage"));
-const CartPage = lazy(() => import("./pages/CartPage"));
-const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
-const SearchPage = lazy(() => import("./pages/SearchPage"));
-const ProfilePage = lazy(() => import("./pages/ProfilePage"));
-const OrdersPage = lazy(() => import("./pages/OrdersPage"));
-const WalletPage = lazy(() => import("./pages/WalletPage"));
-const AuthPage = lazy(() => import("./pages/AuthPage"));
-const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
-const GoogleCallback = lazy(() => import("./pages/auth/GoogleCallback"));
-const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
-const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
-const TempDashboard = lazy(() => import("./pages/admin/TempDashboard"));
-const ComprehensiveMonitor = lazy(() => import("./pages/admin/ComprehensiveMonitor"));
-const ActivityMonitor = lazy(() => import("./pages/admin/ActivityMonitor"));
-const SystemControl = lazy(() => import("./pages/admin/SystemControl"));
-const DatabaseViewer = lazy(() => import("./pages/admin/DatabaseViewer"));
-const DirectApiTest = lazy(() => import("./pages/admin/DirectApiTest"));
+const CategoryPage = lazyPage(() => import("./pages/CategoryPage"));
+const CategoriesPage = lazyPage(() => import("./pages/CategoriesPage"));
+const ProductPage = lazyPage(() => import("./pages/ProductPage"));
+const CartPage = lazyPage(() => import("./pages/CartPage"));
+const FavoritesPage = lazyPage(() => import("./pages/FavoritesPage"));
+const SearchPage = lazyPage(() => import("./pages/SearchPage"));
+const ProfilePage = lazyPage(() => import("./pages/ProfilePage"));
+const OrdersPage = lazyPage(() => import("./pages/OrdersPage"));
+const WalletPage = lazyPage(() => import("./pages/WalletPage"));
+const AuthPage = lazyPage(() => import("./pages/AuthPage"));
+const ForgotPasswordPage = lazyPage(() => import("./pages/auth/ForgotPasswordPage"));
+const GoogleCallback = lazyPage(() => import("./pages/auth/GoogleCallback"));
+const NotificationsPage = lazyPage(() => import("./pages/NotificationsPage"));
+const CheckoutPage = lazyPage(() => import("./pages/CheckoutPage"));
+const TempDashboard = lazyPage(() => import("./pages/admin/TempDashboard"));
+const ComprehensiveMonitor = lazyPage(() => import("./pages/admin/ComprehensiveMonitor"));
+const ActivityMonitor = lazyPage(() => import("./pages/admin/ActivityMonitor"));
+const SystemControl = lazyPage(() => import("./pages/admin/SystemControl"));
+const DatabaseViewer = lazyPage(() => import("./pages/admin/DatabaseViewer"));
+const DirectApiTest = lazyPage(() => import("./pages/admin/DirectApiTest"));
 
-const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
-const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
-const AdminProductForm = lazy(() => import("./pages/admin/AdminProductForm"));
-const AdminBulkImport = lazy(() => import("./pages/admin/AdminBulkImport"));
-const AdminPhotoImport = lazy(() => import("./pages/admin/AdminPhotoImport"));
-const AdminKilimallImport = lazy(() => import("./pages/admin/AdminKilimallImport"));
-const AdminEnquiries = lazy(() => import("./pages/admin/AdminEnquiries"));
-const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
-const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
-const AdminTeam = lazy(() => import("./pages/admin/AdminTeam"));
-const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
-const AuthDebug = lazy(() => import("./pages/admin/AuthDebug"));
+const AdminUsers = lazyPage(() => import("./pages/admin/AdminUsers"));
+const AdminProducts = lazyPage(() => import("./pages/admin/AdminProducts"));
+const AdminProductForm = lazyPage(() => import("./pages/admin/AdminProductForm"));
+const AdminBulkImport = lazyPage(() => import("./pages/admin/AdminBulkImport"));
+const AdminPhotoImport = lazyPage(() => import("./pages/admin/AdminPhotoImport"));
+const AdminKilimallImport = lazyPage(() => import("./pages/admin/AdminKilimallImport"));
+const AdminEnquiries = lazyPage(() => import("./pages/admin/AdminEnquiries"));
+const AdminOrders = lazyPage(() => import("./pages/admin/AdminOrders"));
+const AdminCoupons = lazyPage(() => import("./pages/admin/AdminCoupons"));
+const AdminTeam = lazyPage(() => import("./pages/admin/AdminTeam"));
+const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"));
+const AuthDebug = lazyPage(() => import("./pages/admin/AuthDebug"));
 import AdminRoute from "./components/AdminRoute";
-const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
-const TestLuckyCodes = lazy(() => import("./pages/TestLuckyCodes"));
+// React.lazy with recovery. If a page's code can't be fetched - typically a tab
+// that was opened before a deploy, whose old script files no longer exist - the
+// click would otherwise do nothing at all. Clear the caches and reload once so
+// the browser picks up the current version.
+const RELOAD_FLAG = "cm:chunk-reload";
+// (A function declaration, so it's available to the page imports above it.)
+function lazyPage<T extends ComponentType<any>>(load: () => Promise<{ default: T }>) {
+  return lazy(async () => {
+    try {
+      const module = await load();
+      sessionStorage.removeItem(RELOAD_FLAG);
+      return module;
+    } catch (error) {
+      if (!sessionStorage.getItem(RELOAD_FLAG)) {
+        sessionStorage.setItem(RELOAD_FLAG, "1");
+        try {
+          const names = await caches.keys();
+          await Promise.all(names.map((n) => caches.delete(n)));
+        } catch { /* no Cache API - reload anyway */ }
+        window.location.reload();
+        return new Promise<never>(() => {}); // page is reloading
+      }
+      throw error;
+    }
+  });
+}
+const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
+
+const TestLuckyCodes = lazyPage(() => import("./pages/TestLuckyCodes"));
 
 const queryClient = new QueryClient();
 
@@ -64,13 +91,31 @@ const App = () => {
     initializeCacheManagement();
 
     const warm = () => {
+      if (window.location.pathname.startsWith("/admin")) {
+        // Admin screens: load them all in the background so the sidebar never waits.
+        import("./pages/admin/AdminProducts");
+        import("./pages/admin/AdminOrders");
+        import("./pages/admin/AdminEnquiries");
+        import("./pages/admin/AdminUsers");
+        import("./pages/admin/AdminCoupons");
+        import("./pages/admin/AdminTeam");
+        import("./pages/admin/AdminKilimallImport");
+        import("./pages/admin/AdminBulkImport");
+        import("./pages/admin/AdminPhotoImport");
+        import("./pages/admin/AdminProductForm");
+        import("./pages/admin/TempDashboard");
+        import("./pages/admin/ActivityMonitor");
+        import("./pages/admin/SystemControl");
+        import("./pages/admin/DatabaseViewer");
+        return;
+      }
       import("./pages/ProductPage");
       import("./pages/CategoryPage");
       import("./pages/CartPage");
       import("./pages/SearchPage");
     };
     const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
-    if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 4000 });
+    if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: window.location.pathname.startsWith("/admin") ? 800 : 4000 });
     else setTimeout(warm, 2500);
   }, []);
 

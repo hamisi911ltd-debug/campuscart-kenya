@@ -5,9 +5,26 @@ import type { ProductWithCategory } from "@/data/products";
 import { handleImageError } from "@/lib/imageFallback";
 import { sizedImage, cdnImgProps } from "@/lib/imageUrl";
 
-const SLOTS = 3;
 const FLIP_EVERY_MS = 3200;
-const STAGGER_MS = 1000;
+const STAGGER_MS = 600;
+
+// How many cards fit the row: 3 on phones, then more as the screen widens so
+// the whole row is filled on tablets and desktops instead of leaving it empty.
+const slotsForWidth = (width: number) => (width >= 1280 ? 7 : width >= 1024 ? 6 : width >= 768 ? 4 : 3);
+
+function useSlotCount(): number {
+  const [count, setCount] = useState(() => (typeof window === "undefined" ? 3 : slotsForWidth(window.innerWidth)));
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const onResize = () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => setCount(slotsForWidth(window.innerWidth)), 150);
+    };
+    window.addEventListener("resize", onResize);
+    return () => { clearTimeout(timer); window.removeEventListener("resize", onResize); };
+  }, []);
+  return count;
+}
 const FLIP_MS = 700;
 
 // Each card has two faces; flipping rotates the card 180deg so the hidden
@@ -101,24 +118,25 @@ const Face = ({ p, back }: { p?: ProductWithCategory; back?: boolean }) => {
 // pointer is over it so a card doesn't turn mid-tap, and while the tab is
 // hidden.
 export const HotDealsCarousel = ({ products }: { products: ProductWithCategory[] }) => {
+  const slotCount = useSlotCount();
   const pool = useMemo(() => interleaveByCategory(products), [products]);
   const [slots, setSlots] = useState<Slot[]>([]);
   const slotsRef = useRef<Slot[]>([]);
-  const cursorRef = useRef(SLOTS);
+  const cursorRef = useRef(slotCount);
   const pausedRef = useRef(false);
 
-  // (Re)seed the cards whenever the product pool changes.
+  // (Re)seed the cards whenever the product pool or the number of cards changes.
   useEffect(() => {
-    const count = Math.min(SLOTS, pool.length);
+    const count = Math.min(slotCount, pool.length);
     const initial: Slot[] = Array.from({ length: count }, (_, i) => ({ faces: [pool[i], undefined], turns: 0 }));
     slotsRef.current = initial;
     cursorRef.current = count;
     setSlots(initial);
-  }, [pool]);
+  }, [pool, slotCount]);
 
   useEffect(() => {
     // Nothing new to show if the pool fits entirely on the cards.
-    if (pool.length <= SLOTS) return;
+    if (pool.length <= slotCount) return;
     if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
 
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -154,7 +172,7 @@ export const HotDealsCarousel = ({ products }: { products: ProductWithCategory[]
       setSlots(slotsRef.current);
     };
 
-    for (let i = 0; i < Math.min(SLOTS, pool.length); i++) {
+    for (let i = 0; i < Math.min(slotCount, pool.length); i++) {
       timers.push(
         setTimeout(() => {
           flip(i);
@@ -167,7 +185,7 @@ export const HotDealsCarousel = ({ products }: { products: ProductWithCategory[]
       timers.forEach(clearTimeout);
       intervals.forEach(clearInterval);
     };
-  }, [pool]);
+  }, [pool, slotCount]);
 
   if (products.length === 0) return null;
 
@@ -181,7 +199,8 @@ export const HotDealsCarousel = ({ products }: { products: ProductWithCategory[]
         <span className="text-[11px] text-muted-foreground">New picks every few seconds</span>
       </div>
       <div
-        className="grid grid-cols-3 gap-1.5 md:max-w-md"
+        className="grid gap-1.5 md:gap-2"
+        style={{ gridTemplateColumns: `repeat(${Math.max(1, Math.min(slotCount, slots.length || slotCount))}, minmax(0, 1fr))` }}
         onPointerEnter={(e) => { if (e.pointerType === "mouse") pausedRef.current = true; }}
         onPointerLeave={() => { pausedRef.current = false; }}
       >
