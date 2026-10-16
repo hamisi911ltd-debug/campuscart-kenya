@@ -278,7 +278,7 @@ const Index = () => {
                   <div className="-mx-1 overflow-x-auto scrollbar-hide px-1">
                     <div className="flex gap-2">
                       {items.map((p) => (
-                        <div key={p.id} className="w-[142px] shrink-0">
+                        <div key={p.id} className="w-[116px] shrink-0">
                           <ProductCard p={p} />
                         </div>
                       ))}
@@ -302,7 +302,7 @@ const Index = () => {
             <p className="py-10 text-center text-sm text-muted-foreground">Loading products…</p>
           ) : (
             <>
-              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
+              <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-7 xl:grid-cols-8">
                 {products.map((p, i) => (
                   <ProductCard key={p.id} p={p} priority={i < 6} />
                 ))}

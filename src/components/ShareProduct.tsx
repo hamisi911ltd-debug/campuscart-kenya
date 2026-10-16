@@ -3,6 +3,7 @@ import { Check, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sizedImage } from "@/lib/imageUrl";
 import { shortProductTitle } from "@/lib/productTitle";
+import logoUrl from "@/assets/logo-badge.png";
 
 interface ShareProductProps {
   id: string;
@@ -23,12 +24,19 @@ const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
 
 // ---------------------------------------------------------------------------
 // The share card: a large portrait picture that works as a WhatsApp status or
-// chat image. The photo takes about three quarters of it; underneath, in a
-// classic ivory footer, sit the name and the price.
+// chat image, branded as CampusMart:
+//   - the product photo, large, with the CampusMart logo + name on it
+//   - a classic ivory footer with the product name and price
+//   - a navy brand band at the bottom: logo, name, tagline, website
 const CARD_W = 1080;
-const CARD_H = 1350;
-const PHOTO_H = 1010; // ~75% of the card is the photo
+const CARD_H = 1420;
+const PHOTO_H = 1010; // ~71% of the card is the photo
+const BAND_H = 104;   // navy brand band at the very bottom
 const SERIF = `Georgia, "Times New Roman", serif`;
+const SANS = `"Segoe UI", "Helvetica Neue", Arial, sans-serif`;
+const NAVY = "#0e214e";   // the site's primary colour
+const GREEN = "#7CB342";  // the "MART" green from the logo
+const GOLD = "#b8923a";
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -38,6 +46,16 @@ function loadImage(url: string): Promise<HTMLImageElement> {
     img.onerror = () => reject(new Error("image failed"));
     img.src = url;
   });
+}
+
+function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
 }
 
 function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
@@ -62,12 +80,42 @@ function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number
   return lines;
 }
 
+/** Round logo badge, clipped to a circle. */
+function drawLogo(ctx: CanvasRenderingContext2D, logo: HTMLImageElement | null, cx: number, cy: number, r: number) {
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.closePath();
+  ctx.fillStyle = "#ffffff";
+  ctx.fill();
+  if (logo) {
+    ctx.clip();
+    ctx.drawImage(logo, cx - r, cy - r, r * 2, r * 2);
+  }
+  ctx.restore();
+}
+
+/** "CAMPUS" + "MART" wordmark, left-aligned at x, baseline y. Returns its width. */
+function drawWordmark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, campusColor: string): number {
+  ctx.textAlign = "left";
+  ctx.font = `800 ${size}px ${SANS}`;
+  const w1 = ctx.measureText("CAMPUS").width;
+  ctx.fillStyle = campusColor;
+  ctx.fillText("CAMPUS", x, y);
+  ctx.fillStyle = GREEN;
+  ctx.fillText("MART", x + w1, y);
+  return w1 + ctx.measureText("MART").width;
+}
+
 async function buildShareCard(image: string | undefined, name: string, price: number): Promise<Blob | null> {
   const canvas = document.createElement("canvas");
   canvas.width = CARD_W;
   canvas.height = CARD_H;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
+
+  // the logo is optional - the card is still branded by name if it can't load
+  const logo = await loadImage(logoUrl).catch(() => null);
 
   // ivory background
   ctx.fillStyle = "#fffdf8";
@@ -91,11 +139,34 @@ async function buildShareCard(image: string | undefined, name: string, price: nu
     }
   }
 
+  // brand badge on the photo: logo + CAMPUSMART in a white pill, top-left
+  {
+    const LOGO_R = 36;
+    const PAD = 20;
+    const pillH = LOGO_R * 2 + PAD * 2;
+    ctx.font = `800 44px ${SANS}`;
+    const textW = ctx.measureText("CAMPUS").width + ctx.measureText("MART").width;
+    const pillW = PAD + LOGO_R * 2 + 16 + textW + PAD + 6;
+    const px = 38;
+    const py = 38;
+    ctx.save();
+    ctx.shadowColor = "rgba(0,0,0,0.28)";
+    ctx.shadowBlur = 18;
+    ctx.shadowOffsetY = 4;
+    roundedRect(ctx, px, py, pillW, pillH, pillH / 2);
+    ctx.fillStyle = "rgba(255,255,255,0.96)";
+    ctx.fill();
+    ctx.restore();
+    drawLogo(ctx, logo, px + PAD + LOGO_R, py + pillH / 2, LOGO_R);
+    ctx.textBaseline = "alphabetic";
+    drawWordmark(ctx, px + PAD + LOGO_R * 2 + 16, py + pillH / 2 + 15, 44, NAVY);
+  }
+
   // thin gold rule between photo and footer
-  ctx.fillStyle = "#b8923a";
+  ctx.fillStyle = GOLD;
   ctx.fillRect(0, PHOTO_H, CARD_W, 5);
 
-  // name (classic serif, up to two lines) and price, centred as one block in the footer
+  // name (classic serif, up to two lines) and price, centred as one block above the band
   ctx.textAlign = "center";
   ctx.textBaseline = "alphabetic";
   ctx.font = `bold 54px ${SERIF}`;
@@ -104,10 +175,10 @@ async function buildShareCard(image: string | undefined, name: string, price: nu
   const PRICE_SIZE = 84;
   const GAP = 34;
   const footerTop = PHOTO_H + 5;
-  const footerBottom = CARD_H - 62; // leave room for the wordmark
+  const footerBottom = CARD_H - BAND_H;
   const blockH = lines.length * NAME_LINE + GAP + PRICE_SIZE;
   let y = footerTop + (footerBottom - footerTop - blockH) / 2 + 48;
-  ctx.fillStyle = "#1b2a41";
+  ctx.fillStyle = NAVY;
   for (const line of lines) {
     ctx.fillText(line, CARD_W / 2, y);
     y += NAME_LINE;
@@ -116,13 +187,28 @@ async function buildShareCard(image: string | undefined, name: string, price: nu
   ctx.font = `bold ${PRICE_SIZE}px ${SERIF}`;
   ctx.fillText(`KES ${price.toLocaleString("en-KE")}`, CARD_W / 2, y - NAME_LINE + GAP + PRICE_SIZE);
 
-  // small wordmark
-  ctx.fillStyle = "#8a8272";
-  ctx.font = `600 24px ${SERIF}`;
-  ctx.fillText("C A M P U S M A R T   K E N Y A", CARD_W / 2, CARD_H - 30);
+  // navy brand band: logo, name, tagline, website
+  ctx.fillStyle = NAVY;
+  ctx.fillRect(0, CARD_H - BAND_H, CARD_W, BAND_H);
+  ctx.fillStyle = GOLD;
+  ctx.fillRect(0, CARD_H - BAND_H, CARD_W, 4);
+  {
+    const cy = CARD_H - BAND_H / 2 + 2;
+    drawLogo(ctx, logo, 86, cy, 34);
+    ctx.textBaseline = "alphabetic";
+    drawWordmark(ctx, 134, cy + 2, 38, "#ffffff");
+    ctx.textAlign = "left";
+    ctx.fillStyle = "rgba(255,255,255,0.72)";
+    ctx.font = `600 17px ${SANS}`;
+    ctx.fillText("WHOLESALE PRICES, REAL SAVINGS", 135, cy + 26);
+    ctx.textAlign = "right";
+    ctx.fillStyle = GREEN;
+    ctx.font = `700 28px ${SANS}`;
+    ctx.fillText("campusmart.co.ke", CARD_W - 52, cy + 10);
+  }
 
   // classic frame
-  ctx.strokeStyle = "#1b2a41";
+  ctx.strokeStyle = NAVY;
   ctx.lineWidth = 12;
   ctx.strokeRect(6, 6, CARD_W - 12, CARD_H - 12);
 

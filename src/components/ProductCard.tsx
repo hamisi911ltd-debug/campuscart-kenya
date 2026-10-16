@@ -44,7 +44,7 @@ export const ProductCard = ({ p, priority = false }: { p: Product; priority?: bo
   return (
     <Link
       to={`/product/${p.id}`}
-      className="group flex h-full w-full flex-col overflow-hidden rounded-lg bg-card shadow-sm transition-all hover:shadow-md"
+      className="group flex w-full flex-col self-start overflow-hidden rounded-lg bg-card shadow-sm transition-all hover:shadow-md"
     >
       <div className="relative overflow-hidden bg-muted">
         <LazyImage
@@ -70,43 +70,39 @@ export const ProductCard = ({ p, priority = false }: { p: Product; priority?: bo
         )}
       </div>
 
-      <div className="flex flex-1 flex-col p-1.5">
-        {/* Fixed one-line title keeps every card's white area the same (short) height */}
-        <h3 className="line-clamp-1 h-[15px] text-[11px] font-medium text-foreground leading-[15px]">{p.title}</h3>
+      {/* Compact body: name with the + button right beside it, then the price.
+          No fixed heights or spare rows, so there's no empty space under the card. */}
+      <div className="flex flex-col gap-0.5 px-1.5 pb-1.5 pt-1">
+        <div className="flex items-center gap-1">
+          <h3 className="min-w-0 flex-1 truncate text-[11px] font-medium leading-4 text-foreground">{p.title}</h3>
+          <button
+            onClick={(e) => { e.preventDefault(); addToCart(p); }}
+            aria-label="Add to cart"
+            className="flex h-5 w-5 min-h-0 min-w-0 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground transition hover:bg-primary-glow"
+          >
+            <Plus className="h-3 w-3" />
+          </button>
+        </div>
 
         {p.shippingNote && (
-          <div className="mt-0.5 flex items-center gap-1 text-[9px] font-semibold text-accent">
+          <div className="flex items-center gap-1 text-[9px] font-semibold text-accent">
             <Truck className="h-2.5 w-2.5 shrink-0" />
             <span className="truncate">Ships in 2-4 weeks</span>
           </div>
         )}
 
-        {/* Price row — single line so every card's white area matches */}
-        <div className="mt-1 flex items-end gap-1 overflow-hidden whitespace-nowrap">
-          <span className="shrink-0 text-[10px] font-bold text-primary leading-none">KES</span>
-          <span className="shrink-0 text-[14px] font-extrabold text-primary leading-none">{p.price.toLocaleString()}</span>
+        <div className="flex items-end gap-1 overflow-hidden whitespace-nowrap">
+          <span className="shrink-0 text-[9px] font-bold leading-none text-primary">KES</span>
+          <span className="shrink-0 text-[13px] font-extrabold leading-none text-primary">{p.price.toLocaleString()}</span>
           {p.oldPrice && p.oldPrice > p.price && (
-            <span className="mb-0.5 truncate text-[9px] text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
+            <span className="mb-px truncate text-[9px] leading-none text-muted-foreground line-through">{p.oldPrice.toLocaleString()}</span>
           )}
-        </div>
-
-        {/* Rating (only once there is one) + add */}
-        <div className="mt-1 flex items-center justify-between gap-1">
-          <div className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap text-[9px] text-muted-foreground">
-            {p.rating ? (
-              <>
-                <Star className="h-2.5 w-2.5 shrink-0 fill-warning text-warning" />
-                <span className="shrink-0">{p.rating.toFixed(1)}</span>
-              </>
-            ) : null}
-          </div>
-          <button
-            onClick={(e) => { e.preventDefault(); addToCart(p); }}
-            aria-label="Add to cart"
-            className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-primary text-primary-foreground hover:bg-primary-glow transition"
-          >
-            <Plus className="h-3 w-3" />
-          </button>
+          {p.rating ? (
+            <span className="ml-auto flex shrink-0 items-center gap-0.5 text-[9px] leading-none text-muted-foreground">
+              <Star className="h-2.5 w-2.5 fill-warning text-warning" />
+              {p.rating.toFixed(1)}
+            </span>
+          ) : null}
         </div>
       </div>
     </Link>
