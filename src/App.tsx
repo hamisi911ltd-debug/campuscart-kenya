@@ -36,9 +36,7 @@ const AdminProductForm = lazyPage(() => import("./pages/admin/AdminProductForm")
 const AdminBulkImport = lazyPage(() => import("./pages/admin/AdminBulkImport"));
 const AdminPhotoImport = lazyPage(() => import("./pages/admin/AdminPhotoImport"));
 const AdminKilimallImport = lazyPage(() => import("./pages/admin/AdminKilimallImport"));
-const AdminEnquiries = lazyPage(() => import("./pages/admin/AdminEnquiries"));
 const AdminOrders = lazyPage(() => import("./pages/admin/AdminOrders"));
-const AdminCoupons = lazyPage(() => import("./pages/admin/AdminCoupons"));
 const AdminTeam = lazyPage(() => import("./pages/admin/AdminTeam"));
 const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"));
 const AuthDebug = lazyPage(() => import("./pages/admin/AuthDebug"));
@@ -72,7 +70,6 @@ function lazyPage<T extends ComponentType<any>>(load: () => Promise<{ default: T
 }
 const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
 
-const TestLuckyCodes = lazyPage(() => import("./pages/TestLuckyCodes"));
 
 const queryClient = new QueryClient();
 
@@ -95,9 +92,7 @@ const App = () => {
         // Admin screens: load them all in the background so the sidebar never waits.
         import("./pages/admin/AdminProducts");
         import("./pages/admin/AdminOrders");
-        import("./pages/admin/AdminEnquiries");
         import("./pages/admin/AdminUsers");
-        import("./pages/admin/AdminCoupons");
         import("./pages/admin/AdminTeam");
         import("./pages/admin/AdminKilimallImport");
         import("./pages/admin/AdminBulkImport");
@@ -158,10 +153,8 @@ const App = () => {
               <Route path="/admin/products/edit/:id" element={<AdminRoute requirePermission="products"><AdminProductForm /></AdminRoute>} />
               <Route path="/admin/products/bulk-import" element={<AdminRoute requirePermission="products"><AdminBulkImport /></AdminRoute>} />
               <Route path="/admin/products/import-photos" element={<AdminRoute requirePermission="products"><AdminPhotoImport /></AdminRoute>} />
-              <Route path="/admin/enquiries" element={<AdminRoute requirePermission="products"><AdminEnquiries /></AdminRoute>} />
               <Route path="/admin/products/import-kilimall" element={<AdminRoute requirePermission="products"><AdminKilimallImport /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute requirePermission="orders"><AdminOrders /></AdminRoute>} />
-              <Route path="/admin/coupons" element={<AdminRoute requirePermission="coupons"><AdminCoupons /></AdminRoute>} />
               {/* Owner-only pages: no permission a team member can hold opens these. */}
               <Route path="/admin" element={<AdminRoute ownerOnly><ComprehensiveMonitor /></AdminRoute>} />
               <Route path="/admin/activity" element={<AdminRoute ownerOnly><ActivityMonitor /></AdminRoute>} />
@@ -171,7 +164,6 @@ const App = () => {
               <Route path="/admin/test" element={<AdminRoute ownerOnly><DirectApiTest /></AdminRoute>} />
               <Route path="/admin/debug" element={<AdminRoute ownerOnly><AuthDebug /></AdminRoute>} />
               <Route path="/admin/diagnostic" element={<AdminRoute ownerOnly><TempDashboard /></AdminRoute>} />
-              <Route path="/admin/test-lucky-codes" element={<AdminRoute ownerOnly><TestLuckyCodes /></AdminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>

@@ -1,4 +1,4 @@
-// Source tracking + stock enquiries for imported products.
+// Source tracking for imported products.
 //
 // `products` has no columns for "where did this come from", and adding them
 // would need a migration run against the live database. These two tables are
@@ -7,7 +7,6 @@
 //
 //  - product_sources: one row per imported product - the original listing,
 //    what it cost at the source, the markup applied, and the last live check.
-//  - product_enquiries: a customer asking "is this in stock?" before paying.
 
 interface DbEnv {
   DB: D1Database;
@@ -33,24 +32,6 @@ export async function ensureSourceTables(env: DbEnv): Promise<void> {
         created_at TEXT DEFAULT CURRENT_TIMESTAMP
       )
     `),
-    env.DB.prepare(`
-      CREATE TABLE IF NOT EXISTS product_enquiries (
-        id TEXT PRIMARY KEY,
-        product_id TEXT NOT NULL,
-        product_title TEXT,
-        user_id TEXT,
-        name TEXT,
-        phone TEXT NOT NULL,
-        message TEXT,
-        status TEXT NOT NULL DEFAULT 'pending',
-        reply TEXT,
-        auto_checked INTEGER DEFAULT 0,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        answered_at TEXT
-      )
-    `),
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_enquiries_product ON product_enquiries(product_id)`),
-    env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_enquiries_phone ON product_enquiries(phone, created_at)`),
   ]);
   // Width (px) of the stored cover photo. ALTER fails harmlessly if it's already there.
   try {
@@ -71,7 +52,7 @@ export function withCardTwins(keys: string[]): string[] {
 }
 
 /**
- * Removes the tracking rows (original listing, cost, enquiries) for deleted
+ * Removes the tracking rows (original listing, cost) for deleted
  * products. Without this a deleted Kilimall product would still count as
  * "already imported" and could not be imported again. Pass no ids to clear
  * everything.
@@ -80,13 +61,11 @@ export async function deleteProductExtras(env: DbEnv, productIds?: string[]): Pr
   await ensureSourceTables(env);
   if (!productIds) {
     await env.DB.prepare("DELETE FROM product_sources").run();
-    await env.DB.prepare("DELETE FROM product_enquiries").run();
     return;
   }
   if (productIds.length === 0) return;
   const marks = productIds.map(() => "?").join(",");
   await env.DB.prepare(`DELETE FROM product_sources WHERE product_id IN (${marks})`).bind(...productIds).run();
-  await env.DB.prepare(`DELETE FROM product_enquiries WHERE product_id IN (${marks})`).bind(...productIds).run();
 }
 
 export const kilimallListingUrl = (listingId: string) => `https://www.kilimall.co.ke/listing/${listingId}`;

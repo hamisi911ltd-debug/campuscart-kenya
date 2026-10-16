@@ -5,7 +5,6 @@ import { Heart, LogOut, Package, Settings, ShoppingBag, Wallet, Download, Messag
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { CelebrationModal } from "@/components/CelebrationModal";
-import { CouponModal } from "@/components/CouponModal";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -19,7 +18,6 @@ const ProfilePage = () => {
   const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
-  const [showCouponModal, setShowCouponModal] = useState(false);
 
   useEffect(() => {
     // Check if user just logged in
@@ -119,11 +117,6 @@ const ProfilePage = () => {
 
   return (
     <>
-      <CouponModal
-        isOpen={showCouponModal}
-        onClose={() => setShowCouponModal(false)}
-      />
-      
       <CelebrationModal
         isOpen={showLoginCelebration}
         onClose={() => setShowLoginCelebration(false)}
@@ -168,19 +161,13 @@ const ProfilePage = () => {
         <p className="text-xs opacity-90">
           Top up with M-Pesa and pay for orders instantly from your balance.
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-2">
+        <div className="mt-4 grid grid-cols-1 gap-2">
           <Link
             to="/wallet"
             className="flex items-center justify-center gap-1.5 py-2.5 bg-accent text-accent-foreground rounded-xl font-bold text-sm shadow-accent hover:scale-[1.02] transition"
           >
             <Wallet className="h-4 w-4" /> Top Up
           </Link>
-          <button
-            onClick={() => setShowCouponModal(true)}
-            className="flex items-center justify-center gap-1.5 py-2.5 bg-white/15 text-primary-foreground rounded-xl font-bold text-sm hover:bg-white/25 transition"
-          >
-            Redeem Code
-          </button>
         </div>
       </div>
 

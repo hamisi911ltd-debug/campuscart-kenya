@@ -8,7 +8,6 @@ const PERMISSION_OPTIONS: { value: string; label: string; description: string }[
   { value: "products", label: "Products", description: "Add, edit, import and delete product listings" },
   { value: "orders", label: "Orders", description: "Confirm orders, request M-Pesa payment, update status" },
   { value: "users", label: "Users", description: "View and activate/deactivate customer accounts" },
-  { value: "coupons", label: "Coupons", description: "Create and manage wallet-credit coupon codes" },
 ];
 
 interface TeamMember {

@@ -3,7 +3,6 @@ import { PageShell } from "@/components/PageShell";
 import { findProduct, products, categories } from "@/data/products";
 import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
-import { StockEnquiry } from "@/components/StockEnquiry";
 import { sizedImage } from "@/lib/imageUrl";
 import { LazyImage } from "@/components/LazyImage";
 import { ShareProduct } from "@/components/ShareProduct";
@@ -183,7 +182,8 @@ const ProductPage = () => {
   const related = products.filter((x) => x.category === p.category && x.id !== p.id).slice(0, 4);
   
   // Get all images (main image + additional images if available)
-  const allImages = [p.image, ...(p.images || [])].filter(Boolean);
+  // The main photo is usually also the first of the gallery - list each photo once.
+  const allImages = [...new Set([p.image, ...(p.images || [])].filter(Boolean))];
   
   const nextImage = () => {
     setCurrentImageIndex((prev) => (prev + 1) % allImages.length);
@@ -238,29 +238,39 @@ const ProductPage = () => {
                   priority
                 />
 
-                {/* Navigation arrows - only show if multiple images */}
+                {/* Previous / next: large round buttons with a soft shadow, easy to hit
+                    with a thumb and clearly visible on any photo */}
                 {allImages.length > 1 && (
                   <>
                     <button
+                      type="button"
+                      aria-label="Previous photo"
                       onClick={(e) => { e.stopPropagation(); prevImage(); }}
-                      className="absolute left-1.5 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-1 hover:bg-black/60 transition-colors"
+                      className="absolute left-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-lg ring-1 ring-black/10 backdrop-blur transition hover:bg-white hover:scale-105 active:scale-95 md:h-11 md:w-11"
                     >
-                      <ChevronLeft className="h-3 w-3" />
+                      <ChevronLeft className="h-6 w-6" />
                     </button>
                     <button
+                      type="button"
+                      aria-label="Next photo"
                       onClick={(e) => { e.stopPropagation(); nextImage(); }}
-                      className="absolute right-1.5 top-1/2 -translate-y-1/2 bg-black/40 text-white rounded-full p-1 hover:bg-black/60 transition-colors"
+                      className="absolute right-2 top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-gray-900 shadow-lg ring-1 ring-black/10 backdrop-blur transition hover:bg-white hover:scale-105 active:scale-95 md:h-11 md:w-11"
                     >
-                      <ChevronRight className="h-3 w-3" />
+                      <ChevronRight className="h-6 w-6" />
                     </button>
-                  </>
-                )}
 
-                {/* Image counter */}
-                {allImages.length > 1 && (
-                  <span className="absolute bottom-1.5 right-1.5 rounded-full bg-black/40 px-2 py-0.5 text-[10px] font-semibold text-white">
-                    {currentImageIndex + 1}/{allImages.length}
-                  </span>
+                    {/* Position dots: plain decorative spans (not buttons - the site's global rule gives buttons a 44px minimum size); the arrows and thumbnails are the accessible controls */}
+                    <div className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 gap-1.5 rounded-full bg-black/35 px-2.5 py-1.5 backdrop-blur">
+                      {allImages.map((_, i) => (
+                        <span
+                          key={i}
+                          aria-hidden="true"
+                          onClick={(e) => { e.stopPropagation(); setCurrentImageIndex(i); }}
+                          className={`block h-2 cursor-pointer rounded-full transition-all ${i === currentImageIndex ? "w-5 bg-white" : "w-2 bg-white/60 hover:bg-white/90"}`}
+                        />
+                      ))}
+                    </div>
+                  </>
                 )}
               </div>
             </div>
@@ -294,9 +304,12 @@ const ProductPage = () => {
             <div className="min-w-0">
               <h1 className="text-xl md:text-2xl font-extrabold text-foreground break-words">{p.title}</h1>
               <div className="mt-2 flex items-center gap-3 text-sm text-muted-foreground flex-wrap">
-                <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-warning text-warning" /> {p.rating ?? 4.7}</span>
-                <span>· {p.sold ?? 0} sold</span>
-                <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {p.campus}</span>
+                {p.rating > 0 && (
+                  <span className="flex items-center gap-1"><Star className="h-4 w-4 fill-warning text-warning" /> {Number(p.rating).toFixed(1)}</span>
+                )}
+                {p.campus && p.campus !== "Unknown" && (
+                  <span className="flex items-center gap-1"><MapPin className="h-4 w-4" /> {p.campus}</span>
+                )}
               </div>
             </div>
 
@@ -331,7 +344,6 @@ const ProductPage = () => {
               {priceCardClicked ? 'Selected for purchase!' : 'Flash price · ends tonight'}
             </p>
           </div>
-          {p.description && <p className="text-sm text-foreground/90 break-words">{p.description}</p>}
 
           {/* Product Location Map */}
           {p.location && (
@@ -372,8 +384,6 @@ const ProductPage = () => {
             </div>
           </div>
 
-          <StockEnquiry productId={p.id} productTitle={p.title} price={p.price} quantity={qty} user={user} />
-
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => {
@@ -392,7 +402,7 @@ const ProductPage = () => {
             </button>
           </div>
 
-          <ShareProduct id={p.id} title={p.title} price={p.price} description={p.description} />
+          <ShareProduct id={p.id} title={p.title} price={p.price} image={p.image} />
         </div>
       </div>
 

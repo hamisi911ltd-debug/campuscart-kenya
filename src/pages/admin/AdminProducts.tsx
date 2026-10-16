@@ -45,6 +45,7 @@ const AdminProducts = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
   const [optimizing, setOptimizing] = useState<{ done: number; total: number } | null>(null);
+  const [tidying, setTidying] = useState(false);
 
   const fetchProducts = async () => {
     try {
@@ -70,6 +71,24 @@ const AdminProducts = () => {
   useEffect(() => {
     fetchProducts();
   }, []);
+
+  // Move every product into the category its name says it belongs in, and shorten
+  // keyword-stuffed names to brand + model.
+  const handleTidy = async () => {
+    if (!window.confirm('Put every product in its right category and shorten long names? (Descriptions are not changed.)')) return;
+    setTidying(true);
+    try {
+      const res = await adminPost('/api/admin/tidy-products', {});
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Could not tidy products');
+      toast.success(`Checked ${data.checked}: ${data.recategorized} recategorized, ${data.retitled} names shortened`);
+      fetchProducts();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not tidy products');
+    } finally {
+      setTidying(false);
+    }
+  };
 
   // Imported products whose photos aren't yet stored in the two fast sizes
   // (400px cards / 1200px product page) in our own storage.
@@ -344,6 +363,15 @@ const AdminProducts = () => {
               <Copy className="h-4 w-4" />
               <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
             </button>
+            <button
+              onClick={handleTidy}
+              disabled={tidying}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition disabled:opacity-60"
+              title="Fix categories and shorten long names for every product"
+            >
+              <CheckSquare className="h-4 w-4" />
+              <span>{tidying ? 'Tidying…' : 'Fix categories & names'}</span>
+            </button>
             {(needsOptimizing.length > 0 || optimizing) && (
               <button
                 onClick={handleOptimizeImages}
@@ -523,7 +551,7 @@ const AdminProducts = () => {
                   id={product.id}
                   title={product.title}
                   price={product.price}
-                  description={product.description}
+                  image={product.image_url}
                   variant="icon"
                   className="mb-2"
                 />

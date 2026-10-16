@@ -14,6 +14,7 @@ import catBeauty from "@/assets/cat-beauty.jpg";
 import catBaby from "@/assets/cat-baby.jpg";
 import catGaming from "@/assets/cat-gaming.jpg";
 import catWatches from "@/assets/cat-watches.jpg";
+import { shortProductTitle } from "@/lib/productTitle";
 
 export type ProductWithCategory = Product & { 
   category: string; 
@@ -74,7 +75,8 @@ export const transformDatabaseProduct = (dbProduct: any): ProductWithCategory =>
 
   return {
     id: dbProduct.id,
-    title: dbProduct.title,
+    // Marketplace titles are keyword-stuffed; shoppers see just the important part.
+    title: shortProductTitle(dbProduct.title),
     price: parseFloat(dbProduct.price),
     oldPrice: dbProduct.original_price ? parseFloat(dbProduct.original_price) : undefined,
     image: primaryImage,

@@ -1,4 +1,4 @@
-import { Zap, Ticket, ChevronRight, ThumbsUp } from "lucide-react";
+import { Zap, ChevronRight, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { TopBar } from "@/components/TopBar";
@@ -8,7 +8,6 @@ import { FlashCountdown } from "@/components/FlashCountdown";
 import { HotSaleBanner } from "@/components/HotSaleBanner";
 import { HotDealsCarousel } from "@/components/HotDealsCarousel";
 import { SignInModal } from "@/components/SignInModal";
-import { CouponModal } from "@/components/CouponModal";
 import { CelebrationModal } from "@/components/CelebrationModal";
 import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
@@ -17,20 +16,12 @@ import { Pagination } from "@/components/Pagination";
 import { categories, getProductsPage, getProductsSync, transformDatabaseProduct, DEFAULT_PAGE_SIZE, type ProductWithCategory } from "@/data/products";
 import { sizedImage, cdnImgProps } from "@/lib/imageUrl";
 
-const VOUCHERS = [
-  { code: "WELCOME50", label: "KES 50 OFF", sub: "New shoppers" },
-  { code: "FLASH30", label: "KES 30 OFF", sub: "Flash sale" },
-  { code: "SHOP20", label: "KES 20 OFF", sub: "Any order" },
-  { code: "LUCKY25", label: "KES 25 OFF", sub: "Limited time" },
-];
-
 const Index = () => {
   const { user } = useShop();
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
   const [productsHasMore, setProductsHasMore] = useState(false);
   const [productsPage, setProductsPage] = useState(1);
   const [showSignInModal, setShowSignInModal] = useState(false);
-  const [showCouponModal, setShowCouponModal] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
   const [flashDeals, setFlashDeals] = useState<ProductWithCategory[]>([]);
   // ONE category-mixed request feeds the Hot Deals cards, the first page of
@@ -193,7 +184,6 @@ const Index = () => {
         onClose={() => setShowSignInModal(false)}
         message="Welcome to CampusMart! Sign in to shop at wholesale prices."
       />
-      <CouponModal isOpen={showCouponModal} onClose={() => setShowCouponModal(false)} />
       <CelebrationModal
         isOpen={showLoginCelebration}
         onClose={() => setShowLoginCelebration(false)}
@@ -299,27 +289,6 @@ const Index = () => {
             </div>
           </section>
         )}
-
-        {/* Voucher / coupon strip */}
-        <section className="mb-3">
-          <div className="-mx-4 overflow-x-auto scrollbar-hide px-4 md:mx-0 md:overflow-visible md:px-0">
-            <div className="flex gap-2 md:gap-3">
-              {VOUCHERS.map((v) => (
-                <button
-                  key={v.code}
-                  onClick={() => (user ? setShowCouponModal(true) : setShowSignInModal(true))}
-                  className="flex shrink-0 items-center gap-2 rounded-lg border border-dashed border-accent bg-accent/5 px-3 py-2 text-left md:flex-1 md:shrink md:justify-center md:py-3"
-                >
-                  <Ticket className="h-4 w-4 text-accent" />
-                  <div>
-                    <div className="text-xs font-extrabold text-accent leading-tight">{v.label}</div>
-                    <div className="text-[10px] text-muted-foreground">{v.sub} · Collect</div>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
 
         {/* More to love feed */}
         <section className="pb-6">

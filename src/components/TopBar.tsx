@@ -1,39 +1,15 @@
-import { Bell, Search, ShoppingCart, Star, Wallet } from "lucide-react";
+import { Bell, Search, ShoppingCart, Wallet } from "lucide-react";
 import { Logo } from "./Logo";
 import { Link, useNavigate } from "react-router-dom";
 import { useState, useEffect, type FormEvent } from "react";
 import { useShop } from "@/store/shop";
-import { CouponModal } from "./CouponModal";
-import { CouponWelcomePopup } from "./CouponWelcomePopup";
 import { SignInModal } from "./SignInModal";
 
 export const TopBar = () => {
   const navigate = useNavigate();
   const { cartCount, user, unreadNotificationCount } = useShop();
   const [q, setQ] = useState("");
-  const [showCouponModal, setShowCouponModal] = useState(false);
   const [showSignInModal, setShowSignInModal] = useState(false);
-
-  useEffect(() => {
-    // Listen for custom event to open the coupon modal
-    const handleOpenCouponModal = () => {
-      setShowCouponModal(true);
-    };
-
-    window.addEventListener('openCouponModal', handleOpenCouponModal);
-
-    return () => {
-      window.removeEventListener('openCouponModal', handleOpenCouponModal);
-    };
-  }, []);
-
-  const handleCouponClick = () => {
-    if (!user) {
-      setShowSignInModal(true);
-    } else {
-      setShowCouponModal(true);
-    }
-  };
 
   const handleNotificationClick = (e: React.MouseEvent) => {
     if (!user) {
@@ -57,11 +33,6 @@ export const TopBar = () => {
 
   return (
     <>
-      <CouponModal
-        isOpen={showCouponModal}
-        onClose={() => setShowCouponModal(false)}
-      />
-      <CouponWelcomePopup />
       <SignInModal 
         isOpen={showSignInModal} 
         onClose={() => setShowSignInModal(false)}
@@ -90,7 +61,7 @@ export const TopBar = () => {
           </button>
         </form>
         
-        {/* Desktop Layout: Wallet + Lucky Code + Notifications + Cart */}
+        {/* Desktop Layout: Wallet + Notifications + Cart */}
         <div className="hidden sm:flex items-center gap-2 ml-auto">
           {/* Desktop Wallet */}
           <Link
@@ -102,16 +73,6 @@ export const TopBar = () => {
             <span className="hidden md:inline">KES {(user?.walletBalance || 0).toLocaleString()}</span>
           </Link>
 
-          {/* Desktop Coupon Button */}
-          <button
-            onClick={handleCouponClick}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
-            aria-label="Coupon"
-          >
-            <Star className="h-4 w-4" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          </button>
-          
           {/* Desktop Notifications */}
           <Link 
             to="/notifications" 
@@ -143,7 +104,7 @@ export const TopBar = () => {
           </Link>
         </div>
         
-        {/* Mobile Layout: Wallet + Lucky Code + Notifications + Cart */}
+        {/* Mobile Layout: Wallet + Notifications + Cart */}
         <div className="sm:hidden flex items-center gap-2 ml-auto">
           {/* Mobile Wallet */}
           <Link
@@ -154,16 +115,6 @@ export const TopBar = () => {
             <Wallet className="h-4 w-4" />
           </Link>
 
-          {/* Mobile Coupon Button */}
-          <button
-            onClick={handleCouponClick}
-            className="relative flex h-9 w-9 items-center justify-center rounded-full bg-gradient-to-r from-yellow-400 via-yellow-500 to-orange-500 text-white hover:shadow-lg hover:scale-105 transition-all"
-            aria-label="Coupon"
-          >
-            <Star className="h-4 w-4" />
-            <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-          </button>
-          
           {/* Mobile Notifications */}
           <Link 
             to="/notifications" 

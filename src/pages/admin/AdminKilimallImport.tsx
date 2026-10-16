@@ -39,7 +39,7 @@ const formatKsh = (n: number) => `KSh ${n.toLocaleString("en-KE")}`;
 const AdminKilimallImport = () => {
   const [query, setQuery] = useState("");
   const [url, setUrl] = useState("");
-  const [category, setCategory] = useState("phones");
+  const [category, setCategory] = useState("auto");
   const [markup, setMarkup] = useState(15);
   const [items, setItems] = useState<KilimallItem[]>([]);
   const [page, setPage] = useState(1);
@@ -203,13 +203,14 @@ const AdminKilimallImport = () => {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Category for searched products {discovered && "(ignored for Discover)"}
+              Category for imported products
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-normal"
               >
-                {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                <option value="auto">Auto-detect from each product (recommended)</option>
+                {CATEGORIES.map((c) => <option key={c.slug} value={c.slug}>{c.name} (if it can't tell)</option>)}
               </select>
             </label>
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">

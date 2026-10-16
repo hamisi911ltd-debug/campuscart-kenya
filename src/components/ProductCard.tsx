@@ -10,6 +10,8 @@ export interface Product {
   price: number;
   oldPrice?: number;
   image: string;
+  /** All photos; the card falls back to the next one if the first fails to load. */
+  images?: string[];
   campus: string;
   badge?: "SALE" | "NEW" | "HOT" | "FREE";
   rating?: number;
@@ -88,12 +90,15 @@ export const ProductCard = ({ p, priority = false }: { p: Product; priority?: bo
           )}
         </div>
 
-        {/* Rating + sold + add */}
+        {/* Rating (only once there is one) + add */}
         <div className="mt-1 flex items-center justify-between gap-1">
           <div className="flex min-w-0 items-center gap-1 overflow-hidden whitespace-nowrap text-[9px] text-muted-foreground">
-            <Star className="h-2.5 w-2.5 shrink-0 fill-warning text-warning" />
-            <span className="shrink-0">{(p.rating ?? 4.7).toFixed(1)}</span>
-            {p.sold !== undefined && <span className="truncate">· {p.sold >= 1000 ? `${(p.sold / 1000).toFixed(1)}k` : p.sold} sold</span>}
+            {p.rating ? (
+              <>
+                <Star className="h-2.5 w-2.5 shrink-0 fill-warning text-warning" />
+                <span className="shrink-0">{p.rating.toFixed(1)}</span>
+              </>
+            ) : null}
           </div>
           <button
             onClick={(e) => { e.preventDefault(); addToCart(p); }}

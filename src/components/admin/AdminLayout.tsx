@@ -1,9 +1,9 @@
 import { ReactNode, useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
-  LayoutDashboard, Users, Package, ShoppingBag, Sparkles, Users2,
+  LayoutDashboard, Users, Package, ShoppingBag, Users2,
   LogOut, Menu, X, Bell, Search, ChevronDown, Shield,
-  Activity, Settings, BarChart3, Database, PackageSearch
+  Activity, Settings, BarChart3, Database
 } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
@@ -77,25 +77,11 @@ const AdminLayout = ({ children }: AdminLayoutProps) => {
       permission: 'products' as PermissionArea,
     },
     {
-      icon: PackageSearch,
-      label: 'Stock Enquiries',
-      path: '/admin/enquiries',
-      description: 'Customer Stock Questions',
-      permission: 'products' as PermissionArea,
-    },
-    {
       icon: ShoppingBag,
       label: 'Orders',
       path: '/admin/orders',
       description: 'Order Management',
       permission: 'orders' as PermissionArea,
-    },
-    {
-      icon: Sparkles,
-      label: 'Coupons',
-      path: '/admin/coupons',
-      description: 'Wallet Credit Codes',
-      permission: 'coupons' as PermissionArea,
     },
     {
       icon: Users2,

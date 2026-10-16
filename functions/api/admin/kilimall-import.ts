@@ -12,6 +12,8 @@ import { hasPermission } from "../_lib/teamAuth";
 import { fetchKilimallHtml, parseProductPage } from "../_lib/kilimall";
 import { ensureSourceTables, kilimallListingUrl } from "../_lib/productSources";
 import { findImportedListingIds } from "../_lib/kilimallDiscover";
+import { pickCategory } from "../_lib/categorize";
+import { shortProductTitle } from "../_lib/productTitle";
 import { MIN_COVER_WIDTH, copyPhotoToStorage } from "../_lib/imageStore";
 
 interface Env {
@@ -45,11 +47,13 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       fallbackPrice?: number;
     };
     const listingId = String(body.listingId || "").trim();
-    const category = body.category || "";
+    const hint = body.category || "";
     const markup = Math.min(Math.max(Number(body.markupPercent) || 0, 0), 500);
 
     if (!/^\d{3,15}$/.test(listingId)) return json({ error: "Invalid Kilimall listing id" }, 400);
-    if (!VALID_CATEGORIES.has(category)) return json({ error: `Unknown category "${category}"` }, 400);
+    // "auto" (or nothing) is fine; anything else must at least be a real category,
+    // since it's the fallback if the product itself doesn't say what it is.
+    if (hint && hint !== "auto" && !VALID_CATEGORIES.has(hint)) return json({ error: `Unknown category "${hint}"` }, 400);
 
     await ensureSourceTables(env);
 
@@ -62,6 +66,12 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     }
 
     const product = parseProductPage(await fetchKilimallHtml(`/listing/${listingId}`), listingId);
+
+    // File the product under the category it actually belongs to (decided from its
+    // own name and description); the chosen/search category is only the fallback.
+    const category = pickCategory(product.title, product.description, hint === "auto" ? null : hint);
+    // Store the name shoppers need - brand + model - not the keyword-stuffed original.
+    const shortTitle = shortProductTitle(product.title);
 
     const sourcePrice = product.price ?? Number(body.fallbackPrice) ?? 0;
     if (!(sourcePrice > 0)) return json({ error: "Could not determine a price for this product" }, 422);
@@ -91,7 +101,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     ).bind(
       id,
       OWNER_ID,
-      product.title,
+      shortTitle,
       product.description || product.title,
       category,
       sellPrice,
@@ -121,7 +131,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       cover.width
     ).run();
 
-    return json({ success: true, id, title: product.title, price: sellPrice, images: photoUrls.length, coverWidth: cover.width }, 201);
+    return json({ success: true, id, title: shortTitle, category, price: sellPrice, images: photoUrls.length, coverWidth: cover.width }, 201);
   } catch (error) {
     console.error("Kilimall import error:", error);
     return json({ error: error instanceof Error ? error.message : "Import failed" }, 502);

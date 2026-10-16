@@ -37,6 +37,8 @@ export const LazyImage = ({
 }: LazyImageProps) => {
   const candidates = srcs.filter((s): s is string => Boolean(s));
   const boxRef = useRef<HTMLDivElement>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
+  const handleErrorRef = useRef<() => void>(() => {});
   const [inView, setInView] = useState(priority);
   const [loaded, setLoaded] = useState(false);
   const [index, setIndex] = useState(0);
@@ -72,6 +74,13 @@ export const LazyImage = ({
   }, [key]);
 
   useEffect(() => {
+    const el = imgRef.current;
+    if (!el || !el.complete) return;
+    if (el.naturalWidth > 0) setLoaded(true);
+    else if (el.getAttribute("src")) handleErrorRef.current();
+  });
+
+  useEffect(() => {
     if (failed) onAllFailed?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [failed]);
@@ -97,6 +106,8 @@ export const LazyImage = ({
     setFailed(true);
   };
 
+  handleErrorRef.current = handleError;
+
   return (
     <div ref={boxRef} className={`relative overflow-hidden bg-muted ${ratio} ${className}`}>
       {/* Shimmer until the photo has loaded */}
@@ -108,6 +119,7 @@ export const LazyImage = ({
       )}
       {inView && (
         <img
+          ref={imgRef}
           key={`${index}`}
           src={src}
           srcSet={attempt === 0 ? srcSetFor(current) : undefined}
