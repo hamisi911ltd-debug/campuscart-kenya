@@ -4,6 +4,8 @@ import { findProduct, products, categories } from "@/data/products";
 import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
 import { StockEnquiry } from "@/components/StockEnquiry";
+import { sizedImage } from "@/lib/imageUrl";
+import { LazyImage } from "@/components/LazyImage";
 import { ShareProduct } from "@/components/ShareProduct";
 import { useShop } from "@/store/shop";
 import { useSEO, SITE_URL } from "@/hooks/useSEO";
@@ -227,13 +229,13 @@ const ProductPage = () => {
                 onTouchStart={handleTouchStart}
                 onTouchEnd={handleTouchEnd}
               >
-                <img
-                  src={allImages[currentImageIndex]}
+                <LazyImage
+                  srcs={[allImages[currentImageIndex], ...allImages.filter((_, i) => i !== currentImageIndex)]}
                   alt={p.title}
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    (e.target as HTMLImageElement).src = '/placeholder.svg';
-                  }}
+                  ratio="h-full w-full"
+                  width={1200}
+                  sizes="(max-width: 1024px) 100vw, 600px"
+                  priority
                 />
 
                 {/* Navigation arrows - only show if multiple images */}
@@ -274,13 +276,12 @@ const ProductPage = () => {
                       idx === currentImageIndex ? 'border-accent' : 'border-transparent opacity-70'
                     }`}
                   >
-                    <img
-                      src={img}
+                    <LazyImage
+                      srcs={[img]}
                       alt={`${p.title} ${idx + 1}`}
-                      className="h-full w-full object-cover"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/placeholder.svg';
-                      }}
+                      ratio="h-full w-full"
+                      width={400}
+                      sizes="56px"
                     />
                   </button>
                 ))}
@@ -371,7 +372,7 @@ const ProductPage = () => {
             </div>
           </div>
 
-          <StockEnquiry productId={p.id} productTitle={p.title} user={user} />
+          <StockEnquiry productId={p.id} productTitle={p.title} price={p.price} quantity={qty} user={user} />
 
           <div className="flex flex-col sm:flex-row gap-3">
             <button

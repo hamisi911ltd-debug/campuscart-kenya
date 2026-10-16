@@ -209,7 +209,10 @@ export const productsByCategory = async (
 // in `categories[].img`. A category with no products yet has no entry here —
 // callers should fall back to the static illustration in that case.
 export const getCategoryImages = async (): Promise<Record<string, string>> => {
-  const all = await getProducts({ limit: 1000 });
+  // A category-mixed first batch (the same request the homepage makes, so it's
+  // already cached) holds a product from every category - no need to pull the
+  // whole catalogue just to find one photo each.
+  const all = await getProducts({ sort: "mixed", limit: 100 });
   const images: Record<string, string> = {};
   for (const p of all) {
     if (!images[p.category] && p.image && p.image !== "/placeholder.svg") {

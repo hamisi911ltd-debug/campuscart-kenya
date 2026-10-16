@@ -1,7 +1,8 @@
 import { Star, Plus, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useShop } from "@/store/shop";
-import { handleImageError } from "@/lib/imageFallback";
+import { useState } from "react";
+import { LazyImage } from "@/components/LazyImage";
 
 export interface Product {
   id: string;
@@ -27,27 +28,31 @@ const badgeStyles: Record<string, string> = {
   FREE: "bg-primary",
 };
 
-export const ProductCard = ({ p }: { p: Product }) => {
+export const ProductCard = ({ p, priority = false }: { p: Product; priority?: boolean }) => {
   const { addToCart } = useShop();
+  const [photoFailed, setPhotoFailed] = useState(false);
   const discount = p.oldPrice && p.oldPrice > p.price
     ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100)
     : 0;
+
+  // If every photo of a product fails to load, hide the card rather than
+  // showing a broken-image icon.
+  if (photoFailed) return null;
 
   return (
     <Link
       to={`/product/${p.id}`}
       className="group flex h-full w-full flex-col overflow-hidden rounded-lg bg-card shadow-sm transition-all hover:shadow-md"
     >
-      <div className="relative aspect-square overflow-hidden bg-muted">
-        <img
-          src={p.image}
+      <div className="relative overflow-hidden bg-muted">
+        <LazyImage
+          srcs={[p.image, ...(p.images || [])]}
           alt={p.title}
-          loading="lazy"
-          decoding="async"
+          ratio="aspect-square"
           width={400}
-          height={400}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          onError={handleImageError}
+          sizes="(max-width: 640px) 34vw, (max-width: 1024px) 25vw, 200px"
+          priority={priority}
+          onAllFailed={() => setPhotoFailed(true)}
         />
         {p.badge && (
           <span

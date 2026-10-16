@@ -1,13 +1,12 @@
 // Cloudflare Pages Function - customer stock enquiries.
 //
-// A shopper can ask "is this in stock?" before paying. For products imported
-// from Kilimall the answer comes back instantly from a live stock check; for
-// anything else (or if the live check fails) the enquiry waits for the admin,
-// who replies from Admin -> Stock Enquiries. The customer sees the answer on
-// the product page.
+// A shopper asks "is this in stock?" before paying. The question goes to the
+// admin's WhatsApp (the page opens it, pre-filled), and is also saved here as
+// a PENDING enquiry. Nothing is answered automatically: the admin checks
+// stock first, then replies from Admin -> Stock Enquiries (or on WhatsApp),
+// and the customer sees that confirmed answer on the product page.
 import { normalizeKenyanPhone } from "./_lib/phone";
-import { fetchKilimallHtml, parseProductPage } from "./_lib/kilimall";
-import { ensureSourceTables, getSourceForProduct } from "./_lib/productSources";
+import { ensureSourceTables } from "./_lib/productSources";
 
 interface Env {
   DB: D1Database;
@@ -15,9 +14,6 @@ interface Env {
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-
-const withTimeout = <T,>(promise: Promise<T>, ms: number): Promise<T> =>
-  Promise.race([promise, new Promise<T>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms))]);
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   const { env, request } = context;
@@ -37,9 +33,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     await ensureSourceTables(env);
 
-    const product = await env.DB.prepare(
-      "SELECT id, title, is_available, quantity_available FROM products WHERE id = ?"
-    ).bind(productId).first<{ id: string; title: string; is_available: number; quantity_available: number }>();
+    const product = await env.DB.prepare("SELECT id, title FROM products WHERE id = ?")
+      .bind(productId)
+      .first<{ id: string; title: string }>();
     if (!product) return json({ error: "Product not found" }, 404);
 
     // Light spam guard: a handful of enquiries per phone per hour.
@@ -51,44 +47,10 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       return json({ error: "You've sent a few enquiries already - we'll get back to you shortly." }, 429);
     }
 
-    let status: "pending" | "available" | "unavailable" = "pending";
-    let reply: string | null = null;
-    let autoChecked = 0;
-
-    if (!product.is_available) {
-      status = "unavailable";
-      reply = "Sorry, this item is currently unavailable.";
-    } else {
-      // Instant answer from live stock when the item comes from Kilimall.
-      try {
-        const source = await getSourceForProduct(env, productId);
-        if (source) {
-          const live = await withTimeout(
-            fetchKilimallHtml(`/listing/${source.listing_id}`).then((html) => parseProductPage(html, source.listing_id)),
-            7000
-          );
-          if (live.inStock === true) {
-            status = "available";
-            reply = live.stock !== null && live.stock <= 5
-              ? `Good news - it's in stock (only ${live.stock} left). You can order now.`
-              : "Good news - it's in stock. You can order now.";
-            autoChecked = 1;
-          } else if (live.inStock === false) {
-            status = "unavailable";
-            reply = "Sorry, this item is out of stock right now. We'll let you know when it's back.";
-            autoChecked = 1;
-          }
-        }
-      } catch (err) {
-        console.error("Live stock check failed, leaving enquiry for the admin:", err);
-      }
-    }
-
     const id = crypto.randomUUID();
-    const now = new Date().toISOString();
     await env.DB.prepare(
-      `INSERT INTO product_enquiries (id, product_id, product_title, user_id, name, phone, message, status, reply, auto_checked, created_at, answered_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO product_enquiries (id, product_id, product_title, user_id, name, phone, message, status, reply, auto_checked, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', NULL, 0, ?)`
     ).bind(
       id,
       productId,
@@ -97,18 +59,15 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       (body.name || "").trim().slice(0, 80) || null,
       phone,
       (body.message || "").trim().slice(0, 300) || null,
-      status,
-      reply,
-      autoChecked,
-      now,
-      status === "pending" ? null : now
+      new Date().toISOString()
     ).run();
 
     return json({
       success: true,
       id,
-      status,
-      reply: reply || "Thanks! We're checking stock and will reply here shortly.",
+      ref: id.slice(0, 6).toUpperCase(),
+      status: "pending",
+      reply: "Sent to our WhatsApp. We'll confirm stock and reply shortly.",
     }, 201);
   } catch (error) {
     console.error("Enquiry error:", error);

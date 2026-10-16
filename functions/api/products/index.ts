@@ -16,6 +16,16 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       });
     }
 
+    // Serve repeat requests from Cloudflare's edge cache instead of querying
+    // D1 every time (the homepage asks for the same few lists on every visit).
+    // Anything new shows up within about a minute.
+    const edgeCache: Cache | undefined = typeof caches !== "undefined" ? (caches as any).default : undefined;
+    const cacheKey = new Request(context.request.url, { method: "GET" });
+    if (edgeCache) {
+      const cached = await edgeCache.match(cacheKey);
+      if (cached) return cached;
+    }
+
     const url = new URL(context.request.url);
     const category = url.searchParams.get("category");
     const sellerId = url.searchParams.get("seller_id");
@@ -83,9 +93,25 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const { results } = await context.env.DB.prepare(query).bind(...params).all();
 
     // Ensure results is always an array
-    return new Response(JSON.stringify(results || []), {
-      headers: { "Content-Type": "application/json" },
+    // The list only needs enough to draw a card: a short description and just
+    // the main photo. The full description + gallery come from /api/products/:id
+    // when a product page opens (this cuts the homepage payload by about 3/4).
+    const slim = (results || []).map((row: any) => ({
+      ...row,
+      description: typeof row.description === "string" ? row.description.slice(0, 160) : row.description,
+      images: row.image_url ? JSON.stringify([row.image_url]) : row.images,
+    }));
+
+    const response = new Response(JSON.stringify(slim), {
+      headers: {
+        "Content-Type": "application/json",
+        // Browser: reuse for 30s and refresh quietly in the background for 10 min.
+        // Edge: keep for 60s.
+        "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=600",
+      },
     });
+    if (edgeCache) context.waitUntil(edgeCache.put(cacheKey, response.clone()));
+    return response;
   } catch (err: any) {
     console.error('GET /api/products error:', err);
     // Return empty array on error instead of error object

@@ -6,53 +6,72 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ShopProvider } from "@/store/shop";
 import InstallPrompt from "@/components/InstallPrompt";
 import { initializeCacheManagement } from "@/utils/cacheUtils";
-import { useEffect } from "react";
+import { lazy, Suspense, useEffect } from "react";
 import Index from "./pages/Index.tsx";
 import NotFound from "./pages/NotFound.tsx";
-import CategoryPage from "./pages/CategoryPage";
-import CategoriesPage from "./pages/CategoriesPage";
-import ProductPage from "./pages/ProductPage";
-import CartPage from "./pages/CartPage";
-import FavoritesPage from "./pages/FavoritesPage";
-import SearchPage from "./pages/SearchPage";
-import ProfilePage from "./pages/ProfilePage";
-import OrdersPage from "./pages/OrdersPage";
-import WalletPage from "./pages/WalletPage";
-import AuthPage from "./pages/AuthPage";
-import ForgotPasswordPage from "./pages/auth/ForgotPasswordPage";
-import GoogleCallback from "./pages/auth/GoogleCallback";
-import NotificationsPage from "./pages/NotificationsPage";
-import CheckoutPage from "./pages/CheckoutPage";
-import TempDashboard from "./pages/admin/TempDashboard";
-import ComprehensiveMonitor from "./pages/admin/ComprehensiveMonitor";
-import ActivityMonitor from "./pages/admin/ActivityMonitor";
-import SystemControl from "./pages/admin/SystemControl";
-import DatabaseViewer from "./pages/admin/DatabaseViewer";
-import DirectApiTest from "./pages/admin/DirectApiTest";
+const CategoryPage = lazy(() => import("./pages/CategoryPage"));
+const CategoriesPage = lazy(() => import("./pages/CategoriesPage"));
+const ProductPage = lazy(() => import("./pages/ProductPage"));
+const CartPage = lazy(() => import("./pages/CartPage"));
+const FavoritesPage = lazy(() => import("./pages/FavoritesPage"));
+const SearchPage = lazy(() => import("./pages/SearchPage"));
+const ProfilePage = lazy(() => import("./pages/ProfilePage"));
+const OrdersPage = lazy(() => import("./pages/OrdersPage"));
+const WalletPage = lazy(() => import("./pages/WalletPage"));
+const AuthPage = lazy(() => import("./pages/AuthPage"));
+const ForgotPasswordPage = lazy(() => import("./pages/auth/ForgotPasswordPage"));
+const GoogleCallback = lazy(() => import("./pages/auth/GoogleCallback"));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage"));
+const CheckoutPage = lazy(() => import("./pages/CheckoutPage"));
+const TempDashboard = lazy(() => import("./pages/admin/TempDashboard"));
+const ComprehensiveMonitor = lazy(() => import("./pages/admin/ComprehensiveMonitor"));
+const ActivityMonitor = lazy(() => import("./pages/admin/ActivityMonitor"));
+const SystemControl = lazy(() => import("./pages/admin/SystemControl"));
+const DatabaseViewer = lazy(() => import("./pages/admin/DatabaseViewer"));
+const DirectApiTest = lazy(() => import("./pages/admin/DirectApiTest"));
 
-import AdminUsers from "./pages/admin/AdminUsers";
-import AdminProducts from "./pages/admin/AdminProducts";
-import AdminProductForm from "./pages/admin/AdminProductForm";
-import AdminBulkImport from "./pages/admin/AdminBulkImport";
-import AdminPhotoImport from "./pages/admin/AdminPhotoImport";
-import AdminKilimallImport from "./pages/admin/AdminKilimallImport";
-import AdminEnquiries from "./pages/admin/AdminEnquiries";
-import AdminOrders from "./pages/admin/AdminOrders";
-import AdminCoupons from "./pages/admin/AdminCoupons";
-import AdminTeam from "./pages/admin/AdminTeam";
-import AdminLogin from "./pages/admin/AdminLogin";
-import AuthDebug from "./pages/admin/AuthDebug";
+const AdminUsers = lazy(() => import("./pages/admin/AdminUsers"));
+const AdminProducts = lazy(() => import("./pages/admin/AdminProducts"));
+const AdminProductForm = lazy(() => import("./pages/admin/AdminProductForm"));
+const AdminBulkImport = lazy(() => import("./pages/admin/AdminBulkImport"));
+const AdminPhotoImport = lazy(() => import("./pages/admin/AdminPhotoImport"));
+const AdminKilimallImport = lazy(() => import("./pages/admin/AdminKilimallImport"));
+const AdminEnquiries = lazy(() => import("./pages/admin/AdminEnquiries"));
+const AdminOrders = lazy(() => import("./pages/admin/AdminOrders"));
+const AdminCoupons = lazy(() => import("./pages/admin/AdminCoupons"));
+const AdminTeam = lazy(() => import("./pages/admin/AdminTeam"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const AuthDebug = lazy(() => import("./pages/admin/AuthDebug"));
 import AdminRoute from "./components/AdminRoute";
-import SettingsPage from "./pages/SettingsPage";
+const SettingsPage = lazy(() => import("./pages/SettingsPage"));
 
-import TestLuckyCodes from "./pages/TestLuckyCodes";
+const TestLuckyCodes = lazy(() => import("./pages/TestLuckyCodes"));
 
 const queryClient = new QueryClient();
+
+// Pages other than the homepage load on demand, so opening the site only
+// downloads the code the homepage needs (admin screens, checkout, charts etc.
+// used to ship in the same file for every visitor).
+const PageFallback = () => (
+  <div className="flex min-h-[60vh] items-center justify-center" aria-busy="true">
+    <div className="h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary" />
+  </div>
+);
 
 const App = () => {
   // Initialize cache management on app start
   useEffect(() => {
     initializeCacheManagement();
+
+    const warm = () => {
+      import("./pages/ProductPage");
+      import("./pages/CategoryPage");
+      import("./pages/CartPage");
+      import("./pages/SearchPage");
+    };
+    const w = window as Window & { requestIdleCallback?: (cb: () => void, opts?: { timeout: number }) => number };
+    if (w.requestIdleCallback) w.requestIdleCallback(warm, { timeout: 4000 });
+    else setTimeout(warm, 2500);
   }, []);
 
   return (
@@ -64,6 +83,7 @@ const App = () => {
         <InstallPrompt />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
           <ShopProvider>
+            <Suspense fallback={<PageFallback />}>
             <Routes>
               <Route path="/" element={<Index />} />
               <Route path="/categories" element={<CategoriesPage />} />
@@ -110,6 +130,7 @@ const App = () => {
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />
             </Routes>
+            </Suspense>
           </ShopProvider>
         </BrowserRouter>
       </div>

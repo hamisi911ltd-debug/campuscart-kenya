@@ -3,9 +3,13 @@ import { CheckCircle2, Clock, Loader2, PackageSearch, XCircle } from "lucide-rea
 import { toast } from "sonner";
 import { isValidKenyanPhone } from "@/data/deliveryAreas";
 
+const ADMIN_WHATSAPP = "254108254465";
+
 interface StockEnquiryProps {
   productId: string;
   productTitle: string;
+  price?: number;
+  quantity?: number;
   user?: { id?: string; name?: string; phone?: string } | null;
 }
 
@@ -21,10 +25,11 @@ const writeStored = (productId: string, enquiryId: string) => {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...readStored(), [productId]: enquiryId })); } catch { /* optional */ }
 };
 
-// "Is it in stock?" before paying. Imported products are answered instantly
-// from live stock; others wait for the admin's reply, which this picks up
-// (it re-checks while the page is open) and shows in place.
-export const StockEnquiry = ({ productId, productTitle, user }: StockEnquiryProps) => {
+// "Is it in stock?" before paying. Tapping the button opens WhatsApp to the
+// store with the product and the customer's details already written, and saves
+// the enquiry as pending. The admin checks stock first and then replies; that
+// confirmed answer shows up here (this re-checks while the page is open).
+export const StockEnquiry = ({ productId, productTitle, price, quantity, user }: StockEnquiryProps) => {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState(user?.name || "");
   const [phone, setPhone] = useState(user?.phone || "");
@@ -48,7 +53,7 @@ export const StockEnquiry = ({ productId, productTitle, user }: StockEnquiryProp
           setAnswer({
             id: row.id,
             status: row.status,
-            reply: row.reply || "We're checking stock and will reply here shortly.",
+            reply: row.reply || "Sent to our WhatsApp. We'll confirm stock and reply shortly.",
           });
           // Once answered there's nothing left to wait for.
           if (row.status !== "pending" && timer) clearInterval(timer);
@@ -85,6 +90,25 @@ export const StockEnquiry = ({ productId, productTitle, user }: StockEnquiryProp
       writeStored(productId, data.id);
       setAnswer({ id: data.id, status: data.status, reply: data.reply });
       setOpen(false);
+
+      // Send the question to the store's WhatsApp (the admin confirms stock, then replies).
+      const sections = [
+        ["Hello CampusMart 👋 Is this item still in stock?"],
+        [
+          `*${productTitle}*`,
+          price ? `Price: KES ${price.toLocaleString("en-KE")}` : "",
+          quantity && quantity > 1 ? `Quantity wanted: ${quantity}` : "",
+          `Link: ${window.location.origin}/product/${productId}`,
+        ],
+        [
+          `Name: ${name.trim() || "-"}`,
+          `Phone: ${phone.trim()}`,
+          message.trim() ? `Note: ${message.trim()}` : "",
+          `Ref: #${data.ref}`,
+        ],
+      ];
+      const text = sections.map((lines) => lines.filter(Boolean).join("\n")).join("\n\n");
+      window.open(`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(text)}`, "_blank");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not send your enquiry");
     } finally {
@@ -104,7 +128,7 @@ export const StockEnquiry = ({ productId, productTitle, user }: StockEnquiryProp
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold">Not sure it's in stock?</p>
           <p className="text-xs text-muted-foreground">
-            Check availability before you pay - no payment needed to ask.
+            Ask us on WhatsApp before you pay - we confirm stock first, then reply.
           </p>
         </div>
         {!open && !answer && (
@@ -113,7 +137,7 @@ export const StockEnquiry = ({ productId, productTitle, user }: StockEnquiryProp
             onClick={() => setOpen(true)}
             className="shrink-0 rounded-full bg-accent px-4 py-2 text-xs font-bold text-accent-foreground hover:opacity-90"
           >
-            Check availability
+            Ask if in stock
           </button>
         )}
       </div>
@@ -125,7 +149,7 @@ export const StockEnquiry = ({ productId, productTitle, user }: StockEnquiryProp
           {answer.status === "pending" && <Clock className="mt-0.5 h-4 w-4 shrink-0" />}
           <div className="min-w-0 flex-1">
             <p className="font-semibold">
-              {answer.status === "available" ? "In stock" : answer.status === "unavailable" ? "Out of stock" : "Checking…"}
+              {answer.status === "available" ? "In stock - confirmed" : answer.status === "unavailable" ? "Out of stock - confirmed" : "Sent - waiting for confirmation"}
             </p>
             <p className="text-xs">{answer.reply}</p>
             <button
@@ -174,7 +198,7 @@ export const StockEnquiry = ({ productId, productTitle, user }: StockEnquiryProp
               disabled={sending}
               className="flex flex-1 items-center justify-center gap-2 rounded-full bg-accent py-2.5 text-sm font-bold text-accent-foreground disabled:opacity-60"
             >
-              {sending && <Loader2 className="h-4 w-4 animate-spin" />} Ask if it's in stock
+              {sending && <Loader2 className="h-4 w-4 animate-spin" />} Send on WhatsApp
             </button>
             <button
               type="button"

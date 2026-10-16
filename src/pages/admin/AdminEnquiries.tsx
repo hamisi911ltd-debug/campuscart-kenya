@@ -86,8 +86,8 @@ const AdminEnquiries = () => {
           <div>
             <h1 className="text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-1">Stock Enquiries</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              Customers asking if an item is in stock before they pay. Kilimall items are answered automatically;
-              the rest wait here for your reply.
+              Customers asking if an item is in stock before they pay. Each one also arrives on your WhatsApp.
+              Check the stock (use "Check on Kilimall"), then mark it here - the customer sees your confirmed answer.
             </p>
           </div>
           <button

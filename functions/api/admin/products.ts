@@ -3,7 +3,7 @@
 import { OWNER_ID, ensureOwnerUser } from "../_lib/owner";
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
-import { ensureSourceTables, kilimallListingUrl, listingIdFromImages } from "../_lib/productSources";
+import { deleteProductExtras, ensureSourceTables, kilimallListingUrl, listingIdFromImages, withCardTwins } from "../_lib/productSources";
 
 interface Env {
   DB: D1Database;
@@ -232,6 +232,7 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
 
     // Delete the product from database
     await env.DB.prepare("DELETE FROM products WHERE id = ?").bind(productId).run();
+    await deleteProductExtras(env, [productId]);
 
     // Clean up images from R2 storage
     const imagesToDelete: string[] = [];
@@ -253,8 +254,8 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
       }
     }
 
-    // Delete images from R2
-    for (const key of imagesToDelete) {
+    // Delete images from R2 (including each photo's 400px card twin)
+    for (const key of withCardTwins(imagesToDelete)) {
       try {
         await env.STORAGE.delete(key);
       } catch (e) {

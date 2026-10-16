@@ -1,16 +1,18 @@
 // Cloudflare Pages Function - import ONE Kilimall product into the catalog
-// (admin-only). The admin page calls this once per selected product so each
-// request stays well inside Workers' subrequest limit (1 page fetch + up to
-// 8 image downloads).
+// (admin-only). Called once per selected product by the admin page.
 //
-// Product photos are downloaded and re-hosted on this site's own R2 bucket
-// (served at /api/images/...) instead of hotlinking Kilimall's CDN, so
-// listings don't break when Kilimall rotates image URLs.
+// Product photos are copied into our own R2 storage in two sizes (400px for
+// cards, 1200px for the product page) and served from our domain with
+// immutable, one-year caching - so pages never wait on, or break with, the
+// source site. The cover photo's width is measured and photos under 500px are
+// rejected (they'd look blurry).
 import { OWNER_ID, ensureOwnerUser } from "../_lib/owner";
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
 import { fetchKilimallHtml, parseProductPage } from "../_lib/kilimall";
 import { ensureSourceTables, kilimallListingUrl } from "../_lib/productSources";
+import { findImportedListingIds } from "../_lib/kilimallDiscover";
+import { MIN_COVER_WIDTH, copyPhotoToStorage } from "../_lib/imageStore";
 
 interface Env {
   DB: D1Database;
@@ -24,25 +26,6 @@ const VALID_CATEGORIES = new Set([
 
 const json = (body: unknown, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
-
-async function rehostImage(env: Env, listingId: string, sourceUrl: string, index: number): Promise<string | null> {
-  try {
-    const response = await fetch(sourceUrl, { headers: { Referer: "https://www.kilimall.co.ke/" } });
-    if (!response.ok || !response.body) return null;
-
-    const contentType = (response.headers.get("Content-Type") || "image/jpeg").split(";")[0];
-    if (!contentType.startsWith("image/")) return null;
-    const extension = contentType.includes("png") ? "png" : contentType.includes("webp") ? "webp" : "jpg";
-    // "o" after the index marks the photo as already compressed (see optimize-images.ts).
-    const key = `products/km-${listingId}-${index}o-${Math.random().toString(36).slice(2, 8)}.${extension}`;
-
-    await env.STORAGE.put(key, response.body, { httpMetadata: { contentType } });
-    return `/api/images/${key}`;
-  } catch (err) {
-    console.error(`Failed to rehost image ${sourceUrl}:`, err);
-    return null;
-  }
-}
 
 export async function onRequestPost(context: { env: Env; request: Request }) {
   const { env, request } = context;
@@ -68,11 +51,15 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     if (!/^\d{3,15}$/.test(listingId)) return json({ error: "Invalid Kilimall listing id" }, 400);
     if (!VALID_CATEGORIES.has(category)) return json({ error: `Unknown category "${category}"` }, 400);
 
-    // Already imported? (see kilimall-search.ts for how this is detected)
-    const existing = await env.DB.prepare("SELECT id FROM products WHERE images LIKE ? LIMIT 1")
-      .bind(`%/km-${listingId}-%`)
-      .first<{ id: string }>();
-    if (existing) return json({ error: "Already imported", id: existing.id, duplicate: true }, 409);
+    await ensureSourceTables(env);
+
+    // Already imported?
+    if ((await findImportedListingIds(env, [listingId])).has(listingId)) {
+      const existing = await env.DB.prepare("SELECT product_id FROM product_sources WHERE listing_id = ?")
+        .bind(listingId)
+        .first<{ product_id: string }>();
+      return json({ error: "Already imported", id: existing?.product_id, duplicate: true }, 409);
+    }
 
     const product = parseProductPage(await fetchKilimallHtml(`/listing/${listingId}`), listingId);
 
@@ -80,14 +67,20 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     if (!(sourcePrice > 0)) return json({ error: "Could not determine a price for this product" }, 422);
     const sellPrice = Math.round(sourcePrice * (1 + markup / 100));
 
-    const hosted = (await Promise.all(
-      product.images.map((url, i) => rehostImage(env, listingId, url, i))
-    )).filter((url): url is string => Boolean(url));
+    if (product.images.length === 0) return json({ error: "This listing has no photos" }, 422);
 
-    if (hosted.length === 0) return json({ error: "Could not download any product images" }, 502);
+    // Copy every photo into our storage (cover first - it decides acceptance).
+    const stored = (await Promise.all(
+      product.images.map((source, i) => copyPhotoToStorage(env, source, `km-${listingId}-${i}`))
+    ));
+    const cover = stored[0];
+    if (!cover) return json({ error: "Could not download the cover photo" }, 502);
+    if (cover.width !== null && cover.width < MIN_COVER_WIDTH) {
+      return json({ error: `Cover photo is only ${cover.width}px wide (needs ${MIN_COVER_WIDTH}px+) - skipped`, tooSmall: true }, 422);
+    }
+    const photoUrls = stored.filter((p): p is NonNullable<typeof p> => Boolean(p)).map((p) => p.url);
 
     await ensureOwnerUser(env);
-    await ensureSourceTables(env);
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
@@ -102,8 +95,8 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       product.description || product.title,
       category,
       sellPrice,
-      hosted[0],
-      JSON.stringify(hosted),
+      photoUrls[0],
+      JSON.stringify(photoUrls),
       10,
       now,
       now
@@ -113,8 +106,8 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     // original listing, see the margin, and re-check price/stock before buying.
     await env.DB.prepare(
       `INSERT OR REPLACE INTO product_sources
-        (product_id, source, listing_id, source_url, source_price, source_list_price, markup_percent, source_stock, in_stock, checked_at)
-       VALUES (?, 'kilimall', ?, ?, ?, ?, ?, ?, ?, ?)`
+        (product_id, source, listing_id, source_url, source_price, source_list_price, markup_percent, source_stock, in_stock, checked_at, image_width)
+       VALUES (?, 'kilimall', ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       id,
       listingId,
@@ -124,10 +117,11 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       markup,
       product.stock,
       product.inStock === null ? null : product.inStock ? 1 : 0,
-      now
+      now,
+      cover.width
     ).run();
 
-    return json({ success: true, id, title: product.title, price: sellPrice, images: hosted.length }, 201);
+    return json({ success: true, id, title: product.title, price: sellPrice, images: photoUrls.length, coverWidth: cover.width }, 201);
   } catch (error) {
     console.error("Kilimall import error:", error);
     return json({ error: error instanceof Error ? error.message : "Import failed" }, 502);

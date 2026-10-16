@@ -1,6 +1,6 @@
 import { Zap, Ticket, ChevronRight, ThumbsUp } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
 import { ProductCard } from "@/components/ProductCard";
@@ -14,7 +14,8 @@ import { notificationService } from "@/services/notificationService";
 import { useShop } from "@/store/shop";
 import { useSEO, SITE_URL } from "@/hooks/useSEO";
 import { Pagination } from "@/components/Pagination";
-import { categories, getProducts, getProductsPage, getProductsSync, transformDatabaseProduct, type ProductWithCategory } from "@/data/products";
+import { categories, getProductsPage, getProductsSync, transformDatabaseProduct, DEFAULT_PAGE_SIZE, type ProductWithCategory } from "@/data/products";
+import { sizedImage, cdnImgProps } from "@/lib/imageUrl";
 
 const VOUCHERS = [
   { code: "WELCOME50", label: "KES 50 OFF", sub: "New shoppers" },
@@ -31,25 +32,30 @@ const Index = () => {
   const [showSignInModal, setShowSignInModal] = useState(false);
   const [showCouponModal, setShowCouponModal] = useState(false);
   const [showLoginCelebration, setShowLoginCelebration] = useState(false);
-  const [hotDeals, setHotDeals] = useState<ProductWithCategory[]>([]);
   const [flashDeals, setFlashDeals] = useState<ProductWithCategory[]>([]);
-  const [categoryImageSample, setCategoryImageSample] = useState<ProductWithCategory[]>([]);
+  // ONE category-mixed request feeds the Hot Deals cards, the first page of
+  // "More to love" and the per-category photos (these used to be three
+  // separate requests). The URL is also <link rel="preload">ed in index.html so
+  // it starts downloading before this code has even loaded - keep them identical.
+  const [homeMixed, setHomeMixed] = useState<ProductWithCategory[]>([]);
+
+  const loadHome = useCallback(async () => {
+    try {
+      const res = await fetch('/api/products?sort=mixed&limit=100');
+      if (res.ok) {
+        const data = await res.json();
+        setHomeMixed(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
+      }
+    } catch (e) {
+      console.error('Error fetching products:', e);
+    }
+  }, []);
+
+  useEffect(() => { loadHome(); }, [loadHome]);
 
   // Hot Deals cards — a category-mixed pool; each card flips to a new product.
-  useEffect(() => {
-    const fetchHotDeals = async () => {
-      try {
-        const res = await fetch('/api/products?sort=mixed&limit=40', { headers: { 'Cache-Control': 'no-cache' } });
-        if (res.ok) {
-          const data = await res.json();
-          setHotDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
-        }
-      } catch (e) {
-        console.error('Error fetching hot deals:', e);
-      }
-    };
-    fetchHotDeals();
-  }, []);
+  const hotDeals = useMemo(() => homeMixed.slice(0, 40), [homeMixed]);
+  const categoryImageSample = homeMixed;
 
   // Flash deals = trending products, fetched broadly enough to spread
   // across several categories so they can be shown as one batch per
@@ -57,7 +63,7 @@ const Index = () => {
   useEffect(() => {
     const fetchFlash = async () => {
       try {
-        const res = await fetch('/api/products?sort=trending&limit=48', { headers: { 'Cache-Control': 'no-cache' } });
+        const res = await fetch('/api/products?sort=trending&limit=48');
         if (res.ok) {
           const data = await res.json();
           setFlashDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
@@ -81,16 +87,28 @@ const Index = () => {
       .filter((group) => group.items.length > 0);
   }, [flashDeals]);
 
-  // "More to love" feed — one page at a time (see Pagination below) rather
-  // than one long scrolling grid, refreshed on focus/visibility so a page
-  // left open in a background tab still reflects newly added products.
+  // "More to love" feed — one page at a time (see Pagination below). Page 1
+  // comes straight from the shared request above; later pages are fetched when
+  // asked for. Refreshed on focus/visibility so a page left open in a
+  // background tab still reflects newly added products.
+  useEffect(() => {
+    if (productsPage !== 1) return;
+    if (homeMixed.length === 0) return;
+    setProducts(homeMixed.slice(0, DEFAULT_PAGE_SIZE));
+    setProductsHasMore(homeMixed.length > DEFAULT_PAGE_SIZE);
+  }, [productsPage, homeMixed]);
+
   useEffect(() => {
     const refreshProductList = async () => {
+      if (productsPage === 1) {
+        await loadHome();
+        return;
+      }
       const result = await getProductsPage({ sort: "mixed" }, productsPage);
       setProducts(result.items);
       setProductsHasMore(result.hasMore);
     };
-    refreshProductList();
+    if (productsPage !== 1) refreshProductList();
 
     const handleVisibilityChange = () => { if (!document.hidden) refreshProductList(); };
     window.addEventListener('storage', refreshProductList);
@@ -101,21 +119,14 @@ const Index = () => {
       window.removeEventListener('focus', refreshProductList);
       document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
-  }, [productsPage]);
-
-  // A broader (unpaginated) sample purely for deriving one real photo per
-  // category for the strip below — independent of whichever page of "More
-  // to love" happens to be showing.
-  useEffect(() => {
-    getProducts({ limit: 100 }).then(setCategoryImageSample);
-  }, []);
+  }, [productsPage, loadHome]);
 
   // Real photos of actual in-stock items, one per category. Falls back to
   // the generic illustration for a category with nothing in stock yet.
   const categoryImages = useMemo(() => {
     const map: Record<string, string> = {};
     for (const p of categoryImageSample) {
-      if (!map[p.category] && p.image && p.image !== "/placeholder.svg") map[p.category] = p.image;
+      if (!map[p.category] && p.image && p.image !== "/placeholder.svg") map[p.category] = sizedImage(p.image, 400);
     }
     return map;
   }, [categoryImageSample]);
@@ -221,7 +232,9 @@ const Index = () => {
                       <img
                         src={categoryImages[c.slug] || c.img}
                         alt={c.name}
-                        loading="lazy"
+                        width={64}
+                        height={64}
+                        {...cdnImgProps}
                         className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
                       />
                     </div>
@@ -321,8 +334,8 @@ const Index = () => {
           ) : (
             <>
               <div className="grid grid-cols-3 gap-1.5 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
-                {products.map((p) => (
-                  <ProductCard key={p.id} p={p} />
+                {products.map((p, i) => (
+                  <ProductCard key={p.id} p={p} priority={i < 6} />
                 ))}
               </div>
               <Pagination page={productsPage} hasMore={productsHasMore} onChange={setProductsPage} />

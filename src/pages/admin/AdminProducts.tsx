@@ -71,9 +71,10 @@ const AdminProducts = () => {
     fetchProducts();
   }, []);
 
-  // Imported products saved before photo compression existed: still heavy.
+  // Imported products whose photos aren't yet stored in the two fast sizes
+  // (400px cards / 1200px product page) in our own storage.
   const needsOptimizing = products.filter(
-    (p) => p.src_listing_id && !/\/km-\d+-\d+o-/.test(p.images || '')
+    (p) => p.src_listing_id && !(p.images || '').includes('-1200-')
   );
 
   // Re-downloads each product's photos in a compressed form, one product at
@@ -95,8 +96,8 @@ const AdminProducts = () => {
       setOptimizing({ done: i + 1, total: queue.length });
     }
     setOptimizing(null);
-    if (failed === 0) toast.success(`Optimized photos on ${ok} product${ok === 1 ? '' : 's'}`);
-    else toast.warning(`Optimized ${ok}, ${failed} couldn't be re-downloaded (listing may be gone)`);
+    if (failed === 0) toast.success(`Photos optimized on ${ok} product${ok === 1 ? '' : 's'}`);
+    else toast.warning(`Optimized ${ok}, ${failed} couldn't be updated (the Kilimall listing may be gone)`);
     fetchProducts();
   };
 
@@ -348,13 +349,13 @@ const AdminProducts = () => {
                 onClick={handleOptimizeImages}
                 disabled={!!optimizing}
                 className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-green-600 text-white text-xs md:text-sm font-bold hover:bg-green-700 transition disabled:opacity-70"
-                title="Re-download heavy photos in a much smaller size so pages load fast"
+                title="Copy photos into fast storage in card + page sizes so pages open quickly"
               >
                 <Images className="h-4 w-4" />
                 <span>
                   {optimizing
-                    ? `Optimizing ${optimizing.done}/${optimizing.total}…`
-                    : `Speed up photos (${needsOptimizing.length})`}
+                    ? `Updating ${optimizing.done}/${optimizing.total}…`
+                    : `Make photos faster (${needsOptimizing.length})`}
                 </span>
               </button>
             )}

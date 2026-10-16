@@ -3,6 +3,7 @@
 // the ids the admin selected on the Products page.
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
+import { deleteProductExtras, withCardTwins } from "../_lib/productSources";
 
 interface Env {
   DB: D1Database;
@@ -62,8 +63,9 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       }
     }
 
-    for (let i = 0; i < keysToDelete.length; i += 1000) {
-      const batch = keysToDelete.slice(i, i + 1000);
+    const allKeys = withCardTwins(keysToDelete);
+    for (let i = 0; i < allKeys.length; i += 1000) {
+      const batch = allKeys.slice(i, i + 1000);
       try {
         await env.STORAGE.delete(batch);
       } catch (e) {
@@ -76,12 +78,13 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     // a product that was ever ordered doesn't fail outright.
     await env.DB.prepare(`DELETE FROM order_items WHERE product_id IN (${placeholders})`).bind(...ids).run();
     await env.DB.prepare(`DELETE FROM products WHERE id IN (${placeholders})`).bind(...ids).run();
+    await deleteProductExtras(env, ids);
 
     return new Response(JSON.stringify({
       success: true,
       message: `Deleted ${results?.length ?? 0} product(s)`,
       deleted: results?.length ?? 0,
-      imagesDeleted: keysToDelete.length,
+      imagesDeleted: allKeys.length,
     }), {
       headers: { "Content-Type": "application/json" },
     });

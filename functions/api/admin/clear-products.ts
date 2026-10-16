@@ -4,6 +4,7 @@
 // request.
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
+import { deleteProductExtras, withCardTwins } from "../_lib/productSources";
 
 interface Env {
   DB: D1Database;
@@ -53,9 +54,12 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       }
     }
 
+    // Include the 400px card twin of every stored photo.
+    const allKeys = withCardTwins(keysToDelete);
+
     // R2 delete accepts up to 1000 keys per call.
-    for (let i = 0; i < keysToDelete.length; i += 1000) {
-      const batch = keysToDelete.slice(i, i + 1000);
+    for (let i = 0; i < allKeys.length; i += 1000) {
+      const batch = allKeys.slice(i, i + 1000);
       try {
         await env.STORAGE.delete(batch);
       } catch (e) {
@@ -76,11 +80,14 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     await env.DB.prepare("DELETE FROM products").run();
 
+    // Forget where each product came from, so Kilimall items can be imported again.
+    await deleteProductExtras(env);
+
     return new Response(JSON.stringify({
       success: true,
-      message: `Deleted ${results?.length ?? 0} product(s) and ${keysToDelete.length} image(s)`,
+      message: `Deleted ${results?.length ?? 0} product(s) and ${allKeys.length} image(s)`,
       productsDeleted: results?.length ?? 0,
-      imagesDeleted: keysToDelete.length,
+      imagesDeleted: allKeys.length,
     }), {
       headers: { "Content-Type": "application/json" },
     });

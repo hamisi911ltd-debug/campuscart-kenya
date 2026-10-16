@@ -101,11 +101,25 @@ const CategoryPage = () => {
           recognizable; object-cover centers the interesting part either way. */}
       {cat && (
         <div className="relative mb-4 h-28 overflow-hidden rounded-2xl shadow-card sm:h-36 md:h-48 lg:h-60">
+          {/* Wide, purpose-made banner photo per category (public/banners). The
+              old version stretched a small product thumbnail across the whole
+              width, which is why it looked pixelated. */}
           <img
-            src={items[0]?.image || catImages[slug] || cat.img}
+            src={`/banners/${slug}.webp`}
+            srcSet={`/banners/${slug}-sm.webp 720w, /banners/${slug}.webp 1600w`}
+            sizes="100vw"
             alt=""
             aria-hidden="true"
+            fetchPriority="high"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover object-center"
+            onError={(e) => {
+              // No banner for this slug: fall back to the category illustration.
+              const img = e.currentTarget;
+              img.onerror = null;
+              img.removeAttribute("srcset");
+              img.src = catImages[slug] || cat.img;
+            }}
           />
           <div className="absolute inset-0 bg-gradient-to-r from-primary/95 via-primary/60 to-primary/10" />
           <div className="absolute inset-0 flex flex-col justify-center px-5 md:px-8">

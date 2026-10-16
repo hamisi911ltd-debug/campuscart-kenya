@@ -1,9 +1,10 @@
 // Helpers shared by the Kilimall search and "Discover" endpoints.
+import { ensureSourceTables } from "./productSources";
 
 /**
- * Which of these listings were already imported? Imported images are stored
- * as products/km-<listingId>-<n>-<rand>.<ext>, so a LIKE on products.images
- * finds them without any schema change.
+ * Which of these listings were already imported? Products imported now have a
+ * product_sources row; ones imported earlier are recognised by their R2 photo
+ * names (products/km-<listingId>-<n>-<rand>.<ext>).
  */
 export async function findImportedListingIds(
   env: { DB: D1Database },
@@ -12,6 +13,14 @@ export async function findImportedListingIds(
 ): Promise<Set<string>> {
   const imported = new Set<string>();
   if (listingIds.length === 0) return imported;
+
+  await ensureSourceTables(env);
+  const marks = listingIds.map(() => "?").join(",");
+  const tracked = await env.DB.prepare(`SELECT listing_id FROM product_sources WHERE listing_id IN (${marks})`)
+    .bind(...listingIds)
+    .all<{ listing_id: string }>();
+  for (const row of tracked.results || []) imported.add(String(row.listing_id));
+
   const clauses = listingIds.map(() => "images LIKE ?").join(" OR ");
   const { results } = await env.DB.prepare(`SELECT images FROM products WHERE ${clauses}`)
     .bind(...listingIds.map((id) => `%/${prefix}-${id}-%`))

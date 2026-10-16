@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Flame } from "lucide-react";
 import type { ProductWithCategory } from "@/data/products";
 import { handleImageError } from "@/lib/imageFallback";
+import { sizedImage, cdnImgProps } from "@/lib/imageUrl";
 
 const SLOTS = 3;
 const FLIP_EVERY_MS = 3200;
@@ -73,10 +74,10 @@ const Face = ({ p, back }: { p?: ProductWithCategory; back?: boolean }) => {
       style={{ backfaceVisibility: "hidden", transform: back ? "rotateY(180deg)" : undefined }}
     >
       <img
-        src={p.image}
+        src={sizedImage(p.image, 400)}
         alt={p.title}
-        loading="lazy"
-        decoding="async"
+        loading="eager"
+        {...cdnImgProps}
         className="h-full w-full object-cover"
         onError={handleImageError}
       />
@@ -143,7 +144,7 @@ export const HotDealsCarousel = ({ products }: { products: ProductWithCategory[]
       }
       if (!next) return;
 
-      await preload(next.image);
+      await preload(sizedImage(next.image, 400));
 
       const slot = slotsRef.current[index];
       const hidden = ((slot.turns + 1) % 2) as 0 | 1;

@@ -171,7 +171,7 @@ export function parseProductPage(html: string, listingId: string): KilimallProdu
   // Gallery: de-duplicated, capped so a single import stays within Workers'
   // subrequest limit (1 page fetch + up to 8 image downloads).
   const gallery: string[] = Array.isArray(detail.imageUrls) ? detail.imageUrls : [];
-  const images = [...new Set(gallery.map((u: string) => cleanImageUrl(u, 720)).filter(Boolean))].slice(0, 8);
+  const images = [...new Set(gallery.map((u: string) => cleanImageUrl(u, 720)).filter(Boolean))].slice(0, 6);
   if (images.length === 0 && detail.imageUrl) images.push(cleanImageUrl(detail.imageUrl, 720));
 
   // Price of the selected variant.

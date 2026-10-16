@@ -52,7 +52,41 @@ export async function ensureSourceTables(env: DbEnv): Promise<void> {
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_enquiries_product ON product_enquiries(product_id)`),
     env.DB.prepare(`CREATE INDEX IF NOT EXISTS idx_enquiries_phone ON product_enquiries(phone, created_at)`),
   ]);
+  // Width (px) of the stored cover photo. ALTER fails harmlessly if it's already there.
+  try {
+    await env.DB.prepare("ALTER TABLE product_sources ADD COLUMN image_width INTEGER").run();
+  } catch { /* column already exists */ }
   ensured = true;
+}
+
+/**
+ * Stored photos come in pairs (…-1200-… for the product page, …-400-… for
+ * cards) but only the 1200 URL is saved on the product. When deleting, add the
+ * 400 twin of every 1200 key so it isn't left behind in storage.
+ */
+export function withCardTwins(keys: string[]): string[] {
+  const all = new Set(keys);
+  for (const key of keys) if (key.includes("-1200-")) all.add(key.replace("-1200-", "-400-"));
+  return [...all];
+}
+
+/**
+ * Removes the tracking rows (original listing, cost, enquiries) for deleted
+ * products. Without this a deleted Kilimall product would still count as
+ * "already imported" and could not be imported again. Pass no ids to clear
+ * everything.
+ */
+export async function deleteProductExtras(env: DbEnv, productIds?: string[]): Promise<void> {
+  await ensureSourceTables(env);
+  if (!productIds) {
+    await env.DB.prepare("DELETE FROM product_sources").run();
+    await env.DB.prepare("DELETE FROM product_enquiries").run();
+    return;
+  }
+  if (productIds.length === 0) return;
+  const marks = productIds.map(() => "?").join(",");
+  await env.DB.prepare(`DELETE FROM product_sources WHERE product_id IN (${marks})`).bind(...productIds).run();
+  await env.DB.prepare(`DELETE FROM product_enquiries WHERE product_id IN (${marks})`).bind(...productIds).run();
 }
 
 export const kilimallListingUrl = (listingId: string) => `https://www.kilimall.co.ke/listing/${listingId}`;
