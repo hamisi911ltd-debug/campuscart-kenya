@@ -4,6 +4,7 @@ import { Search, Filter, CheckCircle, XCircle, Eye, Trash2, Pencil, Plus, Upload
 import AdminLayout from "@/components/admin/AdminLayout";
 import { ProductSourcePanel } from "@/components/admin/ProductSourcePanel";
 import { ShareProduct } from "@/components/ShareProduct";
+import { categories as storeCategories } from "@/data/products";
 import { toast } from "sonner";
 import { adminGet, adminPost, adminPut, adminDelete } from "@/utils/adminApi";
 
@@ -44,6 +45,7 @@ const AdminProducts = () => {
   const [dedupeChecking, setDedupeChecking] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkDeleting, setBulkDeleting] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [optimizing, setOptimizing] = useState<{ done: number; total: number } | null>(null);
   const [tidying, setTidying] = useState(false);
   const [repricing, setRepricing] = useState<{ done: number; total: number } | null>(null);
@@ -259,6 +261,45 @@ const AdminProducts = () => {
       if (allSelected) return new Set();
       return new Set(filteredProducts.map(p => p.id));
     });
+  };
+
+  // "Select…" menu: pick a whole group of the products currently shown.
+  const selectBy = (mode: string) => {
+    if (mode === 'none') { setSelectedIds(new Set()); return; }
+    const pool = filteredProducts;
+    let match: typeof pool = [];
+    if (mode === 'all') match = pool;
+    else if (mode === 'approved') match = pool.filter((p) => p.is_available);
+    else if (mode === 'rejected') match = pool.filter((p) => !p.is_available);
+    else if (mode.startsWith('cat:')) match = pool.filter((p) => p.category === mode.slice(4));
+    setSelectedIds(new Set(match.map((p) => p.id)));
+    if (match.length === 0) toast.info('No products match that');
+  };
+
+  // Approve / reject / move the selected products in one go.
+  const handleBulkUpdate = async (action: 'approve' | 'reject' | 'category', category?: string) => {
+    if (selectedIds.size === 0) return;
+    const ids = Array.from(selectedIds);
+    setBulkBusy(true);
+    try {
+      const res = await adminPost('/api/admin/bulk-update', { ids, action, category });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Update failed');
+      setProducts((prev) => prev.map((p) => {
+        if (!selectedIds.has(p.id)) return p;
+        if (action === 'category') return { ...p, category: category! };
+        return { ...p, is_available: action === 'approve' };
+      }));
+      toast.success(
+        action === 'approve' ? `${data.updated} product(s) approved`
+          : action === 'reject' ? `${data.updated} product(s) hidden from the store`
+            : `${data.updated} product(s) moved`
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Update failed');
+    } finally {
+      setBulkBusy(false);
+    }
   };
 
   const handleBulkDelete = async () => {
@@ -504,27 +545,76 @@ const AdminProducts = () => {
 
         {/* Bulk selection bar */}
         {filteredProducts.length > 0 && (
-          <div className="flex items-center justify-between gap-3 mb-3 md:mb-4">
-            <button
-              onClick={toggleSelectAllFiltered}
-              className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-foreground hover:text-accent"
-            >
-              {filteredProducts.every(p => selectedIds.has(p.id)) ? (
-                <CheckSquare className="h-4 w-4" />
-              ) : (
-                <Square className="h-4 w-4" />
-              )}
-              {selectedIds.size > 0 ? `${selectedIds.size} selected` : 'Select all'}
-            </button>
-            {selectedIds.size > 0 && (
+          <div className="mb-3 md:mb-4 rounded-xl border border-border bg-card p-3 shadow-sm">
+            <div className="flex flex-wrap items-center gap-2 md:gap-3">
               <button
-                onClick={handleBulkDelete}
-                disabled={bulkDeleting}
-                className="flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+                onClick={toggleSelectAllFiltered}
+                className="flex items-center gap-1.5 text-xs md:text-sm font-semibold text-foreground hover:text-accent"
               >
-                <Trash2 className="h-4 w-4" />
-                {bulkDeleting ? 'Deleting…' : `Delete Selected (${selectedIds.size})`}
+                {filteredProducts.every(p => selectedIds.has(p.id)) ? (
+                  <CheckSquare className="h-4 w-4" />
+                ) : (
+                  <Square className="h-4 w-4" />
+                )}
+                {selectedIds.size > 0 ? `${selectedIds.size} of ${filteredProducts.length} selected` : `Select all (${filteredProducts.length})`}
               </button>
+
+              {/* Select a whole group */}
+              <select
+                value=""
+                onChange={(e) => { selectBy(e.target.value); e.target.value = ''; }}
+                className="rounded-lg border border-border bg-background px-2 py-1.5 text-xs md:text-sm"
+                aria-label="Select products by group"
+              >
+                <option value="">Select…</option>
+                <option value="all">All products ({filteredProducts.length})</option>
+                <option value="approved">Approved only ({filteredProducts.filter((p) => p.is_available).length})</option>
+                <option value="rejected">Rejected only ({filteredProducts.filter((p) => !p.is_available).length})</option>
+                <optgroup label="By category">
+                  {storeCategories
+                    .map((c) => ({ ...c, n: filteredProducts.filter((p) => p.category === c.slug).length }))
+                    .filter((c) => c.n > 0)
+                    .map((c) => <option key={c.slug} value={`cat:${c.slug}`}>{c.name} ({c.n})</option>)}
+                </optgroup>
+                <option value="none">Clear selection</option>
+              </select>
+            </div>
+
+            {selectedIds.size > 0 && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-border pt-3">
+                <button
+                  onClick={() => handleBulkUpdate('approve')}
+                  disabled={bulkBusy}
+                  className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg bg-green-600 text-white text-xs md:text-sm font-bold hover:bg-green-700 transition disabled:opacity-50"
+                >
+                  <CheckCircle className="h-4 w-4" /> Approve ({selectedIds.size})
+                </button>
+                <button
+                  onClick={() => handleBulkUpdate('reject')}
+                  disabled={bulkBusy}
+                  className="flex items-center gap-1.5 px-3 md:px-4 py-2 rounded-lg bg-amber-600 text-white text-xs md:text-sm font-bold hover:bg-amber-700 transition disabled:opacity-50"
+                >
+                  <XCircle className="h-4 w-4" /> Hide ({selectedIds.size})
+                </button>
+                <select
+                  value=""
+                  disabled={bulkBusy}
+                  onChange={(e) => { if (e.target.value) handleBulkUpdate('category', e.target.value); e.target.value = ''; }}
+                  className="rounded-lg border border-border bg-background px-2 py-2 text-xs md:text-sm font-semibold"
+                  aria-label="Move selected products to a category"
+                >
+                  <option value="">Move to category…</option>
+                  {storeCategories.map((c) => <option key={c.slug} value={c.slug}>{c.name}</option>)}
+                </select>
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting || bulkBusy}
+                  className="ml-auto flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-2 rounded-lg md:rounded-xl bg-red-600 text-white text-xs md:text-sm font-bold hover:bg-red-700 transition disabled:opacity-50"
+                >
+                  <Trash2 className="h-4 w-4" />
+                  {bulkDeleting ? 'Deleting…' : `Delete (${selectedIds.size})`}
+                </button>
+              </div>
             )}
           </div>
         )}

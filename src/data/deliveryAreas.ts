@@ -1,20 +1,10 @@
-// Counties CampusMart delivers to. Orders are fulfilled through Kilimall /
-// Jumia-style nationwide courier networks, so delivery is offered per county
-// (with the customer giving the town/area and street or landmark).
-//
-// To stop delivering to a county, remove it here - checkout, the order
-// record and the admin WhatsApp message all read from this one list.
-export const DELIVERY_COUNTIES = [
-  "Nairobi", "Mombasa", "Kiambu", "Kajiado", "Machakos", "Nakuru", "Kisumu", "Uasin Gishu",
-  "Kwale", "Kilifi", "Tana River", "Lamu", "Taita-Taveta",
-  "Garissa", "Wajir", "Mandera", "Marsabit", "Isiolo",
-  "Meru", "Tharaka-Nithi", "Embu", "Kitui", "Makueni",
-  "Nyandarua", "Nyeri", "Kirinyaga", "Murang'a",
-  "Turkana", "West Pokot", "Samburu", "Trans-Nzoia", "Elgeyo-Marakwet", "Nandi", "Baringo", "Laikipia",
-  "Narok", "Kericho", "Bomet",
-  "Kakamega", "Vihiga", "Bungoma", "Busia",
-  "Siaya", "Homa Bay", "Migori", "Kisii", "Nyamira",
-] as const;
+// Where CampusMart delivers. Delivery is within Nairobi and Mombasa only.
+// Checkout offers just these, and the server rejects any other county
+// (functions/api/checkout.ts keeps its own copy of this list - keep them in sync).
+export const DELIVERY_COUNTIES = ["Nairobi", "Mombasa"] as const;
+
+/** Shown wherever a shopper might wonder if we reach them. */
+export const DELIVERY_NOTICE = "We deliver within Nairobi and Mombasa only.";
 
 // Flat delivery fee (KES) charged on every order. Keep in sync with
 // DELIVERY_FEE in functions/api/checkout.ts.

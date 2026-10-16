@@ -15,6 +15,10 @@ interface Env {
 // src/data/deliveryAreas.ts (the frontend can't import from functions/).
 const DELIVERY_FEE = 129;
 
+// Delivery is within Nairobi and Mombasa only. Keep in sync with DELIVERY_COUNTIES
+// in src/data/deliveryAreas.ts.
+const DELIVERY_COUNTIES = ["Nairobi", "Mombasa"];
+
 const ADMIN_PHONE_E164 = "+254108254465";
 const ADMIN_PHONE_WA = "254108254465";
 const SITE_URL = "https://campusmart.co.ke";
@@ -51,6 +55,13 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       name: 'Guest',
       phone: body.buyer_phone || 'N/A'
     };
+
+    if (!body.county || !DELIVERY_COUNTIES.includes(body.county)) {
+      return new Response(JSON.stringify({ error: "We deliver within Nairobi and Mombasa only." }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
 
     // The phone entered at checkout is the one the M-Pesa request is sent
     // to, so it wins over whatever is on the account profile.

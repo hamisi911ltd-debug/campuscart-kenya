@@ -5,7 +5,7 @@ import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
-import { DELIVERY_COUNTIES, DELIVERY_FEE, isValidKenyanPhone } from "@/data/deliveryAreas";
+import { DELIVERY_COUNTIES, DELIVERY_FEE, DELIVERY_NOTICE, isValidKenyanPhone } from "@/data/deliveryAreas";
 
 const DETAILS_KEY = "campusmart_delivery_details";
 const fieldClass = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40";
@@ -49,7 +49,8 @@ const CheckoutPage = () => {
   const [recipientName, setRecipientName] = useState<string>(saved.recipientName || user?.name || "");
   const [phone, setPhone] = useState<string>(saved.phone || user?.phone || "");
   const [altPhone, setAltPhone] = useState<string>(saved.altPhone || "");
-  const [county, setCounty] = useState<string>(saved.county || "");
+  // A county saved from an earlier order that we no longer deliver to is dropped.
+  const [county, setCounty] = useState<string>((DELIVERY_COUNTIES as readonly string[]).includes(saved.county) ? saved.county : "");
   const [town, setTown] = useState<string>(saved.town || "");
   const [address, setAddress] = useState<string>(saved.address || "");
   const [deliveryNote, setDeliveryNote] = useState("");
@@ -147,7 +148,7 @@ const CheckoutPage = () => {
       return;
     }
     if (!county) {
-      toast.error("Choose the county we're delivering to");
+      toast.error(DELIVERY_NOTICE);
       return;
     }
 
@@ -270,7 +271,8 @@ const CheckoutPage = () => {
           <div className="space-y-3 lg:space-y-4 overflow-hidden">
             {/* Delivery details */}
             <div className="rounded-lg lg:rounded-xl bg-card p-3 lg:p-4 shadow-card">
-              <h2 className="text-sm lg:text-base font-bold mb-2 lg:mb-3">Delivery Details</h2>
+              <h2 className="text-sm lg:text-base font-bold mb-1">Delivery Details</h2>
+              <p className="mb-2 lg:mb-3 rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-semibold text-accent">{DELIVERY_NOTICE}</p>
               <div className="grid gap-2.5 sm:grid-cols-2">
                 <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
                   Full name of person receiving the order

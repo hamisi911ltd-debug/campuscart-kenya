@@ -4,6 +4,7 @@ import { findProduct, products, categories } from "@/data/products";
 import { ProductCard } from "@/components/ProductCard";
 import { SignInModal } from "@/components/SignInModal";
 import { sizedImage } from "@/lib/imageUrl";
+import { DELIVERY_NOTICE } from "@/data/deliveryAreas";
 import { LazyImage } from "@/components/LazyImage";
 import { ShareProduct } from "@/components/ShareProduct";
 import { useShop } from "@/store/shop";
@@ -401,6 +402,10 @@ const ProductPage = () => {
               Add to cart
             </button>
           </div>
+
+          <p className="flex items-center gap-1.5 text-xs font-semibold text-muted-foreground">
+            <Truck className="h-3.5 w-3.5" /> {DELIVERY_NOTICE}
+          </p>
 
           <ShareProduct id={p.id} title={p.title} price={p.price} image={p.image} />
         </div>
