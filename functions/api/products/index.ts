@@ -40,8 +40,23 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
       params.push(`%${search}%`, `%${search}%`);
     }
 
+    // "mixed": interleave categories so a page shows a varied spread (one
+    // product from each category in turn) instead of whichever category
+    // was imported most recently. Within a category products are ordered
+    // by id (a UUID, so effectively random but stable), which keeps
+    // pagination consistent between requests.
+    const mixed = sort === "mixed";
+    if (mixed) {
+      query = `SELECT * FROM (
+        SELECT *, ROW_NUMBER() OVER (PARTITION BY category ORDER BY id) AS mix_rank
+        FROM (${query})
+      ) ORDER BY mix_rank, category, id`;
+    }
+
     // Sort order
-    switch (sort) {
+    switch (mixed ? "none" : sort) {
+      case "none":
+        break;
       case "trending":
         // Trending: High rating + many reviews
         query += " ORDER BY (rating * reviews_count) DESC, created_at DESC";

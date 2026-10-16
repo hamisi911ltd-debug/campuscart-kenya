@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { ArrowLeft, Search, Loader2, CheckCircle2, XCircle, Download, Star } from "lucide-react";
+import { ArrowLeft, Search, Loader2, CheckCircle2, XCircle, Download, Star, Shuffle } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminPost } from "@/utils/adminApi";
 import { toast } from "sonner";
@@ -28,6 +28,8 @@ interface KilimallItem {
   rating: number;
   reviews: number;
   alreadyImported: boolean;
+  /** Set by "Discover mix" - the store category this item belongs in. */
+  category?: string;
 }
 
 type ImportState = { status: "pending" | "running" | "done" | "failed"; message?: string };
@@ -43,6 +45,7 @@ const AdminKilimallImport = () => {
   const [page, setPage] = useState(1);
   const [searching, setSearching] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [discovered, setDiscovered] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [progress, setProgress] = useState<Record<string, ImportState>>({});
   const [importing, setImporting] = useState(false);
@@ -74,6 +77,26 @@ const AdminKilimallImport = () => {
     }
   };
 
+  // Random, varied mix across every category - each run is different.
+  const runDiscover = async () => {
+    setSearching(true);
+    try {
+      const res = await adminPost("/api/admin/kilimall-discover", { perCategory: 5 });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Discover failed");
+      setItems(data.items as KilimallItem[]);
+      setPage(1);
+      setSearched(true);
+      setDiscovered(true);
+      setSelected(new Set());
+      setProgress({});
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Discover failed");
+    } finally {
+      setSearching(false);
+    }
+  };
+
   const toggle = (id: string) =>
     setSelected((prev) => {
       const next = new Set(prev);
@@ -97,7 +120,7 @@ const AdminKilimallImport = () => {
       try {
         const res = await adminPost("/api/admin/kilimall-import", {
           listingId: item.listingId,
-          category,
+          category: item.category || category,
           markupPercent: markup,
           fallbackPrice: item.price,
         });
@@ -139,7 +162,7 @@ const AdminKilimallImport = () => {
 
         <div className="bg-white dark:bg-gray-800 rounded-2xl p-5 lg:p-6 shadow-lg border border-gray-200 dark:border-gray-700 mb-6 space-y-4">
           <form
-            onSubmit={(e) => { e.preventDefault(); runSearch(1, false); }}
+            onSubmit={(e) => { e.preventDefault(); setDiscovered(false); runSearch(1, false); }}
             className="grid gap-3 md:grid-cols-[1fr_1fr_auto]"
           >
             <input
@@ -163,9 +186,24 @@ const AdminKilimallImport = () => {
             </button>
           </form>
 
+          <div className="flex flex-col gap-2 rounded-xl border border-dashed border-primary/50 bg-primary/5 p-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="font-bold">Not sure what to add?</span> Pull a random mix of general products from every
+              category - different each time. Each one is filed under its own category.
+            </p>
+            <button
+              type="button"
+              onClick={runDiscover}
+              disabled={searching || importing}
+              className="flex shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-2.5 text-sm font-bold text-accent-foreground transition hover:opacity-90 disabled:opacity-50"
+            >
+              {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Shuffle className="h-4 w-4" />} Discover random mix
+            </button>
+          </div>
+
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
-              Category for imported products
+              Category for searched products {discovered && "(ignored for Discover)"}
               <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
@@ -226,6 +264,11 @@ const AdminKilimallImport = () => {
                   >
                     <img src={item.image} alt="" loading="lazy" className="aspect-square w-full object-cover bg-secondary" />
                     {isSelected && <CheckCircle2 className="absolute right-2 top-2 h-6 w-6 rounded-full bg-white text-primary" />}
+                    {item.category && !item.alreadyImported && (
+                      <span className="absolute left-2 top-2 rounded bg-black/60 px-2 py-0.5 text-[10px] font-bold capitalize text-white">
+                        {CATEGORIES.find((c) => c.slug === item.category)?.name ?? item.category}
+                      </span>
+                    )}
                     {item.alreadyImported && (
                       <span className="absolute left-2 top-2 rounded bg-green-600 px-2 py-0.5 text-[10px] font-bold text-white">Imported</span>
                     )}
@@ -256,7 +299,7 @@ const AdminKilimallImport = () => {
               })}
             </div>
 
-            {items.length > 0 && (
+            {items.length > 0 && !discovered && (
               <div className="mt-6 flex justify-center">
                 <button
                   onClick={() => runSearch(page + 1, true)}

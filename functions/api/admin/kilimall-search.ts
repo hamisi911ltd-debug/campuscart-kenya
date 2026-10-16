@@ -5,6 +5,7 @@
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
 import { buildListingUrl, fetchKilimallHtml, parseListingPage } from "../_lib/kilimall";
+import { findImportedListingIds } from "../_lib/kilimallDiscover";
 
 interface Env {
   DB: D1Database;
@@ -35,22 +36,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     }
 
     const items = parseListingPage(await fetchKilimallHtml(pageUrl));
-
-    // Flag products already imported so the admin doesn't create duplicates.
-    // Imported images are stored as products/km-<listingId>-<n>-<rand>.<ext>,
-    // which lets us detect them without any schema change.
-    const imported = new Set<string>();
-    if (items.length > 0) {
-      const clauses = items.map(() => "images LIKE ?").join(" OR ");
-      const { results } = await env.DB.prepare(`SELECT images FROM products WHERE ${clauses}`)
-        .bind(...items.map((item) => `%/km-${item.listingId}-%`))
-        .all<{ images: string | null }>();
-      for (const row of results || []) {
-        for (const item of items) {
-          if (row.images && row.images.includes(`/km-${item.listingId}-`)) imported.add(item.listingId);
-        }
-      }
-    }
+    const imported = await findImportedListingIds(env, items.map((item) => item.listingId));
 
     return json({
       page,

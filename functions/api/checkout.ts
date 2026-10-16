@@ -1,5 +1,6 @@
 // Cloudflare Pages Function - Checkout API
 import { OWNER_ID, ensureOwnerUser } from "./_lib/owner";
+import { normalizeKenyanPhone } from "./_lib/phone";
 
 interface Env {
   DB: D1Database;
@@ -15,6 +16,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       delivery_longitude?: number;
       buyer_phone: string;
       notes?: string;
+      // Kilimall-style delivery details
+      recipient_name?: string;
+      alt_phone?: string;
+      county?: string;
+      town?: string;
+      delivery_note?: string;
     };
 
     if (!body.items || body.items.length === 0) {
@@ -30,6 +37,23 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       phone: body.buyer_phone || 'N/A'
     };
 
+    // The phone entered at checkout is the one the M-Pesa request is sent
+    // to, so it wins over whatever is on the account profile.
+    const checkoutPhone = normalizeKenyanPhone(body.buyer_phone || "");
+    const altPhone = body.alt_phone ? normalizeKenyanPhone(body.alt_phone) : null;
+    if (body.buyer_phone && !checkoutPhone) {
+      return new Response(JSON.stringify({ error: "Enter a valid Kenyan phone number" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+    if (body.alt_phone && !altPhone) {
+      return new Response(JSON.stringify({ error: "The alternative phone number isn't valid" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" },
+      });
+    }
+
     if (body.buyer_id && body.buyer_id !== 'guest') {
       const buyer = await context.env.DB.prepare(`
         SELECT full_name, phone_number
@@ -40,10 +64,28 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       if (buyer) {
         buyerInfo = {
           name: buyer.full_name as string || 'Guest',
-          phone: buyer.phone_number as string || body.buyer_phone || 'N/A'
+          phone: checkoutPhone || buyer.phone_number as string || body.buyer_phone || 'N/A'
         };
       }
+    } else if (checkoutPhone) {
+      buyerInfo.phone = checkoutPhone;
     }
+
+    const recipientName = (body.recipient_name || "").trim() || buyerInfo.name;
+
+    // The orders table has a single address column, so the full Kilimall-style
+    // address (street, town, county) is written into it as one line, and the
+    // recipient / alternative phone / rider note go into notes.
+    const fullAddress = [body.delivery_address, body.town, body.county ? `${body.county} County` : ""]
+      .map((part) => (part || "").trim())
+      .filter(Boolean)
+      .join(", ");
+    const orderNotes = [
+      `Recipient: ${recipientName}`,
+      altPhone ? `Alt phone: ${altPhone}` : "",
+      body.delivery_note ? `Rider note: ${body.delivery_note.trim()}` : "",
+      body.notes && !body.notes.startsWith("Customer:") ? body.notes : "",
+    ].filter(Boolean).join(" | ");
 
     // Calculate delivery fee
     const subtotal = body.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -93,11 +135,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       OWNER_ID,
       total_amount,
       delivery_fee,
-      body.delivery_address,
+      fullAddress,
       body.delivery_latitude || null,
       body.delivery_longitude || null,
       buyerInfo.phone,
-      body.notes || null
+      orderNotes
     ).run();
 
     // Create order items, snapshotting product title/image at purchase time
@@ -137,9 +179,12 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     const whatsappMessage = `🛒 *New Order - #CM${Date.now().toString().slice(-8)}*\n\n` +
       `👤 *Customer Details:*\n` +
-      `Name: ${buyerInfo.name}\n` +
+      `Account: ${buyerInfo.name}\n` +
+      `Deliver to: ${recipientName}\n` +
       `Phone: ${buyerInfo.phone}\n` +
-      `Delivery: ${body.delivery_address}\n\n` +
+      `${altPhone ? `Alt phone: ${altPhone}\n` : ""}` +
+      `Delivery: ${fullAddress}\n` +
+      `${body.delivery_note ? `Rider note: ${body.delivery_note.trim()}\n` : ""}\n` +
       `${mapsLink}` +
       `📦 *Order Items:*\n\n` +
       `${itemsList}\n\n` +
@@ -147,7 +192,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       `Subtotal: KES ${subtotal.toLocaleString()}\n` +
       `Delivery: KES ${delivery_fee}\n` +
       `*Total: KES ${total_amount.toLocaleString()}*\n\n` +
-      `${body.notes ? `📝 Notes: ${body.notes}\n\n` : ""}` +
       `Admin Contact: +254108254465\n` +
       `Order Time: ${new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}\n\n` +
       `⚠️ Please confirm the item(s) are in stock, then open Admin → Orders ` +

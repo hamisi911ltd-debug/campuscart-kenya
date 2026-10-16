@@ -91,7 +91,7 @@ export const transformDatabaseProduct = (dbProduct: any): ProductWithCategory =>
 
 export interface GetProductsParams {
   category?: string;
-  sort?: "newest" | "trending" | "price_low" | "price_high" | "rating";
+  sort?: "newest" | "trending" | "price_low" | "price_high" | "rating" | "mixed";
   search?: string;
   limit?: number;
   offset?: number;

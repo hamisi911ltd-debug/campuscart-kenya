@@ -17,6 +17,7 @@ interface Order {
   created_at: string;
   updated_at: string;
   delivery_address: string;
+  notes?: string | null;
   payment_method: string;
   payment_status: 'unpaid' | 'requested' | 'paid' | 'failed';
   delivered_at?: string;
@@ -452,6 +453,11 @@ const AdminOrders = () => {
                   {order.delivery_address && (
                     <div className="text-xs text-muted-foreground">
                       <strong>Address:</strong> {order.delivery_address}
+                    </div>
+                  )}
+                  {order.notes && (
+                    <div className="text-xs text-muted-foreground">
+                      <strong>Delivery info:</strong> {order.notes}
                     </div>
                   )}
                 </div>

@@ -35,11 +35,11 @@ const Index = () => {
   const [flashDeals, setFlashDeals] = useState<ProductWithCategory[]>([]);
   const [categoryImageSample, setCategoryImageSample] = useState<ProductWithCategory[]>([]);
 
-  // Hot Deals carousel — freshest listings, auto-plays through them.
+  // Hot Deals cards — a category-mixed pool; each card flips to a new product.
   useEffect(() => {
     const fetchHotDeals = async () => {
       try {
-        const res = await fetch('/api/products?sort=newest&limit=20', { headers: { 'Cache-Control': 'no-cache' } });
+        const res = await fetch('/api/products?sort=mixed&limit=40', { headers: { 'Cache-Control': 'no-cache' } });
         if (res.ok) {
           const data = await res.json();
           setHotDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
@@ -86,7 +86,7 @@ const Index = () => {
   // left open in a background tab still reflects newly added products.
   useEffect(() => {
     const refreshProductList = async () => {
-      const result = await getProductsPage({}, productsPage);
+      const result = await getProductsPage({ sort: "mixed" }, productsPage);
       setProducts(result.items);
       setProductsHasMore(result.hasMore);
     };

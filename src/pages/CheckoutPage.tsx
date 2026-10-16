@@ -5,6 +5,10 @@ import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
+import { DELIVERY_COUNTIES, isValidKenyanPhone } from "@/data/deliveryAreas";
+
+const DETAILS_KEY = "campusmart_delivery_details";
+const fieldClass = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40";
 
 interface Order {
   id: string;
@@ -37,7 +41,18 @@ interface Order {
 const CheckoutPage = () => {
   const { cart, cartTotal, clearCart, user, refreshUser } = useShop();
   const navigate = useNavigate();
-  const [address, setAddress] = useState("");
+  // Delivery details, collected the way Kilimall's checkout does: who is
+  // receiving it, how to reach them, and exactly where it's going.
+  const saved = (() => {
+    try { return JSON.parse(localStorage.getItem(DETAILS_KEY) || "{}"); } catch { return {}; }
+  })();
+  const [recipientName, setRecipientName] = useState<string>(saved.recipientName || user?.name || "");
+  const [phone, setPhone] = useState<string>(saved.phone || user?.phone || "");
+  const [altPhone, setAltPhone] = useState<string>(saved.altPhone || "");
+  const [county, setCounty] = useState<string>(saved.county || "");
+  const [town, setTown] = useState<string>(saved.town || "");
+  const [address, setAddress] = useState<string>(saved.address || "");
+  const [deliveryNote, setDeliveryNote] = useState("");
   const [done, setDone] = useState(false);
   const [paidWithWallet, setPaidWithWallet] = useState(false);
   const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("mpesa");
@@ -120,6 +135,19 @@ const CheckoutPage = () => {
       return;
     }
 
+    if (!isValidKenyanPhone(phone)) {
+      toast.error("Enter a valid phone number, e.g. 0712 345 678 - it's the number we'll send the M-Pesa request to");
+      return;
+    }
+    if (altPhone.trim() && !isValidKenyanPhone(altPhone)) {
+      toast.error("The alternative phone number isn't valid");
+      return;
+    }
+    if (!county) {
+      toast.error("Choose the county we're delivering to");
+      return;
+    }
+
     if (!location) {
       toast.error("Please share your location to continue");
       return;
@@ -146,9 +174,14 @@ const CheckoutPage = () => {
       })),
       total_amount: orderTotal,
       delivery_address: address,
+      recipient_name: recipientName.trim(),
+      alt_phone: altPhone.trim() || undefined,
+      county,
+      town: town.trim(),
+      delivery_note: deliveryNote.trim() || undefined,
       delivery_latitude: location.lat,
       delivery_longitude: location.lng,
-      buyer_phone: user.phone || 'Not provided',
+      buyer_phone: phone.trim(),
       notes: `Customer: ${user.name}`,
     };
 
@@ -165,6 +198,13 @@ const CheckoutPage = () => {
       }
 
       const result = await response.json();
+
+      try {
+        localStorage.setItem(DETAILS_KEY, JSON.stringify({
+          recipientName: recipientName.trim(), phone: phone.trim(), altPhone: altPhone.trim(),
+          county, town: town.trim(), address: address.trim(),
+        }));
+      } catch { /* storage unavailable - not essential */ }
 
       // --- Pay from wallet balance ---
       if (payMethod === "wallet") {
@@ -212,19 +252,48 @@ const CheckoutPage = () => {
       <div className="min-h-screen pb-4">
         <form onSubmit={submit} className="grid gap-3 lg:gap-6 lg:grid-cols-[1fr_320px] max-w-7xl mx-auto">
           <div className="space-y-3 lg:space-y-4 overflow-hidden">
-            {/* Delivery Address */}
+            {/* Delivery details */}
             <div className="rounded-lg lg:rounded-xl bg-card p-3 lg:p-4 shadow-card">
-              <h2 className="text-sm lg:text-base font-bold mb-2 lg:mb-3">Delivery Address</h2>
-              <input 
-                value={address} 
-                onChange={(e) => setAddress(e.target.value)} 
-                required 
-                placeholder="Estate / street / building / house no. / nearest landmark"
-                className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40"
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Provide detailed delivery instructions for the rider
-              </p>
+              <h2 className="text-sm lg:text-base font-bold mb-2 lg:mb-3">Delivery Details</h2>
+              <div className="grid gap-2.5 sm:grid-cols-2">
+                <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
+                  Full name of person receiving the order
+                  <input value={recipientName} onChange={(e) => setRecipientName(e.target.value)} required
+                    autoComplete="name" placeholder="e.g. Jane Wanjiku" className={`mt-1 ${fieldClass}`} />
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Phone number (M-Pesa request goes here)
+                  <input value={phone} onChange={(e) => setPhone(e.target.value)} required type="tel"
+                    inputMode="tel" autoComplete="tel" placeholder="07XX XXX XXX" className={`mt-1 ${fieldClass}`} />
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Alternative phone (optional)
+                  <input value={altPhone} onChange={(e) => setAltPhone(e.target.value)} type="tel"
+                    inputMode="tel" placeholder="07XX XXX XXX" className={`mt-1 ${fieldClass}`} />
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground">
+                  County
+                  <select value={county} onChange={(e) => setCounty(e.target.value)} required className={`mt-1 ${fieldClass}`}>
+                    <option value="">Select county</option>
+                    {DELIVERY_COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                  </select>
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground">
+                  Town / area
+                  <input value={town} onChange={(e) => setTown(e.target.value)} required
+                    placeholder="e.g. Westlands, Nyali, Milimani" className={`mt-1 ${fieldClass}`} />
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
+                  Street / estate / building / house no. / nearest landmark
+                  <input value={address} onChange={(e) => setAddress(e.target.value)} required
+                    placeholder="Estate / street / building / house no. / nearest landmark" className={`mt-1 ${fieldClass}`} />
+                </label>
+                <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
+                  Delivery note for the rider (optional)
+                  <input value={deliveryNote} onChange={(e) => setDeliveryNote(e.target.value)}
+                    placeholder="e.g. Call when you arrive, gate is blue" className={`mt-1 ${fieldClass}`} />
+                </label>
+              </div>
             </div>
 
             {/* Location Section */}
@@ -291,15 +360,17 @@ const CheckoutPage = () => {
               <h2 className="text-sm lg:text-base font-bold mb-2 lg:mb-3">Confirm Order Details</h2>
               <div className="space-y-1.5 lg:space-y-2 text-xs lg:text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Customer:</span>
-                  <span className="font-semibold truncate ml-2 max-w-[200px]">{user?.name}</span>
+                  <span className="text-muted-foreground">Deliver to:</span>
+                  <span className="font-semibold truncate ml-2 max-w-[200px]">{recipientName || '—'}</span>
                 </div>
-                {user?.phone && (
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Phone:</span>
-                    <span className="font-semibold">{user.phone}</span>
-                  </div>
-                )}
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Phone:</span>
+                  <span className="font-semibold">{phone || '—'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Area:</span>
+                  <span className="font-semibold truncate ml-2 max-w-[200px]">{[town, county].filter(Boolean).join(', ') || '—'}</span>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Items:</span>
                   <span className="font-semibold">{cart.length} item{cart.length > 1 ? 's' : ''}</span>
