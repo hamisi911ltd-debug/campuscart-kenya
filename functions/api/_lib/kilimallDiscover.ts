@@ -2,9 +2,10 @@
 import { ensureSourceTables } from "./productSources";
 
 /**
- * Which of these listings were already imported? Products imported now have a
- * product_sources row; ones imported earlier are recognised by their R2 photo
- * names (products/km-<listingId>-<n>-<rand>.<ext>).
+ * Which of these listings were already imported? Every imported product has a
+ * product_sources row, looked up by listing id through an index - so this reads a few
+ * rows per listing instead of scanning the whole products table (the old photo-name LIKE
+ * scan read every product on every call and burned through the database's daily read quota).
  */
 export async function findImportedListingIds(
   env: { DB: D1Database },
@@ -27,15 +28,6 @@ export async function findImportedListingIds(
       .all<{ listing_id: string }>();
     for (const row of tracked.results || []) imported.add(String(row.listing_id));
 
-    const clauses = chunk.map(() => "images LIKE ?").join(" OR ");
-    const { results } = await env.DB.prepare(`SELECT images FROM products WHERE ${clauses}`)
-      .bind(...chunk.map((id) => `%/${prefix}-${id}-%`))
-      .all<{ images: string | null }>();
-    for (const row of results || []) {
-      for (const id of chunk) {
-        if (row.images && row.images.includes(`/${prefix}-${id}-`)) imported.add(id);
-      }
-    }
   }
   return imported;
 }

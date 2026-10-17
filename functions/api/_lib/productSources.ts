@@ -33,6 +33,14 @@ export async function ensureSourceTables(env: DbEnv): Promise<void> {
       )
     `),
   ]);
+  // Indexes: keep lookups from scanning whole tables (D1 bills/limits by rows READ).
+  try {
+    await env.DB.batch([
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_sources_listing ON product_sources(listing_id)"),
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_avail_created ON products(is_available, created_at)"),
+      env.DB.prepare("CREATE INDEX IF NOT EXISTS idx_products_category ON products(category, is_available)"),
+    ]);
+  } catch { /* an index failing must never block the feature */ }
   // Width (px) of the stored cover photo. ALTER fails harmlessly if it's already there.
   try {
     await env.DB.prepare("ALTER TABLE product_sources ADD COLUMN image_width INTEGER").run();

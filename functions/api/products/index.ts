@@ -105,19 +105,22 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
     const response = new Response(JSON.stringify(slim), {
       headers: {
         "Content-Type": "application/json",
-        // Browser: reuse for 30s and refresh quietly in the background for 10 min.
-        // Edge: keep for 60s.
-        "Cache-Control": "public, max-age=30, s-maxage=60, stale-while-revalidate=600",
+        // Browser: reuse for 60s and refresh quietly in the background for 10 min.
+        // Edge: keep for 5 min - the same few lists are asked for on every visit, and each
+        // uncached call reads every product row, so this is what keeps the database's
+        // daily read quota safe as the catalogue grows.
+        "Cache-Control": "public, max-age=60, s-maxage=300, stale-while-revalidate=600",
       },
     });
     if (edgeCache) context.waitUntil(edgeCache.put(cacheKey, response.clone()));
     return response;
   } catch (err: any) {
     console.error('GET /api/products error:', err);
-    // Return empty array on error instead of error object
-    return new Response(JSON.stringify([]), {
-      status: 200,
-      headers: { "Content-Type": "application/json" },
+    // A database failure must not look like "the store has no products" - and must never be
+    // cached as that. 503 + no-store: the page keeps whatever it already shows.
+    return new Response(JSON.stringify({ error: "Products are temporarily unavailable" }), {
+      status: 503,
+      headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "Retry-After": "60" },
     });
   }
 };
