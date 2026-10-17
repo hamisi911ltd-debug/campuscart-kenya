@@ -13,6 +13,7 @@ import {
   isLockedOut,
   recordFailure,
   LEGACY_COOKIE_CLEAR,
+  ownerAuthStatus,
 } from "../_lib/ownerAuth";
 
 interface Env {
@@ -26,6 +27,17 @@ const json = (body: unknown, status = 200, headers: Record<string, string> = {},
   for (const c of cookies) h.append("Set-Cookie", c); // a response may set several cookies
   return new Response(JSON.stringify(body), { status, headers: h });
 };
+
+// "Why can't I sign in?" - reports only non-secret facts: is the password secret set, and is
+// THIS address currently locked out after too many wrong attempts.
+export async function onRequestGet(context: { env: Env; request: Request }) {
+  const { env, request } = context;
+  const domainCheck = enforceAdminDomain(request);
+  if (domainCheck) return domainCheck;
+  let lockedOut = false;
+  try { lockedOut = await isLockedOut(env, "owner", request); } catch { /* report what we can */ }
+  return json({ ...ownerAuthStatus(env), lockedOut });
+}
 
 export async function onRequestPost(context: { env: Env; request: Request }) {
   const { env, request } = context;

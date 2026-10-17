@@ -184,11 +184,24 @@ export type LoginCheck =
   | { ok: true }
   | { ok: false; reason: "not_configured" | "invalid" };
 
+/** Non-secret facts about the sign-in setup, for diagnosing "it won't let me in". */
+export function ownerAuthStatus(env: AuthEnv) {
+  const raw = env.ADMIN_PASSWORD || "";
+  return {
+    configured: raw.trim().length >= 10,
+    secretHasStrayWhitespace: raw.length > 0 && raw !== raw.trim(), // harmless now (ignored), but worth knowing
+    emailConfigured: !!(env.ADMIN_EMAIL || "").trim(),
+  };
+}
+
 /** Checks the owner's email (optional) and password against the Cloudflare secrets. */
 export async function checkOwnerCredentials(env: AuthEnv, email: string | undefined, password: string): Promise<LoginCheck> {
-  if (!env.ADMIN_PASSWORD || env.ADMIN_PASSWORD.length < 10) return { ok: false, reason: "not_configured" };
+  // A secret pasted into the Cloudflare dashboard very often carries a trailing space or
+  // newline; the typed password never does. Ignore leading/trailing whitespace on both sides.
+  const secret = (env.ADMIN_PASSWORD || "").trim();
+  if (secret.length < 10) return { ok: false, reason: "not_configured" };
 
-  const passwordOk = await safeEqual(password, env.ADMIN_PASSWORD);
+  const passwordOk = await safeEqual(password.trim(), secret);
   // Email is optional on the form (blank = main admin); if given it must match.
   const emailOk = !email || !env.ADMIN_EMAIL || (await safeEqual(email.trim().toLowerCase(), env.ADMIN_EMAIL.trim().toLowerCase()));
   return passwordOk && emailOk ? { ok: true } : { ok: false, reason: "invalid" };

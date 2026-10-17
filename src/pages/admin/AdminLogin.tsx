@@ -53,7 +53,7 @@ const AdminLogin = () => {
         const ownerData = await ownerRes.json().catch(() => ({}));
 
         if (!ownerRes.ok) {
-          const message = ownerData.error || 'Invalid password';
+          const message = `${ownerData.error || 'Invalid password'} (code ${ownerRes.status})`;
           setError(message);
           toast.error(message);
           setIsLoading(false);
@@ -75,8 +75,30 @@ const AdminLogin = () => {
       const data = await response.json();
 
       if (!response.ok) {
-        setError(data.error || 'Invalid email or password');
-        toast.error(data.error || 'Invalid email or password');
+        // Not a team member? It may be the main admin typing their own email - try that.
+        if (response.status === 401) {
+          const asOwner = await fetch('/api/admin/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            credentials: 'include',
+            body: JSON.stringify({ email, password }),
+          });
+          if (asOwner.ok) {
+            setAdminSession();
+            toast.success('Welcome, Admin!');
+            navigate("/admin");
+            return;
+          }
+          const ownerErr = await asOwner.json().catch(() => ({}));
+          const message = `${ownerErr.error || data.error || 'Invalid email or password'} (code ${asOwner.status})`;
+          setError(message);
+          toast.error(message);
+          setIsLoading(false);
+          return;
+        }
+        const message = `${data.error || 'Sign-in failed'} (code ${response.status})`;
+        setError(message);
+        toast.error(message);
         setIsLoading(false);
         return;
       }

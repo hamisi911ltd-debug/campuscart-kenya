@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { DatabaseSync } from "node:sqlite";
-import { onRequestPost as login, onRequestDelete as logout } from "./admin/login";
+import { onRequestPost as login, onRequestDelete as logout, onRequestGet as loginStatus } from "./admin/login";
 import { onRequestGet as sessionInfo } from "./admin/session";
 import { onRequestPost as bulkUpdate } from "./admin/bulk-update";
 import { onRequestPost as teamLogin } from "./admin/team-login";
@@ -74,6 +74,33 @@ describe("owner session", () => {
     const res = await login({ env, request: req("/api/admin/login", "POST", { body: { password: "anything" } }) });
     expect(res.status).toBe(503);
     expect(res.headers.get("Set-Cookie")).toBeNull();
+  });
+
+  it("ignores stray whitespace in the saved secret or the typed password", async () => {
+    env.ADMIN_PASSWORD = "  a-long-secret-password-123\n"; // as often pasted into a dashboard
+    for (const typed of ["a-long-secret-password-123", " a-long-secret-password-123 "]) {
+      const res = await login({ env, request: req("/api/admin/login", "POST", { body: { password: typed } }) });
+      expect(res.status).toBe(200);
+    }
+    const wrong = await login({ env, request: req("/api/admin/login", "POST", { body: { password: "a-long-secret-password-124" } }) });
+    expect(wrong.status).toBe(401);
+  });
+
+  it("accepts the owner's email on the form when it matches, rejects another", async () => {
+    env.ADMIN_EMAIL = "Boss@Shop.co";
+    const ok = await login({ env, request: req("/api/admin/login", "POST", { body: { email: "boss@shop.co", password: env.ADMIN_PASSWORD } }) });
+    expect(ok.status).toBe(200);
+    const no = await login({ env, request: req("/api/admin/login", "POST", { body: { email: "someone@else.co", password: env.ADMIN_PASSWORD } }) });
+    expect(no.status).toBe(401);
+  });
+
+  it("reports non-secret sign-in status for diagnosis", async () => {
+    const s: any = await (await loginStatus({ env, request: req("/api/admin/login", "GET") })).json();
+    expect(s.configured).toBe(true);
+    expect(s.lockedOut).toBe(false);
+    expect(JSON.stringify(s)).not.toContain(env.ADMIN_PASSWORD); // never the secret itself
+    env.ADMIN_PASSWORD = undefined;
+    expect(((await (await loginStatus({ env, request: req("/api/admin/login", "GET") })).json()) as any).configured).toBe(false);
   });
 
   it("rejects a wrong password and locks the address out after repeated failures", async () => {
