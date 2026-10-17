@@ -1,9 +1,10 @@
 // Cloudflare Pages Function - login for restricted "team member" admin
 // accounts. The main admin still logs in the existing way via the
-// hardcoded password in AdminLogin.tsx - this is a separate, additional
-// path for accounts created in Admin -> Team.
+// owner login (see login.ts) - this is a separate path for accounts created
+// in Admin -> Team.
 import { enforceAdminDomain } from "../_lib/adminDomain";
-import { ensureTeamTables, hashPassword, sanitizePermissions } from "../_lib/teamAuth";
+import { ensureTeamTables, hashPassword, sanitizePermissions, verifyPassword } from "../_lib/teamAuth";
+import { clearFailures, isLockedOut, recordFailure, sha256Hex } from "../_lib/ownerAuth";
 
 interface Env {
   DB: D1Database;
@@ -26,16 +27,34 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     await ensureTeamTables(env);
 
-    const passwordHash = await hashPassword(body.password);
-    const member = await env.DB.prepare(
-      "SELECT id, email, full_name, permissions, is_active FROM admin_team WHERE email = ? AND password_hash = ?"
-    ).bind(body.email.toLowerCase().trim(), passwordHash).first<{ id: string; email: string; full_name: string | null; permissions: string; is_active: number }>();
+    if (await isLockedOut(env, "team", request)) {
+      return new Response(JSON.stringify({ error: "Too many failed attempts. Try again in 15 minutes." }), {
+        status: 429,
+        headers: { "Content-Type": "application/json", "Retry-After": "900" },
+      });
+    }
 
-    if (!member) {
+    // Look the person up by email, then check the password (never compare in SQL).
+    const found = await env.DB.prepare(
+      "SELECT id, email, full_name, permissions, is_active, password_hash FROM admin_team WHERE email = ?"
+    ).bind(body.email.toLowerCase().trim()).first<{ id: string; email: string; full_name: string | null; permissions: string; is_active: number; password_hash: string }>();
+
+    const check = found ? await verifyPassword(body.password, found.password_hash) : { ok: false, needsUpgrade: false };
+    if (!found || !check.ok) {
+      await recordFailure(env, "team", request);
+      await new Promise((r) => setTimeout(r, 400));
       return new Response(JSON.stringify({ error: "Invalid email or password" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
       });
+    }
+    await clearFailures(env, "team", request);
+    const member = found;
+
+    // First sign-in since the stronger hashing was added: upgrade this account's hash.
+    if (check.needsUpgrade) {
+      await env.DB.prepare("UPDATE admin_team SET password_hash = ? WHERE id = ?")
+        .bind(await hashPassword(body.password), member.id).run();
     }
     if (!member.is_active) {
       return new Response(JSON.stringify({ error: "This account has been deactivated" }), {
@@ -44,17 +63,18 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       });
     }
 
-    const token = crypto.randomUUID() + crypto.randomUUID();
+    const token = Array.from(crypto.getRandomValues(new Uint8Array(32))).map((b) => b.toString(16).padStart(2, "0")).join("");
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(); // 7 days
 
     await env.DB.prepare(
       "INSERT INTO admin_team_sessions (token, admin_id, expires_at) VALUES (?, ?, ?)"
-    ).bind(token, member.id, expiresAt).run();
+    ).bind(await sha256Hex(token), member.id, expiresAt).run(); // only a hash of the token is stored
 
     let permissions: string[] = [];
     try { permissions = sanitizePermissions(JSON.parse(member.permissions)); } catch { /* default empty */ }
 
-    const cookie = `product_admin_session=${token}; Path=/; Max-Age=${7 * 24 * 60 * 60}; SameSite=None; Secure`;
+    // HttpOnly (scripts can't read it), Secure, SameSite=Strict (other sites can't send it)
+    const cookie = `product_admin_session=${token}; Path=/; Max-Age=${7 * 24 * 60 * 60}; HttpOnly; Secure; SameSite=Strict`;
 
     return new Response(JSON.stringify({
       success: true,

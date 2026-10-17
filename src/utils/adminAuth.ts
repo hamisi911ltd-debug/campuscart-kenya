@@ -1,9 +1,9 @@
 // Admin Authentication Utilities
 //
 // Two separate identities can be logged in here:
-// - The main admin (owner): unchanged from before - a single hardcoded
-//   password (AdminLogin.tsx) sets the `admin_session` cookie + sessionStorage
-//   flags below. Full access everywhere, every permission.
+// - The main admin (owner): signs in with the ADMIN_PASSWORD secret, checked on the
+//   server (/api/admin/login), which sets an HttpOnly session cookie. The
+//   sessionStorage flags below only remember "signed in" for the UI. Full access.
 // - A team member (an account created in Admin -> Team, with whichever
 //   permission areas the owner granted them - "products", "orders",
 //   "users", "coupons"): logs in via /api/admin/team-login, which sets a
@@ -19,18 +19,8 @@ export const setAdminSession = () => {
   sessionStorage.setItem('isAdmin', 'true');
   sessionStorage.setItem('adminEmail', 'campusmart.care@gmail.com');
 
-  // Set cookie with proper attributes
-  const expires = new Date();
-  expires.setTime(expires.getTime() + (24 * 60 * 60 * 1000)); // 24 hours
-
-  // Set cookie for current domain and all subdomains
-  const domain = window.location.hostname.includes('campusmart.co.ke')
-    ? '.campusmart.co.ke'
-    : window.location.hostname.includes('urbanstore.co.ke') // legacy domain from the brief Urban Store rebrand
-    ? '.urbanstore.co.ke'
-    : window.location.hostname;
-
-  document.cookie = `admin_session=true; expires=${expires.toUTCString()}; path=/; domain=${domain}; SameSite=None; Secure`;
+  // (No cookie is written here any more. The real session cookie is set by the
+  // server at login: HttpOnly, so no script - ours or anyone's - can read or forge it.)
 };
 
 // Called after a successful POST to /api/admin/team-login (which itself
@@ -55,15 +45,8 @@ export const clearAdminSession = () => {
   sessionStorage.removeItem('teamAdminName');
   sessionStorage.removeItem('teamAdminPermissions');
 
-  // Clear cookies
-  const domain = window.location.hostname.includes('campusmart.co.ke')
-    ? '.campusmart.co.ke'
-    : window.location.hostname.includes('urbanstore.co.ke') // legacy domain from the brief Urban Store rebrand
-    ? '.urbanstore.co.ke'
-    : window.location.hostname;
-
-  document.cookie = `admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=${domain}; SameSite=None; Secure`;
-  document.cookie = `product_admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; SameSite=None; Secure`;
+  // End the session on the server (it also clears the HttpOnly cookie)
+  fetch('/api/admin/login', { method: 'DELETE', credentials: 'include' }).catch(() => {});
 };
 
 export const isAdminAuthenticated = (): boolean => {
@@ -101,25 +84,20 @@ export const getAdminDisplayName = (): string => {
   return sessionStorage.getItem('teamAdminName') || sessionStorage.getItem('teamAdminEmail') || 'Team member';
 };
 
-export const getAdminFetchOptions = (): RequestInit => {
-  return {
-    credentials: 'include',
-    headers: {
-      'Cache-Control': 'no-cache',
-      'X-Admin-Session': sessionStorage.getItem('isAdmin') || 'false',
-    }
-  };
-};
 
+
+// For pages that call admin APIs directly: sends the session cookie and signs
+// you out if the server says the session is gone. (Who you are is always
+// decided by the server from the HttpOnly cookie, never by anything here.)
 export const adminFetch = async (url: string, options: RequestInit = {}): Promise<Response> => {
-  const adminOptions = getAdminFetchOptions();
-
-  return fetch(url, {
-    ...adminOptions,
+  const response = await fetch(url, {
     ...options,
-    headers: {
-      ...adminOptions.headers,
-      ...options.headers,
-    }
+    credentials: 'include',
+    headers: { 'Cache-Control': 'no-cache', ...(options.headers || {}) },
   });
+  if (response.status === 401) {
+    clearAdminSession();
+    window.location.href = '/admin/login';
+  }
+  return response;
 };

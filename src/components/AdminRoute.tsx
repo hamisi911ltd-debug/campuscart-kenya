@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom";
 import { ReactNode, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { canAccess, getTeamPermissions, type PermissionArea } from "@/utils/adminAuth";
+import { canAccess, getTeamPermissions, setAdminSession, setTeamAdminSession, type PermissionArea } from "@/utils/adminAuth";
 
 interface AdminRouteProps {
   children: ReactNode;
@@ -16,6 +16,24 @@ interface AdminRouteProps {
 
 const AdminRoute = ({ children, requirePermission, ownerOnly }: AdminRouteProps) => {
   const [isRedirecting, setIsRedirecting] = useState(false);
+  // The session cookie is HttpOnly (the page can't see it). This tab's own memory of being
+  // signed in lives in sessionStorage; in a NEW tab it's empty, so ask the server once.
+  const remembered = sessionStorage.getItem('isAdmin') === 'true' || sessionStorage.getItem('isTeamAdmin') === 'true';
+  const [verifying, setVerifying] = useState(!remembered);
+
+  useEffect(() => {
+    if (remembered) return;
+    fetch('/api/admin/session', { credentials: 'include', cache: 'no-store' })
+      .then(async (res) => {
+        if (!res.ok) return;
+        const data = await res.json();
+        if (data.role === 'owner') setAdminSession();
+        else if (data.role === 'team' && data.admin) setTeamAdminSession(data.admin);
+      })
+      .catch(() => {})
+      .finally(() => setVerifying(false));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   // More flexible domain checking - allow admin access on mobile and development
   const hostname = window.location.hostname;
@@ -57,13 +75,19 @@ const AdminRoute = ({ children, requirePermission, ownerOnly }: AdminRouteProps)
     );
   }
 
-  // Check if user is authenticated as admin (check both session and cookie).
+  if (verifying) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-100">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-blue-600" />
+      </div>
+    );
+  }
+
+  // Check if user is authenticated as admin.
   // Two identities: the owner (full access) or a team member restricted to
   // whichever permission areas they were granted - see src/utils/adminAuth.ts.
-  const hasSessionAuth = sessionStorage.getItem('isAdmin') === 'true';
-  const hasCookieAuth = document.cookie.includes('admin_session=true');
-  const isOwner = hasSessionAuth || hasCookieAuth;
-  const isTeam = sessionStorage.getItem('isTeamAdmin') === 'true' || document.cookie.includes('product_admin_session=');
+  const isOwner = sessionStorage.getItem('isAdmin') === 'true';
+  const isTeam = sessionStorage.getItem('isTeamAdmin') === 'true';
   const isAdmin = isOwner || isTeam;
 
   if (!isAdmin) {

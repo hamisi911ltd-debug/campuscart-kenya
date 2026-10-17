@@ -1,4 +1,4 @@
-import { isAdmin } from "./auth";
+import { isOwner } from "../_lib/ownerAuth";
 
 // Comprehensive Activity Monitoring API for Admin
 
@@ -10,7 +10,7 @@ interface Env {
 export async function onRequestGet(context: { env: Env; request: Request }) {
   const { env, request } = context;
 
-  if (!isAdmin(request)) {
+  if (!(await isOwner(request, env))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" }

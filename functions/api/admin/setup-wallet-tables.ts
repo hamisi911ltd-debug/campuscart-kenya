@@ -1,18 +1,14 @@
 // Database Setup for Wallet System
+import { isOwner } from "../_lib/ownerAuth";
 
 interface Env {
   DB: D1Database;
 }
 
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  return cookie.includes("admin_session=true");
-}
-
 export async function onRequestPost(context: { env: Env; request: Request }) {
   const { env, request } = context;
 
-  if (!isAdmin(request)) {
+  if (!(await isOwner(request, env))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" }

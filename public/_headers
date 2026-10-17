@@ -14,3 +14,9 @@
 
 /*
   Cache-Control: no-cache
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+  Strict-Transport-Security: max-age=31536000; includeSubDomains
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Permissions-Policy: geolocation=(self), microphone=(), usb=(), payment=()

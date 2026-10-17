@@ -1,4 +1,5 @@
 // Cloudflare Pages Function - Single Product API (GET, DELETE, PATCH)
+import { isOwner } from "../_lib/ownerAuth";
 interface Env {
   DB: D1Database;
 }
@@ -38,19 +39,11 @@ export const onRequestGet: PagesFunction<Env> = async (context) => {
   }
 };
 
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) return true;
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") return true;
-  return request.headers.get("X-Admin-Session") === "true";
-}
-
 // DELETE product by ID (admin-only - this was previously reachable by
 // anyone with no authentication check at all)
 export const onRequestDelete: PagesFunction<Env> = async (context) => {
   try {
-    if (!isAdmin(context.request)) {
+    if (!(await isOwner(context.request, context.env))) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },
@@ -112,7 +105,7 @@ export const onRequestDelete: PagesFunction<Env> = async (context) => {
 // PATCH product by ID (admin-only - same missing-auth issue as DELETE above)
 export const onRequestPatch: PagesFunction<Env> = async (context) => {
   try {
-    if (!isAdmin(context.request)) {
+    if (!(await isOwner(context.request, context.env))) {
       return new Response(JSON.stringify({ error: "Unauthorized" }), {
         status: 401,
         headers: { "Content-Type": "application/json" },

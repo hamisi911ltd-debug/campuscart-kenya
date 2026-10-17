@@ -1,34 +1,16 @@
+import { clearAdminSession } from "@/utils/adminAuth";
 // Admin API utility functions with proper authentication
 
 export const adminFetch = async (url: string, options: RequestInit = {}) => {
-  // Get authentication from sessionStorage and cookies. Two identities can
-  // be logged in: the owner (admin_session cookie / isAdmin flag, full
-  // access) or a restricted team member (product_admin_session cookie /
-  // isTeamAdmin flag, whatever permission areas they were granted) -
-  // either is enough to make this call, the server decides per-endpoint
-  // what it's actually allowed to do.
-  const hasSessionAuth = sessionStorage.getItem('isAdmin') === 'true';
-  const hasCookieAuth = document.cookie.includes('admin_session=true');
-  const hasTeamAuth = sessionStorage.getItem('isTeamAdmin') === 'true' || document.cookie.includes('product_admin_session=');
-
-  if (!hasSessionAuth && !hasCookieAuth && !hasTeamAuth) {
+  // Who is signed in is decided by the SERVER from an HttpOnly session cookie that
+  // scripts can't read or forge. This flag (set after a real sign-in) only avoids
+  // sending requests when we already know there is no session.
+  const signedIn = sessionStorage.getItem('isAdmin') === 'true' || sessionStorage.getItem('isTeamAdmin') === 'true';
+  if (!signedIn) {
     throw new Error('Not authenticated as admin');
   }
 
-  // Prepare headers with authentication
   const headers = new Headers(options.headers);
-  
-  // Add custom header for session-based auth (fallback for mobile)
-  if (hasSessionAuth) {
-    headers.set('X-Admin-Session', 'true');
-  }
-  
-  // Add Authorization header as additional fallback
-  if (hasSessionAuth || hasCookieAuth) {
-    headers.set('Authorization', 'Bearer admin_session_true');
-  }
-  
-  // Ensure Content-Type for JSON requests
   if (options.method === 'POST' || options.method === 'PUT') {
     headers.set('Content-Type', 'application/json');
   }
@@ -36,19 +18,12 @@ export const adminFetch = async (url: string, options: RequestInit = {}) => {
   const response = await fetch(url, {
     ...options,
     headers,
-    credentials: 'include', // Include cookies
+    credentials: 'include', // sends the session cookie
   });
 
   if (response.status === 401) {
-    // Clear invalid session (either identity) and redirect to login
-    sessionStorage.removeItem('isAdmin');
-    sessionStorage.removeItem('adminEmail');
-    sessionStorage.removeItem('isTeamAdmin');
-    sessionStorage.removeItem('teamAdminEmail');
-    sessionStorage.removeItem('teamAdminName');
-    sessionStorage.removeItem('teamAdminPermissions');
-    document.cookie = 'admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    document.cookie = 'product_admin_session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    // Session ended or never existed: clear what we remember and go to the login page
+    clearAdminSession();
     window.location.href = '/admin/login';
     throw new Error('Authentication expired');
   }

@@ -2,6 +2,7 @@
 // permissions. Owner-only: uses the same isAdmin() check as every other
 // non-product admin endpoint, so a team member's own session can't reach
 // this at all (it's never checked here).
+import { isOwner } from "../_lib/ownerAuth";
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { ensureTeamTables, hashPassword, sanitizePermissions } from "../_lib/teamAuth";
 
@@ -9,19 +10,11 @@ interface Env {
   DB: D1Database;
 }
 
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) return true;
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") return true;
-  return request.headers.get("X-Admin-Session") === "true";
-}
-
 export async function onRequestGet(context: { env: Env; request: Request }) {
   const { env, request } = context;
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
-  if (!isAdmin(request)) {
+  if (!(await isOwner(request, env))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
 
@@ -53,7 +46,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
   const { env, request } = context;
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
-  if (!isAdmin(request)) {
+  if (!(await isOwner(request, env))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
 
@@ -106,7 +99,7 @@ export async function onRequestPut(context: { env: Env; request: Request }) {
   const { env, request } = context;
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
-  if (!isAdmin(request)) {
+  if (!(await isOwner(request, env))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
 
@@ -147,7 +140,7 @@ export async function onRequestDelete(context: { env: Env; request: Request }) {
   const { env, request } = context;
   const domainCheck = enforceAdminDomain(request);
   if (domainCheck) return domainCheck;
-  if (!isAdmin(request)) {
+  if (!(await isOwner(request, env))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
 

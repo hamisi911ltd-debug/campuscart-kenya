@@ -39,7 +39,6 @@ const AdminKilimallImport = lazyPage(() => import("./pages/admin/AdminKilimallIm
 const AdminOrders = lazyPage(() => import("./pages/admin/AdminOrders"));
 const AdminTeam = lazyPage(() => import("./pages/admin/AdminTeam"));
 const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"));
-const AuthDebug = lazyPage(() => import("./pages/admin/AuthDebug"));
 import AdminRoute from "./components/AdminRoute";
 
 // React.lazy with recovery. If a page's code can't be fetched - typically a tab
@@ -162,7 +161,6 @@ const App = () => {
               <Route path="/admin/database" element={<AdminRoute ownerOnly><DatabaseViewer /></AdminRoute>} />
               <Route path="/admin/team" element={<AdminRoute ownerOnly><AdminTeam /></AdminRoute>} />
               <Route path="/admin/test" element={<AdminRoute ownerOnly><DirectApiTest /></AdminRoute>} />
-              <Route path="/admin/debug" element={<AdminRoute ownerOnly><AuthDebug /></AdminRoute>} />
               <Route path="/admin/diagnostic" element={<AdminRoute ownerOnly><TempDashboard /></AdminRoute>} />
               {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
               <Route path="*" element={<NotFound />} />

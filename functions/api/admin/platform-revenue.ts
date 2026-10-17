@@ -1,25 +1,15 @@
 // Cloudflare Pages Function - Admin summary of platform revenue
 // (delivery fees + commission kept from paid orders, never passed to sellers)
+import { isOwner } from "../_lib/ownerAuth";
 
 interface Env {
   DB: D1Database;
 }
 
-function isAdmin(request: Request): boolean {
-  const cookie = request.headers.get("Cookie") || "";
-  if (cookie.includes("admin_session=true")) return true;
-
-  const authHeader = request.headers.get("Authorization");
-  if (authHeader === "Bearer admin_session_true") return true;
-
-  const sessionHeader = request.headers.get("X-Admin-Session");
-  return sessionHeader === "true";
-}
-
 export async function onRequestGet(context: { env: Env; request: Request }) {
   const { env, request } = context;
 
-  if (!isAdmin(request)) {
+  if (!(await isOwner(request, env))) {
     return new Response(JSON.stringify({ error: "Unauthorized" }), {
       status: 401,
       headers: { "Content-Type": "application/json" },

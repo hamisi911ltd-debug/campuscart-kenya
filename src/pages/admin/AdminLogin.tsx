@@ -37,15 +37,22 @@ const AdminLogin = () => {
     setError("");
 
     try {
-      // Leave email blank to sign in as the main admin (unchanged password
-      // check); fill it in to sign in as a team member (an account created
+      // Leave email blank to sign in as the main admin; fill it in to sign in as a team member (an account created
       // in Admin -> Team, with whichever permissions were granted).
       if (!email.trim()) {
-        const ADMIN_PASSWORD = "LUCYISOKORE@2026";
+        // The password is checked on the SERVER; nothing secret lives in this page.
+        const ownerRes = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ password }),
+        });
+        const ownerData = await ownerRes.json().catch(() => ({}));
 
-        if (password !== ADMIN_PASSWORD) {
-          setError("Invalid password");
-          toast.error('Invalid password');
+        if (!ownerRes.ok) {
+          const message = ownerData.error || 'Invalid password';
+          setError(message);
+          toast.error(message);
           setIsLoading(false);
           return;
         }
