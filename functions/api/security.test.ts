@@ -113,6 +113,21 @@ describe("owner session", () => {
     expect(after.status).toBe(401);
   });
 
+  it("still works when the browser also sends the OLD site-wide admin_session=true cookie", async () => {
+    const cookie = await signIn();
+    for (const header of [`admin_session=true; ${cookie}`, `${cookie}; admin_session=true`, `admin_session=true; admin_session=abc; ${cookie}`]) {
+      const ok = await bulkUpdate({ env, request: req("/api/admin/bulk-update", "POST", { body: { ids: ["p1"], action: "approve" }, cookie: header }) });
+      expect(ok.status).toBe(200);
+    }
+    // ...and the old cookie alone still gets nowhere
+    const bad = await bulkUpdate({ env, request: req("/api/admin/bulk-update", "POST", { body: { ids: ["p1"], action: "approve" }, cookie: "admin_session=true" }) });
+    expect(bad.status).toBe(401);
+    // sign-in expires the old cookie in the browser
+    const res = await login({ env, request: req("/api/admin/login", "POST", { body: { password: env.ADMIN_PASSWORD } }) });
+    const all = (res.headers as any).getSetCookie ? (res.headers as any).getSetCookie() : [res.headers.get("Set-Cookie")];
+    expect(all.some((c: string) => /Domain=\.campusmart\.co\.ke/.test(c) && /Max-Age=0/.test(c))).toBe(true);
+  });
+
   it("rejects expired sessions and requests coming from another website", async () => {
     const cookie = await signIn();
     // from a different site (CSRF)

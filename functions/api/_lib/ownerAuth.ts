@@ -104,17 +104,28 @@ export async function clearFailures(env: { DB: D1Database }, scope: string, requ
 // ---------------------------------------------------------------------------
 // Sessions
 
-function readCookie(request: Request, name: string): string | null {
+/**
+ * Every value sent under this cookie name. A browser can hold two cookies with the same
+ * name (e.g. the old site-wide admin_session=true from the previous login system AND the
+ * new host-only one) and sends both - so we must look at all of them, not just the first.
+ */
+function readCookies(request: Request, name: string): string[] {
   const header = request.headers.get("Cookie") || "";
+  const values: string[] = [];
   for (const part of header.split(";")) {
     const [k, ...rest] = part.trim().split("=");
-    if (k === name) return decodeURIComponent(rest.join("="));
+    if (k === name) {
+      try { values.push(decodeURIComponent(rest.join("="))); } catch { /* ignore a malformed value */ }
+    }
   }
-  return null;
+  return values;
 }
 
+/** Expires the old site-wide cookie the previous login system left in browsers. */
+export const LEGACY_COOKIE_CLEAR = `${"admin_session"}=; Path=/; Domain=.campusmart.co.ke; Secure; SameSite=None; Max-Age=0`;
+
 /** Cookie value is a 64-char hex token; anything else (e.g. the old "true") is rejected outright. */
-const validToken = (t: string | null): t is string => !!t && /^[0-9a-f]{64}$/.test(t);
+const validToken = (t: string | null | undefined): t is string => !!t && /^[0-9a-f]{64}$/.test(t);
 
 /** Starts a session; returns the Set-Cookie header value. */
 export async function createOwnerSession(env: { DB: D1Database }, request: Request): Promise<string> {
@@ -129,9 +140,10 @@ export async function createOwnerSession(env: { DB: D1Database }, request: Reque
 }
 
 export async function endOwnerSession(env: { DB: D1Database }, request: Request): Promise<string> {
-  const token = readCookie(request, OWNER_COOKIE);
-  if (validToken(token)) {
-    await env.DB.prepare("DELETE FROM admin_sessions WHERE token_hash = ?").bind(await sha256Hex(token)).run();
+  for (const token of readCookies(request, OWNER_COOKIE)) {
+    if (validToken(token)) {
+      await env.DB.prepare("DELETE FROM admin_sessions WHERE token_hash = ?").bind(await sha256Hex(token)).run();
+    }
   }
   return `${OWNER_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
 }
@@ -142,8 +154,8 @@ export async function endOwnerSession(env: { DB: D1Database }, request: Request)
  * cross-site requests.
  */
 export async function isOwner(request: Request, env: { DB: D1Database }): Promise<boolean> {
-  const token = readCookie(request, OWNER_COOKIE);
-  if (!validToken(token)) return false;
+  const candidates = readCookies(request, OWNER_COOKIE).filter(validToken);
+  if (candidates.length === 0) return false;
 
   if (request.method !== "GET" && request.method !== "HEAD" && request.method !== "OPTIONS") {
     const origin = request.headers.get("Origin");
@@ -152,10 +164,14 @@ export async function isOwner(request: Request, env: { DB: D1Database }): Promis
 
   try {
     await ensureAuthTables(env);
-    const row = await env.DB.prepare("SELECT expires_at FROM admin_sessions WHERE token_hash = ?")
-      .bind(await sha256Hex(token))
-      .first<{ expires_at: string }>();
-    return !!row && new Date(row.expires_at) > new Date();
+    // any one genuine, unexpired session token is enough
+    for (const token of candidates) {
+      const row = await env.DB.prepare("SELECT expires_at FROM admin_sessions WHERE token_hash = ?")
+        .bind(await sha256Hex(token))
+        .first<{ expires_at: string }>();
+      if (row && new Date(row.expires_at) > new Date()) return true;
+    }
+    return false;
   } catch {
     return false; // if in doubt, deny
   }

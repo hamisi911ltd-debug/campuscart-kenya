@@ -12,6 +12,7 @@ import {
   endOwnerSession,
   isLockedOut,
   recordFailure,
+  LEGACY_COOKIE_CLEAR,
 } from "../_lib/ownerAuth";
 
 interface Env {
@@ -20,8 +21,11 @@ interface Env {
   ADMIN_PASSWORD?: string;
 }
 
-const json = (body: unknown, status = 200, headers: Record<string, string> = {}) =>
-  new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", ...headers } });
+const json = (body: unknown, status = 200, headers: Record<string, string> = {}, cookies: string[] = []) => {
+  const h = new Headers({ "Content-Type": "application/json", "Cache-Control": "no-store", ...headers });
+  for (const c of cookies) h.append("Set-Cookie", c); // a response may set several cookies
+  return new Response(JSON.stringify(body), { status, headers: h });
+};
 
 export async function onRequestPost(context: { env: Env; request: Request }) {
   const { env, request } = context;
@@ -57,7 +61,8 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     await clearFailures(env, "owner", request);
     const cookie = await createOwnerSession(env, request);
-    return json({ success: true, message: "Login successful" }, 200, { "Set-Cookie": cookie });
+    // Also remove the old site-wide "admin_session=true" cookie the previous login system left in browsers.
+    return json({ success: true, message: "Login successful" }, 200, {}, [cookie, LEGACY_COOKIE_CLEAR]);
   } catch (error) {
     console.error("Login error:", error);
     return json({ error: "Login failed" }, 500);

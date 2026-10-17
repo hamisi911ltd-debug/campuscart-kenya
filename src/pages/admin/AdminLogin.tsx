@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Eye, EyeOff, Lock, Mail, Shield } from "lucide-react";
 import { Logo } from "@/components/Logo";
 import { toast } from "sonner";
-import { setAdminSession, setTeamAdminSession } from "@/utils/adminAuth";
+import { clearLegacyAdminCookie, setAdminSession, setTeamAdminSession } from "@/utils/adminAuth";
 
 const AdminLogin = () => {
   const navigate = useNavigate();
@@ -13,6 +13,9 @@ const AdminLogin = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [isRedirecting, setIsRedirecting] = useState(false);
+
+  // Remove the old site-wide cookie from the previous login system as soon as this page opens.
+  useEffect(() => { clearLegacyAdminCookie(); }, []);
 
   useEffect(() => {
     const hostname = window.location.hostname;

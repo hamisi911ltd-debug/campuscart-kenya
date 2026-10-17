@@ -14,7 +14,17 @@
 //   functions/api/_lib/teamAuth.ts.
 export type PermissionArea = "products" | "orders" | "users" | "coupons";
 
+// The previous login system stored a site-wide cookie named admin_session (value "true").
+// It must go: browsers send it alongside the real session cookie.
+export const clearLegacyAdminCookie = () => {
+  try {
+    document.cookie = 'admin_session=; Path=/; Domain=.campusmart.co.ke; Max-Age=0; Secure; SameSite=None';
+    document.cookie = 'admin_session=; Path=/; Max-Age=0';
+  } catch { /* ignore */ }
+};
+
 export const setAdminSession = () => {
+  clearLegacyAdminCookie();
   // Set session storage
   sessionStorage.setItem('isAdmin', 'true');
   sessionStorage.setItem('adminEmail', 'campusmart.care@gmail.com');
