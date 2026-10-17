@@ -69,8 +69,10 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     if (body.apply && live.price && suggestedPrice) {
       await env.DB.prepare("UPDATE product_sources SET source_price = ?, markup_percent = ? WHERE product_id = ?")
         .bind(live.price, markup, productId).run();
-      await env.DB.prepare("UPDATE products SET price = ?, updated_at = ? WHERE id = ?")
-        .bind(suggestedPrice, now, productId).run();
+      // also refresh the crossed-out regular price (supplier's regular price + the same markup)
+      const regularPrice = live.listPrice && live.price && live.listPrice > live.price ? sellPriceFor(live.listPrice) : null;
+      await env.DB.prepare("UPDATE products SET price = ?, original_price = ?, updated_at = ? WHERE id = ?")
+        .bind(suggestedPrice, regularPrice, now, productId).run();
       currentPrice = suggestedPrice;
       applied = true;
     }

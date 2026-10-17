@@ -1,6 +1,5 @@
-import { Star, Plus, Truck } from "lucide-react";
+import { Star, Truck } from "lucide-react";
 import { Link } from "react-router-dom";
-import { useShop } from "@/store/shop";
 import { useState } from "react";
 import { LazyImage } from "@/components/LazyImage";
 
@@ -30,19 +29,14 @@ const badgeStyles: Record<string, string> = {
   FREE: "bg-primary",
 };
 
+// Laid out like a marketplace listing (AliExpress-style): photo with a discount tag
+// in its corner, a two-line name in normal weight, then the price in red with the
+// crossed-out original price right beside it. Tap anywhere to open the product.
 export const ProductCard = ({ p, priority = false }: { p: Product; priority?: boolean }) => {
-  const { addToCart } = useShop();
   const [photoFailed, setPhotoFailed] = useState(false);
-  // A "was" price is only ever a REAL original price; nothing is invented.
+  // A crossed-out price is only ever a REAL original price; nothing is invented.
   const hasWas = !!p.oldPrice && p.oldPrice > p.price;
   const discount = hasWas ? Math.round(((p.oldPrice! - p.price) / p.oldPrice!) * 100) : 0;
-
-  const rating = p.rating ? (
-    <span className="ml-auto flex shrink-0 items-center gap-0.5 text-[10px] font-semibold text-muted-foreground">
-      <Star className="h-2.5 w-2.5 fill-warning text-warning" />
-      {p.rating.toFixed(1)}
-    </span>
-  ) : null;
 
   // If every photo of a product fails to load, hide the card rather than
   // showing a broken-image icon.
@@ -63,36 +57,26 @@ export const ProductCard = ({ p, priority = false }: { p: Product; priority?: bo
           priority={priority}
           onAllFailed={() => setPhotoFailed(true)}
         />
-        {/* Discount tag on the photo */}
+        {/* Discount tag, top right of the photo */}
         {discount > 0 && (
-          <span className="absolute left-0 top-1.5 rounded-r-md bg-red-600 px-1.5 py-0.5 text-[11px] font-extrabold leading-none text-white shadow">
+          <span className="absolute right-1 top-1 rounded bg-red-600 px-1.5 py-0.5 text-[11px] font-bold leading-none text-white shadow">
             -{discount}%
           </span>
         )}
         {p.badge && (
           <span
-            className={`absolute right-1.5 top-1.5 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground ${badgeStyles[p.badge]}`}
+            className={`absolute left-1 top-1 rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary-foreground ${badgeStyles[p.badge]}`}
           >
             {p.badge}
           </span>
         )}
       </div>
 
-      {/* Body: bold name (2 lines at most) with the red + beside it, price pinned
-          underneath. No fixed heights - the text sets the size, so nothing is left empty. */}
-      <div className="flex flex-1 flex-col justify-between gap-1 px-1.5 pb-1.5 pt-1.5">
-        <div className="flex items-start gap-1">
-          <h3 className="line-clamp-2 min-w-0 flex-1 overflow-hidden text-[14px] font-bold leading-[1.15] text-foreground sm:text-[16px]">
-            {p.title}
-          </h3>
-          <button
-            onClick={(e) => { e.preventDefault(); addToCart(p); }}
-            aria-label="Add to cart"
-            className="flex h-7 w-7 min-h-0 min-w-0 shrink-0 items-center justify-center rounded-full bg-red-600 text-white shadow-sm transition hover:bg-red-700 active:scale-95 sm:h-8 sm:w-8"
-          >
-            <Plus className="h-4 w-4 sm:h-[18px] sm:w-[18px]" strokeWidth={3} />
-          </button>
-        </div>
+      {/* Body sized by its text: no fixed heights, nothing left empty */}
+      <div className="flex flex-1 flex-col gap-1 px-1.5 pb-2 pt-1.5">
+        <h3 className="line-clamp-2 overflow-hidden text-[12px] font-medium leading-[1.25] text-foreground/90 sm:text-[13px]">
+          {p.title}
+        </h3>
 
         {p.shippingNote && (
           <div className="flex items-center gap-1 text-[9px] font-semibold text-accent">
@@ -101,21 +85,24 @@ export const ProductCard = ({ p, priority = false }: { p: Product; priority?: bo
           </div>
         )}
 
-        <div className="leading-none text-red-600">
-          <div className="flex items-baseline gap-1 whitespace-nowrap">
-            {hasWas && <span className="text-[10px] font-bold uppercase">Now</span>}
-            <span className="text-[10px] font-bold">KES</span>
-            <span className="text-[16px] font-extrabold sm:text-[18px]">{p.price.toLocaleString()}</span>
-            {!hasWas && rating}
-          </div>
+        <div className="mt-auto flex flex-wrap items-baseline gap-x-1.5 gap-y-0">
+          <span className="whitespace-nowrap text-[15px] font-semibold leading-tight text-red-600 sm:text-[16px]">
+            <span className="mr-0.5 text-[10px] font-medium">KES</span>
+            {p.price.toLocaleString()}
+          </span>
           {hasWas && (
-            <div className="mt-1 flex items-baseline gap-1 whitespace-nowrap text-[11px] font-semibold">
-              <span className="uppercase">Was</span>
-              <span className="line-through decoration-2">KES {p.oldPrice!.toLocaleString()}</span>
-              {rating}
-            </div>
+            <span className="whitespace-nowrap text-[11px] leading-tight text-muted-foreground line-through">
+              {p.oldPrice!.toLocaleString()}
+            </span>
           )}
         </div>
+
+        {p.rating ? (
+          <div className="flex items-center gap-0.5 text-[10px] leading-none text-muted-foreground">
+            <Star className="h-2.5 w-2.5 fill-warning text-warning" />
+            {p.rating.toFixed(1)}
+          </div>
+        ) : null}
       </div>
     </Link>
   );

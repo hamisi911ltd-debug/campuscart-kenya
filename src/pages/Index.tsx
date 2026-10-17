@@ -54,7 +54,7 @@ const Index = () => {
   useEffect(() => {
     const fetchFlash = async () => {
       try {
-        const res = await fetch('/api/products?sort=trending&limit=48');
+        const res = await fetch('/api/products?sort=trending&limit=200');
         if (res.ok) {
           const data = await res.json();
           setFlashDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
@@ -74,7 +74,7 @@ const Index = () => {
       (map[p.category] ||= []).push(p);
     }
     return categories
-      .map((c) => ({ category: c, items: (map[c.slug] || []).slice(0, 12) }))
+      .map((c) => ({ category: c, items: (map[c.slug] || []).slice(0, 16) }))
       .filter((group) => group.items.length > 0);
   }, [flashDeals]);
 
@@ -275,10 +275,12 @@ const Index = () => {
                       See all
                     </Link>
                   </div>
-                  <div className="-mx-1 overflow-x-auto scrollbar-hide px-1">
-                    <div className="flex gap-2">
+                  {/* Phones: a side-scrolling strip. From tablet width up: ONE row that spreads
+                      across the full width - as many cards as fit, no empty space at the end. */}
+                  <div className="-mx-1 overflow-x-auto scrollbar-hide px-1 md:mx-0 md:overflow-hidden md:px-0">
+                    <div className="flex gap-2 md:grid md:grid-rows-1 md:auto-rows-[0] md:gap-x-2 md:gap-y-0 md:overflow-hidden md:[grid-template-columns:repeat(auto-fill,minmax(150px,1fr))]">
                       {items.map((p) => (
-                        <div key={p.id} className="w-[148px] shrink-0">
+                        <div key={p.id} className="w-[148px] shrink-0 md:w-auto">
                           <ProductCard p={p} />
                         </div>
                       ))}

@@ -76,6 +76,9 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     const sourcePrice = product.price ?? Number(body.fallbackPrice) ?? 0;
     if (!(sourcePrice > 0)) return json({ error: "Could not determine a price for this product" }, 422);
     const sellPrice = sellPriceFor(sourcePrice);
+    // The crossed-out "was" price is the supplier's own regular price (when it's on sale there)
+    // with the same markup - a real price, not an invented one.
+    const regularPrice = product.listPrice && product.listPrice > sourcePrice ? sellPriceFor(product.listPrice) : null;
 
     if (product.images.length === 0) return json({ error: "This listing has no photos" }, 422);
 
@@ -97,7 +100,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     await env.DB.prepare(
       `INSERT INTO products (id, seller_id, title, description, category, price, original_price, image_url, images, quantity_available, location, rating, reviews_count, created_at, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, NULL, 0, 0, ?, ?)`
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULL, 0, 0, ?, ?)`
     ).bind(
       id,
       OWNER_ID,
@@ -105,6 +108,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       product.description || product.title,
       category,
       sellPrice,
+      regularPrice,
       photoUrls[0],
       JSON.stringify(photoUrls),
       10,
