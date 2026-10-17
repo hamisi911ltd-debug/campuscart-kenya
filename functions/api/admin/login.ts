@@ -14,6 +14,8 @@ import {
   recordFailure,
   LEGACY_COOKIE_CLEAR,
   ownerAuthStatus,
+  ensureAuthTables,
+  isOwner,
 } from "../_lib/ownerAuth";
 
 interface Env {
@@ -36,7 +38,38 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
   if (domainCheck) return domainCheck;
   let lockedOut = false;
   try { lockedOut = await isLockedOut(env, "owner", request); } catch { /* report what we can */ }
-  return json({ ...ownerAuthStatus(env), lockedOut });
+
+  // Do the same database work a successful sign-in does (write a session row, then remove it),
+  // so a broken sessions table shows up here instead of as a mystery failure at login.
+  let sessionStorageOk = false;
+  let sessionStorageError: string | undefined;
+  try {
+    await ensureAuthTables(env);
+    const probe = "probe" + crypto.randomUUID().replace(/-/g, "");
+    await env.DB.prepare("INSERT INTO admin_sessions (token_hash, expires_at, ip) VALUES (?, ?, ?)")
+      .bind(probe, new Date(Date.now() + 60000).toISOString(), "status-check").run();
+    const back = await env.DB.prepare("SELECT token_hash FROM admin_sessions WHERE token_hash = ?").bind(probe).first();
+    await env.DB.prepare("DELETE FROM admin_sessions WHERE token_hash = ?").bind(probe).run();
+    sessionStorageOk = !!back;
+  } catch (err) {
+    sessionStorageError = err instanceof Error ? err.message.slice(0, 160) : "unknown error";
+  }
+
+  // What this browser is sending: names and counts only, never values.
+  const names: Record<string, number> = {};
+  for (const part of (request.headers.get("Cookie") || "").split(";")) {
+    const name = part.trim().split("=")[0];
+    if (name) names[name] = (names[name] || 0) + 1;
+  }
+
+  return json({
+    ...ownerAuthStatus(env),
+    lockedOut,
+    sessionStorageOk,
+    ...(sessionStorageError ? { sessionStorageError } : {}),
+    cookiesReceived: names,
+    signedInNow: await isOwner(request, env),
+  });
 }
 
 export async function onRequestPost(context: { env: Env; request: Request }) {
