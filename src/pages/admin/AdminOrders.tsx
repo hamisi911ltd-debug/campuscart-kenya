@@ -99,9 +99,14 @@ const AdminOrders = () => {
 
   const handleUpdateOrderStatus = async (orderId: string, newStatus: string) => {
     try {
+      // tracking note the customer sees on their order timeline (optional)
+      const note = ["processing", "shipped", "out_for_delivery", "delivered"].includes(newStatus)
+        ? window.prompt("Tracking note for the customer (e.g. rider name & phone, location). Leave empty to skip:") || ""
+        : "";
       const response = await adminPut('/api/admin/orders', {
         id: orderId,
         status: newStatus,
+        note,
       });
       
       const data = await response.json();
@@ -294,6 +299,7 @@ const AdminOrders = () => {
                 <option value="confirmed">Confirmed</option>
                 <option value="processing">Processing</option>
                 <option value="shipped">Shipped</option>
+                <option value="out_for_delivery">Out for delivery</option>
                 <option value="delivered">Delivered</option>
                 <option value="payment_failed">Payment Failed</option>
                 <option value="cancelled">Cancelled</option>
@@ -412,6 +418,7 @@ const AdminOrders = () => {
                             <option value="confirmed">Confirmed</option>
                             <option value="processing">Processing</option>
                             <option value="shipped">Shipped</option>
+                            <option value="out_for_delivery">Out for delivery</option>
                             <option value="delivered">Delivered</option>
                             <option value="payment_failed">Payment Failed</option>
                             <option value="cancelled">Cancelled</option>
@@ -543,6 +550,7 @@ const AdminOrders = () => {
                     <option value="confirmed">Confirmed</option>
                     <option value="processing">Processing</option>
                     <option value="shipped">Shipped</option>
+                    <option value="out_for_delivery">Out for delivery</option>
                     <option value="delivered">Delivered</option>
                     <option value="payment_failed">Payment Failed</option>
                     <option value="cancelled">Cancelled</option>

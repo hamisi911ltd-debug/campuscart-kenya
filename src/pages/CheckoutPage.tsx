@@ -5,6 +5,7 @@ import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
+import { OrderPayment } from "@/components/OrderPayment";
 import { DELIVERY_COUNTIES, DELIVERY_FEE, DELIVERY_NOTICE, isValidKenyanPhone } from "@/data/deliveryAreas";
 
 const DETAILS_KEY = "campusmart_delivery_details";
@@ -59,6 +60,7 @@ const CheckoutPage = () => {
   const [payMethod, setPayMethod] = useState<"wallet" | "mpesa">("mpesa");
   const [submitting, setSubmitting] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
+  const [orderId, setOrderId] = useState("");
   const [whatsappLink, setWhatsappLink] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -97,8 +99,13 @@ const CheckoutPage = () => {
           <p className="mt-2 text-sm text-muted-foreground">
             {paidWithWallet
               ? "Paid from your wallet balance. We're preparing your order now."
-              : "We'll send an M-Pesa payment request to your phone once the order is confirmed, and message you on WhatsApp as soon as payment goes through."}
+              : "Pay now to confirm it - we've sent an M-Pesa prompt to your phone."}
           </p>
+          {!paidWithWallet && orderId && (
+            <div className="mt-4">
+              <OrderPayment orderId={orderId} autoStart />
+            </div>
+          )}
           {whatsappLink && (
             <a
               href={whatsappLink}
@@ -247,11 +254,9 @@ const CheckoutPage = () => {
         return;
       }
 
-      // --- M-Pesa: the order now just lands in Admin → Orders for the
-      // admin to confirm and trigger the M-Pesa STK push. Nothing
-      // WhatsApp-related touches the customer's device at this point -
-      // that only happens once PayHero confirms their payment
-      // (see functions/api/_lib/settlePayment.ts). ---
+      // --- M-Pesa: the next screen sends the payment prompt straight away and
+      // follows it until the customer has paid (see OrderPayment). ---
+      setOrderId(result.order_id);
       toast.success("Order placed successfully!");
       await clearCart();
       setDone(true);

@@ -78,6 +78,32 @@ const AdminProducts = () => {
   // Put every supplier product on the fixed 10% markup: re-reads each one's current
   // supplier price and sets the selling price to that + 10%. Products you added
   // yourself (no supplier cost) are left alone.
+  const [enriching, setEnriching] = useState<{ done: number; total: number } | null>(null);
+
+  // Give every supplier product its full details (description, specifications, options, what's in
+  // the box) by re-reading its Kilimall listing. Shown on the product page when it is opened.
+  const handleEnrichDetails = async () => {
+    const queue = products.filter((p) => p.src_listing_id);
+    if (queue.length === 0) { toast.info('No supplier products to update'); return; }
+    if (!window.confirm(`Add full details to ${queue.length} product(s)? This reads each one's Kilimall listing and can take a while - keep this page open.`)) return;
+    setEnriching({ done: 0, total: queue.length });
+    let ok = 0;
+    let skipped = 0;
+    for (let i = 0; i < queue.length; i++) {
+      try {
+        const res = await adminPost('/api/admin/enrich-details', { productId: queue[i].id });
+        const data = await res.json();
+        if (res.ok && data.success) ok++; else skipped++;
+      } catch {
+        skipped++;
+      }
+      setEnriching({ done: i + 1, total: queue.length });
+    }
+    setEnriching(null);
+    toast.success(`Details added to ${ok} product${ok === 1 ? '' : 's'}${skipped ? `; ${skipped} had nothing new or are gone from Kilimall` : ''}`);
+    fetchProducts();
+  };
+
   const handleApplyMarkup = async () => {
     const queue = products.filter((p) => p.src_listing_id);
     if (queue.length === 0) { toast.info('No supplier products to price'); return; }
@@ -432,6 +458,15 @@ const AdminProducts = () => {
               <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
             </button>
             <button
+              onClick={handleEnrichDetails}
+              disabled={!!enriching}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition disabled:opacity-60"
+              title="Fill in full details (specs, options, what's in the box) for every product"
+            >
+              <CheckCircle className="h-4 w-4" />
+              <span>{enriching ? `Details ${enriching.done}/${enriching.total}…` : 'Add more details to all'}</span>
+            </button>
+            <button
               onClick={handleApplyMarkup}
               disabled={!!repricing}
               className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition disabled:opacity-60"
@@ -678,6 +713,7 @@ const AdminProducts = () => {
                   title={product.title}
                   price={product.price}
                   image={product.image_url}
+                  description={product.description}
                   variant="icon"
                   className="mb-2"
                 />

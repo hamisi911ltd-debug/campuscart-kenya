@@ -94,31 +94,49 @@ export async function onRequestPut(context: { env: Env; request: Request }) {
   }
 
   try {
-    const body = await request.json();
-    const { id, status } = body;
+    const body = await request.json() as { id?: string; status?: string; note?: string };
+    const { id } = body;
+    const note = String(body.note || "").trim().slice(0, 200);
+    let status = body.status;
 
-    if (!id || !status) {
-      return new Response(JSON.stringify({ 
-        error: "Order ID and status are required" 
+    if (!id || (!status && !note)) {
+      return new Response(JSON.stringify({
+        error: "Order ID and a status or tracking note are required"
       }), {
         status: 400,
         headers: { "Content-Type": "application/json" }
       });
     }
 
-    const updateData: any = { status, updated_at: new Date().toISOString() };
-    if (status === 'delivered') {
-      updateData.delivered_at = new Date().toISOString();
+    const ALLOWED = ["pending", "pending_confirmation", "confirmed", "payment_requested", "paid", "processing",
+      "shipped", "out_for_delivery", "delivered", "cancelled", "payment_failed"];
+    if (status && !ALLOWED.includes(status)) {
+      return new Response(JSON.stringify({ error: "Unknown status" }), {
+        status: 400,
+        headers: { "Content-Type": "application/json" }
+      });
     }
 
-    await env.DB.prepare(
-      "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP, delivered_at = ? WHERE id = ?"
-    ).bind(status, status === 'delivered' ? new Date().toISOString() : null, id).run();
+    if (status) {
+      await env.DB.prepare(
+        "UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP, delivered_at = ? WHERE id = ?"
+      ).bind(status, status === 'delivered' ? new Date().toISOString() : null, id).run();
+    } else {
+      // note-only update: a tracking message on the current status
+      const current = await env.DB.prepare("SELECT status FROM orders WHERE id = ?").bind(id).first<{ status: string }>();
+      if (!current) {
+        return new Response(JSON.stringify({ error: "Order not found" }), {
+          status: 404,
+          headers: { "Content-Type": "application/json" }
+        });
+      }
+      status = current.status;
+    }
 
     await env.DB.prepare(`
       INSERT INTO order_status_history (id, order_id, status, note)
-      VALUES (?, ?, ?, 'Status updated by admin')
-    `).bind(crypto.randomUUID(), id, status).run();
+      VALUES (?, ?, ?, ?)
+    `).bind(crypto.randomUUID(), id, status, note || "Status updated by admin").run();
 
     return new Response(JSON.stringify({
       success: true,

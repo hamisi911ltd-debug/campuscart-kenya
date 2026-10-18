@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { OrderPayment } from "@/components/OrderPayment";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
@@ -55,6 +56,7 @@ const statusConfig: Record<string, { icon: LucideIcon; label: string; color: str
   paid: { icon: CheckCircle2, label: 'Paid', color: 'text-green-600 bg-green-50 dark:bg-green-950', iconColor: 'text-green-600' },
   processing: { icon: Package, label: 'Processing', color: 'text-blue-600 bg-blue-50 dark:bg-blue-950', iconColor: 'text-blue-600' },
   shipped: { icon: Truck, label: 'Shipped', color: 'text-purple-600 bg-purple-50 dark:bg-purple-950', iconColor: 'text-purple-600' },
+  out_for_delivery: { icon: Truck, label: 'Out for delivery', color: 'text-orange-600 bg-orange-50 dark:bg-orange-950', iconColor: 'text-orange-600' },
   delivered: { icon: CheckCircle2, label: 'Delivered', color: 'text-green-600 bg-green-50 dark:bg-green-950', iconColor: 'text-green-600' },
   cancelled: { icon: XCircle, label: 'Cancelled', color: 'text-red-600 bg-red-50 dark:bg-red-950', iconColor: 'text-red-600' },
   payment_failed: { icon: XCircle, label: 'Payment failed', color: 'text-red-600 bg-red-50 dark:bg-red-950', iconColor: 'text-red-600' },
@@ -200,6 +202,15 @@ const OrdersPage = () => {
                     Enter your M-Pesa PIN on the payment prompt sent to your phone to complete this order.
                   </p>
                 </div>
+              </div>
+            )}
+
+            {/* Pay now - for orders that are not paid yet */}
+            {(selectedOrder.paymentStatus === 'unpaid' || selectedOrder.paymentStatus === 'failed') &&
+              selectedOrder.status !== 'cancelled' && (
+              <div className="mt-4 rounded-xl bg-muted p-4 text-center">
+                <p className="mb-3 text-sm font-semibold">This order is not paid yet.</p>
+                <OrderPayment orderId={selectedOrder.id} onPaid={loadOrders} />
               </div>
             )}
 

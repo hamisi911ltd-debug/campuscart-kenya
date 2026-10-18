@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check, Link2, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { sizedImage } from "@/lib/imageUrl";
 import { shortProductTitle } from "@/lib/productTitle";
@@ -9,9 +9,11 @@ interface ShareProductProps {
   id: string;
   title: string;
   price: number;
-  /** The product photo to put on the share card. */
+  /** The product photo to put on the share picture. */
   image?: string;
-  /** "full" = labelled WhatsApp button + copy; "icon" = compact buttons for cards. */
+  /** Stored description - a few bullet points are taken from it for the message. */
+  description?: string | null;
+  /** "full" = labelled WhatsApp button; "icon" = compact button for cards. */
   variant?: "full" | "icon";
   className?: string;
 }
@@ -23,20 +25,13 @@ const WhatsAppIcon = ({ className = "h-4 w-4" }: { className?: string }) => (
 );
 
 // ---------------------------------------------------------------------------
-// The share card: a large portrait picture that works as a WhatsApp status or
-// chat image, branded as CampusMart:
-//   - the product photo, large, with the CampusMart logo + name on it
-//   - a classic ivory footer with the product name and price
-//   - a navy brand band at the bottom: logo, name, tagline, website
+// The share picture: just the product photo, with a faded CampusMart logo as a
+// watermark in the centre. No badges and no name/price strip - the details go
+// in the message under the picture.
 const CARD_W = 1080;
-const CARD_H = 1420;
-const PHOTO_H = 1010; // ~71% of the card is the photo
-const BAND_H = 104;   // navy brand band at the very bottom
-const SERIF = `Georgia, "Times New Roman", serif`;
+const CARD_H = 1350;
 const SANS = `"Segoe UI", "Helvetica Neue", Arial, sans-serif`;
-const NAVY = "#0e214e";   // the site's primary colour
-const GREEN = "#7CB342";  // the "MART" green from the logo
-const GOLD = "#b8923a";
+const GREEN = "#7CB342";
 
 function loadImage(url: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
@@ -48,185 +43,117 @@ function loadImage(url: string): Promise<HTMLImageElement> {
   });
 }
 
-function roundedRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath();
-  ctx.moveTo(x + r, y);
-  ctx.arcTo(x + w, y, x + w, y + h, r);
-  ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r);
-  ctx.arcTo(x, y, x + w, y, r);
-  ctx.closePath();
-}
-
-function wrapLines(ctx: CanvasRenderingContext2D, text: string, maxWidth: number, maxLines: number): string[] {
-  const words = text.split(" ");
-  const lines: string[] = [];
-  let line = "";
-  for (const word of words) {
-    const test = line ? `${line} ${word}` : word;
-    if (ctx.measureText(test).width <= maxWidth || !line) {
-      line = test;
-    } else {
-      lines.push(line);
-      line = word;
-    }
-  }
-  if (line) lines.push(line);
-  if (lines.length > maxLines) {
-    const kept = lines.slice(0, maxLines);
-    kept[maxLines - 1] = kept[maxLines - 1].replace(/[\s,.;:-]+$/, "") + "…";
-    return kept;
-  }
-  return lines;
-}
-
-/** Round logo badge, clipped to a circle. */
-function drawLogo(ctx: CanvasRenderingContext2D, logo: HTMLImageElement | null, cx: number, cy: number, r: number) {
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(cx, cy, r, 0, Math.PI * 2);
-  ctx.closePath();
-  ctx.fillStyle = "#ffffff";
-  ctx.fill();
-  if (logo) {
-    ctx.clip();
-    ctx.drawImage(logo, cx - r, cy - r, r * 2, r * 2);
-  }
-  ctx.restore();
-}
-
-/** "CAMPUS" + "MART" wordmark, left-aligned at x, baseline y. Returns its width. */
-function drawWordmark(ctx: CanvasRenderingContext2D, x: number, y: number, size: number, campusColor: string): number {
-  ctx.textAlign = "left";
-  ctx.font = `800 ${size}px ${SANS}`;
-  const w1 = ctx.measureText("CAMPUS").width;
-  ctx.fillStyle = campusColor;
-  ctx.fillText("CAMPUS", x, y);
-  ctx.fillStyle = GREEN;
-  ctx.fillText("MART", x + w1, y);
-  return w1 + ctx.measureText("MART").width;
-}
-
-async function buildShareCard(image: string | undefined, name: string, price: number): Promise<Blob | null> {
+async function buildShareCard(image: string | undefined): Promise<Blob | null> {
+  if (!image) return null;
   const canvas = document.createElement("canvas");
   canvas.width = CARD_W;
   canvas.height = CARD_H;
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
 
-  // the logo is optional - the card is still branded by name if it can't load
+  let photo: HTMLImageElement;
+  try {
+    photo = await loadImage(sizedImage(image, 1200));
+  } catch {
+    return null; // no photo = nothing worth sharing as an image
+  }
   const logo = await loadImage(logoUrl).catch(() => null);
 
-  // ivory background
-  ctx.fillStyle = "#fffdf8";
+  // soft blurred backdrop from the same photo, so any shape of photo fills the card
+  ctx.fillStyle = "#ffffff";
   ctx.fillRect(0, 0, CARD_W, CARD_H);
-
-  // the photo, large, cropped to fill its area
-  if (image) {
-    try {
-      const photo = await loadImage(sizedImage(image, 1200));
-      const scale = Math.max(CARD_W / photo.naturalWidth, PHOTO_H / photo.naturalHeight);
-      const w = photo.naturalWidth * scale;
-      const h = photo.naturalHeight * scale;
-      ctx.save();
-      ctx.beginPath();
-      ctx.rect(0, 0, CARD_W, PHOTO_H);
-      ctx.clip();
-      ctx.drawImage(photo, (CARD_W - w) / 2, (PHOTO_H - h) / 2, w, h);
-      ctx.restore();
-    } catch {
-      return null; // no photo = nothing worth sharing as an image
-    }
-  }
-
-  // brand badge on the photo: logo + CAMPUSMART in a white pill, top-left
   {
-    const LOGO_R = 36;
-    const PAD = 20;
-    const pillH = LOGO_R * 2 + PAD * 2;
-    ctx.font = `800 44px ${SANS}`;
-    const textW = ctx.measureText("CAMPUS").width + ctx.measureText("MART").width;
-    const pillW = PAD + LOGO_R * 2 + 16 + textW + PAD + 6;
-    const px = 38;
-    const py = 38;
+    const scale = Math.max(CARD_W / photo.naturalWidth, CARD_H / photo.naturalHeight);
+    const w = photo.naturalWidth * scale;
+    const h = photo.naturalHeight * scale;
     ctx.save();
-    ctx.shadowColor = "rgba(0,0,0,0.28)";
-    ctx.shadowBlur = 18;
-    ctx.shadowOffsetY = 4;
-    roundedRect(ctx, px, py, pillW, pillH, pillH / 2);
-    ctx.fillStyle = "rgba(255,255,255,0.96)";
-    ctx.fill();
+    ctx.filter = "blur(40px)";
+    ctx.globalAlpha = 0.55;
+    ctx.drawImage(photo, (CARD_W - w) / 2, (CARD_H - h) / 2, w, h);
     ctx.restore();
-    drawLogo(ctx, logo, px + PAD + LOGO_R, py + pillH / 2, LOGO_R);
-    ctx.textBaseline = "alphabetic";
-    drawWordmark(ctx, px + PAD + LOGO_R * 2 + 16, py + pillH / 2 + 15, 44, NAVY);
   }
 
-  // thin gold rule between photo and footer
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(0, PHOTO_H, CARD_W, 5);
-
-  // name (classic serif, up to two lines) and price, centred as one block above the band
-  ctx.textAlign = "center";
-  ctx.textBaseline = "alphabetic";
-  ctx.font = `bold 54px ${SERIF}`;
-  const lines = wrapLines(ctx, name, CARD_W - 140, 2);
-  const NAME_LINE = 62;
-  const PRICE_SIZE = 84;
-  const GAP = 34;
-  const footerTop = PHOTO_H + 5;
-  const footerBottom = CARD_H - BAND_H;
-  const blockH = lines.length * NAME_LINE + GAP + PRICE_SIZE;
-  let y = footerTop + (footerBottom - footerTop - blockH) / 2 + 48;
-  ctx.fillStyle = NAVY;
-  for (const line of lines) {
-    ctx.fillText(line, CARD_W / 2, y);
-    y += NAME_LINE;
-  }
-  ctx.fillStyle = "#2f6b1f";
-  ctx.font = `bold ${PRICE_SIZE}px ${SERIF}`;
-  ctx.fillText(`KES ${price.toLocaleString("en-KE")}`, CARD_W / 2, y - NAME_LINE + GAP + PRICE_SIZE);
-
-  // navy brand band: logo, name, tagline, website
-  ctx.fillStyle = NAVY;
-  ctx.fillRect(0, CARD_H - BAND_H, CARD_W, BAND_H);
-  ctx.fillStyle = GOLD;
-  ctx.fillRect(0, CARD_H - BAND_H, CARD_W, 4);
+  // the photo itself, as large as fits without cropping
   {
-    const cy = CARD_H - BAND_H / 2 + 2;
-    drawLogo(ctx, logo, 86, cy, 34);
-    ctx.textBaseline = "alphabetic";
-    drawWordmark(ctx, 134, cy + 2, 38, "#ffffff");
-    ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(255,255,255,0.72)";
-    ctx.font = `600 17px ${SANS}`;
-    ctx.fillText("WHOLESALE PRICES, REAL SAVINGS", 135, cy + 26);
-    ctx.textAlign = "right";
-    ctx.fillStyle = GREEN;
-    ctx.font = `700 28px ${SANS}`;
-    ctx.fillText("campusmart.co.ke", CARD_W - 52, cy + 10);
+    const scale = Math.min(CARD_W / photo.naturalWidth, CARD_H / photo.naturalHeight);
+    const w = photo.naturalWidth * scale;
+    const h = photo.naturalHeight * scale;
+    ctx.drawImage(photo, (CARD_W - w) / 2, (CARD_H - h) / 2, w, h);
   }
 
-  // classic frame
-  ctx.strokeStyle = NAVY;
-  ctx.lineWidth = 12;
-  ctx.strokeRect(6, 6, CARD_W - 12, CARD_H - 12);
+  // faded CampusMart watermark, centred
+  const R = 150;
+  const cx = CARD_W / 2;
+  const cy = CARD_H / 2 - 40;
+  if (logo) {
+    ctx.save();
+    ctx.globalAlpha = 0.22;
+    ctx.beginPath();
+    ctx.arc(cx, cy, R, 0, Math.PI * 2);
+    ctx.closePath();
+    ctx.clip();
+    ctx.drawImage(logo, cx - R, cy - R, R * 2, R * 2);
+    ctx.restore();
+  }
+  ctx.save();
+  ctx.globalAlpha = 0.25;
+  ctx.textBaseline = "alphabetic";
+  ctx.textAlign = "left";
+  ctx.font = `800 84px ${SANS}`;
+  const w1 = ctx.measureText("CAMPUS").width;
+  const w2 = ctx.measureText("MART").width;
+  const x = cx - (w1 + w2) / 2;
+  const y = cy + R + 100;
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 8;
+  ctx.fillStyle = "#ffffff";
+  ctx.fillText("CAMPUS", x, y);
+  ctx.fillStyle = GREEN;
+  ctx.fillText("MART", x + w1, y);
+  ctx.restore();
 
   return new Promise((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", 0.92));
 }
 
-// Shares a product. The message is short - the name, the price and the link -
-// and, on phones, the large share card goes with it as a picture, so it posts
-// to a WhatsApp status or chat as an image. (Where the browser can't share
-// files, e.g. most desktops, the picture is saved and WhatsApp opens with the
-// text, so it can be attached.) The /share/<id> link also carries the photo in
-// its link preview.
-export const ShareProduct = ({ id, title, price, image, variant = "full", className = "" }: ShareProductProps) => {
-  const [copied, setCopied] = useState(false);
+/** A few short bullet points from the stored description (specifications first, else the opening sentences). */
+export function descriptionBullets(description: string | null | undefined, max = 4): string[] {
+  const text = (description || "").replace(/\r/g, "");
+  if (!text.trim()) return [];
+  const clip = (t: string) => {
+    const clean = t.replace(/\s+/g, " ").trim();
+    if (clean.length <= 70) return clean;
+    const cut = clean.slice(0, 70);
+    return cut.slice(0, Math.max(cut.lastIndexOf(" "), 40)).replace(/[\s,.;:-]+$/, "") + "…";
+  };
+  const bullets = text
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => /^[•\-*]\s*/.test(l))
+    .map((l) => l.replace(/^[•\-*]\s*/, ""))
+    .filter((l) => l.length >= 4);
+  if (bullets.length) return bullets.slice(0, max).map(clip);
+  const intro = text.split(/\n\s*\n/)[0] || text;
+  return intro
+    .split(/(?<=[.!?])\s+/)
+    .map((x) => x.trim())
+    .filter((x) => x.length >= 12)
+    .slice(0, max)
+    .map(clip);
+}
+
+export function buildShareText(name: string, price: number, description: string | null | undefined, link: string): string {
+  const bullets = descriptionBullets(description).map((b) => `• ${b}`);
+  return [`*${name}*`, `KES ${price.toLocaleString("en-KE")}`, ...(bullets.length ? ["", ...bullets] : []), "", `View & order: ${link}`].join("\n");
+}
+
+// Shares a product: on phones the clean photo goes with the message as a picture, so it posts to a
+// WhatsApp status or chat; where the browser cannot share files (most desktops) the picture is saved
+// and WhatsApp opens with the text. The /share/<id> link also carries the photo in its preview.
+export const ShareProduct = ({ id, title, price, image, description, variant = "full", className = "" }: ShareProductProps) => {
   const [busy, setBusy] = useState(false);
   const name = shortProductTitle(title);
   const link = `${window.location.origin}/share/${id}`;
-  const text = `${name}\nKES ${price.toLocaleString("en-KE")}\n${link}`;
+  const text = buildShareText(name, price, description, link);
 
   const openWhatsAppText = () =>
     window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
@@ -237,14 +164,13 @@ export const ShareProduct = ({ id, title, price, image, variant = "full", classN
     if (busy) return;
     setBusy(true);
     try {
-      const blob = image ? await buildShareCard(image, name, price) : null;
+      const blob = await buildShareCard(image);
       if (blob) {
         const file = new File([blob], `${name.replace(/[^a-z0-9]+/gi, "-").slice(0, 40) || "product"}.jpg`, { type: "image/jpeg" });
         if (navigator.canShare?.({ files: [file] })) {
           await navigator.share({ files: [file], text });
           return;
         }
-        // No file sharing (desktop): save the picture and open WhatsApp with the text.
         const url = URL.createObjectURL(file);
         const a = document.createElement("a");
         a.href = url;
@@ -262,19 +188,6 @@ export const ShareProduct = ({ id, title, price, image, variant = "full", classN
     }
   };
 
-  const copyLink = async (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    try {
-      await navigator.clipboard.writeText(link);
-      setCopied(true);
-      toast.success("Link copied");
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      toast.error("Couldn't copy - long-press the link to copy it");
-    }
-  };
-
   if (variant === "icon") {
     return (
       <div className={`flex gap-2 ${className}`}>
@@ -286,14 +199,6 @@ export const ShareProduct = ({ id, title, price, image, variant = "full", classN
         >
           {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <WhatsAppIcon className="h-3.5 w-3.5" />}
           <span className="hidden sm:inline">Share</span>
-        </button>
-        <button
-          type="button"
-          onClick={copyLink}
-          title="Copy link"
-          className="rounded-lg bg-secondary px-2.5 py-2 text-foreground transition-colors hover:bg-secondary/80"
-        >
-          {copied ? <Check className="h-3.5 w-3.5" /> : <Link2 className="h-3.5 w-3.5" />}
         </button>
       </div>
     );
@@ -307,13 +212,6 @@ export const ShareProduct = ({ id, title, price, image, variant = "full", classN
         className="flex flex-1 items-center justify-center gap-2 rounded-full bg-green-600 px-4 py-2.5 text-sm font-bold text-white transition hover:bg-green-700"
       >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <WhatsAppIcon />} Share on WhatsApp
-      </button>
-      <button
-        type="button"
-        onClick={copyLink}
-        className="flex items-center gap-1.5 rounded-full border border-border px-4 py-2.5 text-sm font-semibold hover:bg-muted"
-      >
-        {copied ? <Check className="h-4 w-4" /> : <Link2 className="h-4 w-4" />} {copied ? "Copied" : "Copy link"}
       </button>
     </div>
   );

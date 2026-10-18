@@ -7,9 +7,11 @@ import { sizedImage } from "@/lib/imageUrl";
 import { DELIVERY_NOTICE } from "@/data/deliveryAreas";
 import { LazyImage } from "@/components/LazyImage";
 import { ShareProduct } from "@/components/ShareProduct";
+import { ProductDetails } from "@/components/ProductDetails";
 import { useShop } from "@/store/shop";
 import { useSEO, SITE_URL } from "@/hooks/useSEO";
-import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight, Boxes } from "lucide-react";
+import { MapPin, ShieldCheck, Star, Truck, Wallet, Zap, User, ChevronLeft, ChevronRight, Boxes, ImagePlus, Loader2, X } from "lucide-react";
+import { compressReviewPhoto } from "@/lib/reviewPhoto";
 import { useState, useEffect, useRef } from "react";
 import { toast } from "sonner";
 
@@ -27,6 +29,9 @@ const ProductPage = () => {
   const [reviewComment, setReviewComment] = useState("");
   const [reviews, setReviews] = useState<any[]>([]);
   const [loadingReviews, setLoadingReviews] = useState(false);
+  const [reviewPhoto, setReviewPhoto] = useState<File | null>(null);
+  const [reviewPhotoUrl, setReviewPhotoUrl] = useState<string | null>(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
@@ -151,24 +156,56 @@ const ProductPage = () => {
     toast.success('Opening WhatsApp to complete your order!');
   };
 
-  const handleSubmitReview = () => {
+  const pickReviewPhoto = (file: File | undefined) => {
+    if (reviewPhotoUrl) URL.revokeObjectURL(reviewPhotoUrl);
+    if (!file) { setReviewPhoto(null); setReviewPhotoUrl(null); return; }
+    if (!file.type.startsWith('image/')) { toast.error('Please choose a photo'); return; }
+    setReviewPhoto(file);
+    setReviewPhotoUrl(URL.createObjectURL(file));
+  };
+
+  const handleSubmitReview = async () => {
     if (!user) {
       toast.error('Please sign in to leave a review');
       navigate('/auth');
       return;
     }
-
-    if (!reviewComment.trim()) {
-      toast.error('Please write a comment');
+    if (reviewComment.trim().length < 3) {
+      toast.error('Please write a short comment');
       return;
     }
-
-    // In a real app, this would save to backend
-    // For now, just show success message
-    toast.success('Thank you for your review! It will be published after verification.');
-    setShowReviewForm(false);
-    setReviewComment('');
-    setReviewRating(5);
+    if (submittingReview) return;
+    setSubmittingReview(true);
+    try {
+      let imageUrl: string | undefined;
+      if (reviewPhoto) {
+        const blob = await compressReviewPhoto(reviewPhoto);
+        const form = new FormData();
+        form.append('image', blob, 'review.webp');
+        const up = await fetch('/api/reviews/upload', { method: 'POST', body: form });
+        const upData = await up.json().catch(() => ({}));
+        if (!up.ok) throw new Error(upData.error || 'Could not upload the photo');
+        imageUrl = upData.url;
+      }
+      const res = await fetch(`/api/reviews/${id}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: user.id, rating: reviewRating, comment: reviewComment.trim(), image_url: imageUrl }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || 'Could not save your review');
+      const fresh = await fetch(`/api/reviews/${id}`).then((r) => (r.ok ? r.json() : null)).catch(() => null);
+      if (Array.isArray(fresh)) setReviews(fresh);
+      toast.success('Thank you! Your review is posted.');
+      setShowReviewForm(false);
+      setReviewComment('');
+      setReviewRating(5);
+      pickReviewPhoto(undefined);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not save your review');
+    } finally {
+      setSubmittingReview(false);
+    }
   };
 
   if (!p) {
@@ -407,23 +444,27 @@ const ProductPage = () => {
             <Truck className="h-3.5 w-3.5" /> {DELIVERY_NOTICE}
           </p>
 
-          <ShareProduct id={p.id} title={p.title} price={p.price} image={p.image} />
+          <ShareProduct id={p.id} title={p.title} price={p.price} image={p.image} description={p.description} />
         </div>
       </div>
 
+      <ProductDetails description={p.description} />
+
       {/* Reviews Section */}
-      {(reviews.length > 0 || !loadingReviews) && (
+      {(reviews.length > 0 || showReviewForm || !loadingReviews) && (
         <section className="mt-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-extrabold flex items-center gap-2">
-              <Star className="h-5 w-5 fill-warning text-warning" />
-              Customer Reviews ({reviews.length})
-            </h2>
+            {reviews.length > 0 ? (
+              <h2 className="text-lg font-extrabold flex items-center gap-2">
+                <Star className="h-5 w-5 fill-warning text-warning" />
+                Customer Reviews ({reviews.length})
+              </h2>
+            ) : <span />}
             <button
               onClick={() => setShowReviewForm(!showReviewForm)}
-              className="text-sm font-bold text-accent hover:underline"
+              className="rounded-full border border-border px-4 py-2 text-sm font-bold text-accent hover:bg-muted"
             >
-              {showReviewForm ? 'Cancel' : '+ Write Review'}
+              {showReviewForm ? 'Cancel' : '+ Add review'}
             </button>
           </div>
 
@@ -470,13 +511,37 @@ const ProductPage = () => {
                 />
               </div>
 
+              {/* Photo */}
+              <div className="mb-4">
+                <label className="text-sm font-medium mb-2 block">Add a photo (optional)</label>
+                {reviewPhotoUrl ? (
+                  <div className="relative inline-block">
+                    <img src={reviewPhotoUrl} alt="Your review photo" className="h-24 w-24 rounded-xl object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => pickReviewPhoto(undefined)}
+                      className="absolute -right-2 -top-2 rounded-full bg-foreground p-1 text-background"
+                      aria-label="Remove photo"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ) : (
+                  <label className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-4 py-3 text-sm font-semibold text-muted-foreground hover:bg-muted">
+                    <ImagePlus className="h-5 w-5" /> Upload photo
+                    <input type="file" accept="image/*" className="hidden" onChange={(e) => pickReviewPhoto(e.target.files?.[0])} />
+                  </label>
+                )}
+              </div>
+
               {/* Submit Button */}
               <div className="flex gap-3">
                 <button
                   onClick={handleSubmitReview}
-                  className="flex-1 rounded-xl gradient-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all"
+                  disabled={submittingReview}
+                  className="flex flex-1 items-center justify-center gap-2 rounded-xl gradient-accent px-6 py-3 text-sm font-bold text-accent-foreground shadow-lg hover:shadow-xl hover:scale-[1.02] transition-all disabled:opacity-60"
                 >
-                  Submit Review
+                  {submittingReview && <Loader2 className="h-4 w-4 animate-spin" />} Submit Review
                 </button>
                 <button
                   onClick={() => setShowReviewForm(false)}
@@ -493,13 +558,13 @@ const ProductPage = () => {
             <div className="rounded-2xl bg-card p-4 shadow-card mb-4">
               <div className="flex items-center gap-4">
                 <div className="text-center">
-                  <div className="text-4xl font-extrabold text-foreground">{p?.rating?.toFixed(1) || '0.0'}</div>
+                  <div className="text-4xl font-extrabold text-foreground">{(reviews.reduce((t, r) => t + r.rating, 0) / reviews.length).toFixed(1)}</div>
                   <div className="flex items-center gap-0.5 mt-1">
                     {[1, 2, 3, 4, 5].map((star) => (
                       <Star
                         key={star}
                         className={`h-4 w-4 ${
-                          star <= Math.round(p?.rating || 0)
+                          star <= Math.round(reviews.reduce((t, r) => t + r.rating, 0) / Math.max(reviews.length, 1))
                             ? "fill-warning text-warning"
                             : "text-muted-foreground"
                         }`}
@@ -579,6 +644,11 @@ const ProductPage = () => {
                           </span>
                         </div>
                         <p className="text-sm text-foreground/90 mt-2">{review.comment}</p>
+                        {review.image && (
+                          <a href={review.image} target="_blank" rel="noopener noreferrer" className="mt-2 inline-block">
+                            <img src={review.image} alt="Customer photo" loading="lazy" className="h-28 w-28 rounded-xl object-cover" />
+                          </a>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -593,12 +663,7 @@ const ProductPage = () => {
                 </div>
               )}
             </>
-          ) : (
-            <div className="rounded-2xl bg-card p-8 text-center shadow-card">
-              <Star className="h-12 w-12 text-muted-foreground mx-auto mb-3" />
-              <p className="text-sm text-muted-foreground">No reviews yet. Be the first to review!</p>
-            </div>
-          )}
+          ) : null}
         </section>
       )}
 

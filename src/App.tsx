@@ -37,6 +37,7 @@ const AdminBulkImport = lazyPage(() => import("./pages/admin/AdminBulkImport"));
 const AdminPhotoImport = lazyPage(() => import("./pages/admin/AdminPhotoImport"));
 const AdminKilimallImport = lazyPage(() => import("./pages/admin/AdminKilimallImport"));
 const AdminOrders = lazyPage(() => import("./pages/admin/AdminOrders"));
+const AdminReviews = lazyPage(() => import("./pages/admin/AdminReviews"));
 const AdminTeam = lazyPage(() => import("./pages/admin/AdminTeam"));
 const AdminLogin = lazyPage(() => import("./pages/admin/AdminLogin"));
 import AdminRoute from "./components/AdminRoute";
@@ -153,6 +154,7 @@ const App = () => {
               <Route path="/admin/products/bulk-import" element={<AdminRoute requirePermission="products"><AdminBulkImport /></AdminRoute>} />
               <Route path="/admin/products/import-photos" element={<AdminRoute requirePermission="products"><AdminPhotoImport /></AdminRoute>} />
               <Route path="/admin/products/import-kilimall" element={<AdminRoute requirePermission="products"><AdminKilimallImport /></AdminRoute>} />
+              <Route path="/admin/reviews" element={<AdminRoute requirePermission="products"><AdminReviews /></AdminRoute>} />
               <Route path="/admin/orders" element={<AdminRoute requirePermission="orders"><AdminOrders /></AdminRoute>} />
               {/* Owner-only pages: no permission a team member can hold opens these. */}
               <Route path="/admin" element={<AdminRoute ownerOnly><ComprehensiveMonitor /></AdminRoute>} />
