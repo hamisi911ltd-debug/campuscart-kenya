@@ -121,7 +121,6 @@ const App = () => {
     <TooltipProvider>
       <div className="mobile-container no-horizontal-scroll">
         <Toaster />
-        <CookieBanner />
         <Sonner />
         <InstallPrompt />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -173,6 +172,7 @@ const App = () => {
             </Routes>
             </Suspense>
           </ShopProvider>
+          <CookieBanner />
         </BrowserRouter>
       </div>
     </TooltipProvider>
