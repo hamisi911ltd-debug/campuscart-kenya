@@ -226,7 +226,8 @@ const CheckoutPage = () => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to save order');
+        const failure = await response.json().catch(() => ({}));
+        throw new Error(failure.error || 'Failed to save order');
       }
 
       const result = await response.json();
@@ -300,7 +301,7 @@ const CheckoutPage = () => {
 
     } catch (error) {
       console.error('Error placing order:', error);
-      toast.error("Failed to place order. Please try again.");
+      toast.error(error instanceof Error && error.message ? error.message : "Failed to place order. Please try again.");
       setSubmitting(false);
     }
   };

@@ -80,6 +80,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       });
     }
 
+    // The orders table has a foreign key to users, so an unknown account id (e.g. a sign-in that
+    // never reached the database) would make the insert fail. Such orders go under a guest row.
+    let buyerRowId = 'guest';
     if (body.buyer_id && body.buyer_id !== 'guest') {
       const buyer = await context.env.DB.prepare(`
         SELECT full_name, phone_number
@@ -88,6 +91,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       `).bind(body.buyer_id).first();
 
       if (buyer) {
+        buyerRowId = body.buyer_id;
         buyerInfo = {
           name: buyer.full_name as string || 'Guest',
           phone: checkoutPhone || buyer.phone_number as string || body.buyer_phone || 'N/A'
@@ -175,6 +179,11 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     );
 
     await ensureOwnerUser(context.env);
+    if (buyerRowId === 'guest') {
+      await context.env.DB.prepare(
+        "INSERT OR IGNORE INTO users (id, email, password_hash, full_name, is_admin) VALUES ('guest', 'guest@campusmart.local', '', 'Guest customer', 0)"
+      ).run();
+    }
 
     // Create the order
     const orderId = crypto.randomUUID();
@@ -186,7 +195,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_confirmation', 'unpaid')
     `).bind(
       orderId,
-      body.buyer_id || "guest",
+      buyerRowId,
       OWNER_ID,
       total_amount,
       delivery_fee,
@@ -301,7 +310,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
   } catch (error: any) {
     console.error('Checkout error:', error);
     return new Response(JSON.stringify({
-      error: error.message,
+      error: `Could not place the order (${error?.message || 'unknown error'}). Please try again.`,
       details: "Checkout failed"
     }), {
       status: 500,

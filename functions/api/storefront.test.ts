@@ -6,6 +6,7 @@ import { onRequestPost as pay } from "./payhero/pay";
 import { onRequestGet as orderStatus } from "./payhero/order-status";
 import { onRequestPut as updateOrder } from "./admin/orders";
 import { onRequestGet as adminReviews, onRequestDelete as deleteReview } from "./admin/reviews";
+import { onRequestPost as checkout } from "./checkout";
 import { resetAuthTablesCache } from "./_lib/ownerAuth";
 import { descriptionBullets } from "../../src/components/ShareProduct";
 
@@ -113,6 +114,45 @@ describe("review photo upload", () => {
     expect((await upload([0x3c, 0x73, 0x63, 0x72, 0x69, 0x70, 0x74, 0x3e, 0, 0, 0, 0, 0, 0, 0, 0])).status).toBe(400);
     expect((await upload([], 3_000_000)).status).toBe(413);
     expect(env.STORAGE.put).not.toHaveBeenCalled();
+  });
+});
+
+describe("checkout", () => {
+  const place = (extra: Record<string, unknown> = {}) =>
+    checkout({ env, request: json("/api/checkout", "POST", {
+      buyer_id: "u1", items: [{ product_id: "p1", quantity: 2, price: 1 }], county: "Nairobi", town: "CBD",
+      delivery_address: "Moi Ave", buyer_phone: "0712345678", ...extra,
+    }) } as any);
+
+  beforeEach(() => {
+    DB.raw.exec("PRAGMA foreign_keys = ON");
+    DB.raw.exec("ALTER TABLE products ADD COLUMN price REAL; ALTER TABLE products ADD COLUMN is_available INT DEFAULT 1; ALTER TABLE products ADD COLUMN image_url TEXT; ALTER TABLE products ADD COLUMN images TEXT; ALTER TABLE products ADD COLUMN category TEXT;");
+    DB.raw.exec("UPDATE products SET price = 500");
+    DB.raw.exec("ALTER TABLE users ADD COLUMN password_hash TEXT; ALTER TABLE users ADD COLUMN phone_number TEXT; ALTER TABLE users ADD COLUMN is_admin INT");
+    DB.raw.exec("ALTER TABLE orders ADD COLUMN seller_id TEXT REFERENCES users(id); ALTER TABLE orders ADD COLUMN delivery_address TEXT; ALTER TABLE orders ADD COLUMN delivery_latitude REAL; ALTER TABLE orders ADD COLUMN delivery_longitude REAL; ALTER TABLE orders ADD COLUMN notes TEXT");
+    DB.raw.exec("ALTER TABLE order_items ADD COLUMN product_title TEXT; ALTER TABLE order_items ADD COLUMN product_image TEXT; ALTER TABLE order_items ADD COLUMN quantity INT; ALTER TABLE order_items ADD COLUMN price_at_purchase REAL");
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 200 })));
+  });
+
+  it("charges the catalogue price, not the price the browser sent", async () => {
+    const res = await place();
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as any;
+    expect(data.subtotal).toBe(1000);
+    expect(data.total_amount).toBe(1129);
+    expect(data.order_number).toBe("CM" + data.order_id.slice(-8));
+  });
+
+  it("still places the order when the account id is not in the database", async () => {
+    const res = await place({ buyer_id: "google-12345" });
+    expect(res.status).toBe(200);
+  });
+
+  it("rejects unavailable products with a clear message", async () => {
+    DB.raw.exec("UPDATE products SET is_available = 0");
+    const res = await place();
+    expect(res.status).toBe(400);
+    expect(((await res.json()) as any).error).toMatch(/no longer available/);
   });
 });
 
