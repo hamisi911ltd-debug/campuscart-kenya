@@ -69,7 +69,7 @@ const CheckoutPage = () => {
   const [showMap, setShowMap] = useState(false);
   const [locationError, setLocationError] = useState<string>("");
 
-  const ADMIN_WHATSAPP = "254108254465";
+  const ADMIN_WHATSAPP = "254143531813";
 
   // Flat delivery fee on every order.
   const getDeliveryFee = (subtotal: number): number => (subtotal > 0 ? DELIVERY_FEE : 0);

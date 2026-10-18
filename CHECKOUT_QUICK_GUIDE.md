@@ -338,7 +338,7 @@ Please process this order. Thank you!
 
 ### Location Issues:
 **Contact Admin**:
-- WhatsApp: 0108254465
+- WhatsApp: 0143531813
 - Email: campusmart.care@gmail.com
 
 ### Order Issues:

@@ -4,7 +4,7 @@
 
 ### 1. ✅ Updated Admin WhatsApp Number
 **Old Number**: 254759159881  
-**New Number**: 254108254465 (0108254465)
+**New Number**: 254143531813 (0143531813)
 
 **Files Updated**:
 - `src/pages/CheckoutPage.tsx` - Changed `ADMIN_WHATSAPP` constant
@@ -135,7 +135,7 @@ Please process this order. Thank you!
 - [ ] Click "Complete Order Placement"
 - [ ] **Verify WhatsApp app opens directly** (not browser)
 - [ ] Verify message contains seller details
-- [ ] Verify message is sent to 0108254465
+- [ ] Verify message is sent to 0143531813
 - [ ] Verify Google Maps link works
 - [ ] Verify all seller info is formatted correctly
 
@@ -146,7 +146,7 @@ Please process this order. Thank you!
 - [ ] Click "Complete Order Placement"
 - [ ] **Verify WhatsApp Web opens** (in browser)
 - [ ] Verify message contains seller details
-- [ ] Verify message is sent to 0108254465
+- [ ] Verify message is sent to 0143531813
 - [ ] Verify formatting is correct
 
 ### Seller Details Testing
@@ -159,7 +159,7 @@ Please process this order. Thank you!
 
 ## Admin WhatsApp Number
 
-**New Number**: +254108254465 (0108254465)
+**New Number**: +254143531813 (0143531813)
 
 All checkout orders will now be sent to this number.
 
@@ -168,7 +168,7 @@ All checkout orders will now be sent to this number.
 ## Files Modified
 
 1. ✅ `src/pages/CheckoutPage.tsx`
-   - Changed admin number to 254108254465
+   - Changed admin number to 254143531813
    - Enhanced seller details formatting
    - Added mobile detection for WhatsApp app
    - Changed to `window.location.href` for direct app opening
@@ -190,7 +190,7 @@ After deployment:
 1. Test on mobile device (iOS/Android)
 2. Verify WhatsApp app opens (not web)
 3. Verify seller details are formatted correctly
-4. Verify messages go to 0108254465
+4. Verify messages go to 0143531813
 5. Test on desktop to ensure web version still works
 
 ---
@@ -199,7 +199,7 @@ After deployment:
 
 | Change | Status | Impact |
 |--------|--------|--------|
-| Admin number → 0108254465 | ✅ Done | All orders go to new number |
+| Admin number → 0143531813 | ✅ Done | All orders go to new number |
 | Enhanced seller details | ✅ Done | Better organized, includes campus |
 | Open WhatsApp app directly | ✅ Done | Better UX on mobile devices |
 | Mobile detection | ✅ Done | Uses `whatsapp://` on mobile |

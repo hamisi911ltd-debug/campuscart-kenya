@@ -36,7 +36,7 @@ const ProductPage = () => {
   const touchStartX = useRef<number | null>(null);
 
   // Admin WhatsApp number
-  const ADMIN_WHATSAPP = "254108254465"; // Format: country code + number without leading 0
+  const ADMIN_WHATSAPP = "254143531813"; // Format: country code + number without leading 0
 
   // Load product data
   useEffect(() => {

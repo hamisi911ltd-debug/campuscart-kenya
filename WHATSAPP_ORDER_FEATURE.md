@@ -44,8 +44,8 @@ Please confirm this order. Thank you!
 
 ## 📱 Admin WhatsApp Number
 
-**Number:** 0108254465  
-**Format Used:** 254108254465 (international format)
+**Number:** 0143531813  
+**Format Used:** 254143531813 (international format)
 
 ## 🔧 Technical Implementation
 
@@ -176,12 +176,12 @@ https://wa.me/[PHONE_NUMBER]?text=[ENCODED_MESSAGE]
 
 **Example:**
 ```
-https://wa.me/254108254465?text=%F0%9F%9B%92%20*New%20Order%20Request*...
+https://wa.me/254143531813?text=%F0%9F%9B%92%20*New%20Order%20Request*...
 ```
 
 **Phone Number Format:**
-- ❌ Wrong: 0108254465
-- ✅ Correct: 254108254465 (country code + number without leading 0)
+- ❌ Wrong: 0143531813
+- ✅ Correct: 254143531813 (country code + number without leading 0)
 
 ## 🎯 Benefits
 
@@ -294,6 +294,6 @@ const message = `Your custom message format here`;
 - ✅ Adds product to cart for tracking
 - ✅ Shows success notifications
 - ✅ Requires user authentication
-- ✅ Admin number: 0108254465 (254108254465)
+- ✅ Admin number: 0143531813 (254143531813)
 
 **The feature is fully functional and ready for production!** 🎉

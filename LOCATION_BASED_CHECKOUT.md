@@ -475,7 +475,7 @@ interface Order {
    - Wait for signal acquisition
 
 ### Contact:
-- **Admin WhatsApp**: 0108254465
+- **Admin WhatsApp**: 0143531813
 - **Admin Email**: campusmart.care@gmail.com
 
 ---

@@ -19,8 +19,8 @@ const DELIVERY_FEE = 129;
 // in src/data/deliveryAreas.ts.
 const DELIVERY_COUNTIES = ["Nairobi", "Mombasa"];
 
-const ADMIN_PHONE_E164 = "+254108254465";
-const ADMIN_PHONE_WA = "254108254465";
+const ADMIN_PHONE_E164 = "+254143531813";
+const ADMIN_PHONE_WA = "254143531813";
 const SITE_URL = "https://campusmart.co.ke";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {

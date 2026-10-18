@@ -380,7 +380,7 @@ Order Delivered
 
 ## 📞 Contact Information
 
-**Admin WhatsApp**: 0108254465 (254108254465)
+**Admin WhatsApp**: 0143531813 (254143531813)
 **Admin Email**: campusmart.care@gmail.com
 
 ---

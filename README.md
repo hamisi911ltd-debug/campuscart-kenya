@@ -132,7 +132,7 @@ See [CLOUDFLARE_DEPLOYMENT.md](./CLOUDFLARE_DEPLOYMENT.md) for detailed instruct
 ## 📞 Contact & Support
 
 - **Email**: campusmart.care@gmail.com
-- **WhatsApp**: 0108254465 (254108254465 international)
+- **WhatsApp**: 0143531813 (254143531813 international)
 - **Admin**: campusmart.care@gmail.com
 
 ## 📄 License

@@ -9,7 +9,7 @@ export const OWNER_ID = "store-owner";
 
 const OWNER_NAME = "CampusMart";
 const OWNER_EMAIL = "store-owner@campusmart.local";
-const OWNER_PHONE = "254108254465";
+const OWNER_PHONE = "254143531813";
 
 export async function ensureOwnerUser(env: Env): Promise<void> {
   await env.DB.prepare(

@@ -460,7 +460,7 @@ Track these to measure effectiveness:
 ## 📞 Support
 
 **Email**: campusmart.care@gmail.com  
-**WhatsApp**: 0108254465 (254108254465 international)
+**WhatsApp**: 0143531813 (254143531813 international)
 
 ---
 

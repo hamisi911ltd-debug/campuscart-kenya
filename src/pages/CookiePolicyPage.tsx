@@ -73,7 +73,7 @@ const CookiePolicyPage = () => (
       <section>
         <h2 className="mb-2 text-base font-extrabold">Contact us</h2>
         <p>
-          Questions about this policy? Message us on WhatsApp at +254 108 254 465. If we ever add analytics or advertising,
+          Questions about this policy? Message us on WhatsApp at +254 143 531 813. If we ever add analytics or advertising,
           we will update this page and ask for your permission first.
         </p>
       </section>

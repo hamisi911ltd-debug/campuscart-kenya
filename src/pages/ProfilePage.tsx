@@ -74,7 +74,7 @@ const ProfilePage = () => {
   };
 
   const handleContactSupport = () => {
-    const adminPhone = "254108254465";
+    const adminPhone = "254143531813";
     const message = `Hello CampusMart Support,\n\nI need help with:\n\n[Please describe your issue or feedback here]\n\n---\nUser: ${user?.name || 'Guest'}\nPhone: ${user?.phone || 'N/A'}`;
     
     // Detect if mobile device

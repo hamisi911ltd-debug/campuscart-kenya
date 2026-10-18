@@ -263,7 +263,7 @@ npm run build
 ## 📞 Support
 
 **Email**: campusmart.care@gmail.com  
-**WhatsApp**: 0108254465  
+**WhatsApp**: 0143531813  
 **Admin Login**: Configure via environment variables (see .env.example)
 
 ---
