@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { OrderPayment } from "@/components/OrderPayment";
+import { downloadReceipt } from "@/lib/receipt";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
@@ -205,6 +206,23 @@ const OrdersPage = () => {
               </div>
             )}
 
+            <button
+              onClick={() => downloadReceipt({
+                orderNumber: selectedOrder.orderNumber,
+                date: selectedOrder.createdAt,
+                customerName: selectedOrder.customer?.name || user?.name || "Customer",
+                phone: selectedOrder.customer?.phone || user?.phone || "",
+                address: selectedOrder.deliveryAddress,
+                items: selectedOrder.items.map((i) => ({ title: i.productTitle, qty: i.quantity, price: i.price })),
+                deliveryFee: 129,
+                paymentMethod: "M-Pesa",
+                paid: selectedOrder.paymentStatus === "paid",
+              }).catch(() => {})}
+              className="mt-4 w-full rounded-full border-2 border-primary px-5 py-2.5 text-sm font-bold text-primary hover:bg-primary/5"
+            >
+              Download receipt (PDF)
+            </button>
+
             {/* Pay now - for orders that are not paid yet */}
             {(selectedOrder.paymentStatus === 'unpaid' || selectedOrder.paymentStatus === 'failed') &&
               selectedOrder.status !== 'cancelled' && (
@@ -313,11 +331,11 @@ const OrdersPage = () => {
             <div className="mt-4 pt-4 border-t border-border">
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="font-semibold">KES {(selectedOrder.total - 100).toLocaleString()}</span>
+                <span className="font-semibold">KES {(selectedOrder.total - 129).toLocaleString()}</span>
               </div>
               <div className="flex justify-between text-sm mb-2">
                 <span className="text-muted-foreground">Delivery</span>
-                <span className="font-semibold">KES 100</span>
+                <span className="font-semibold">KES 129</span>
               </div>
               <div className="flex justify-between text-lg font-extrabold">
                 <span>Total</span>

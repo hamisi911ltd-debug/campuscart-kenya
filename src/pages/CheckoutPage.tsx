@@ -3,9 +3,10 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone } from "lucide-react";
+import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone, Download } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
 import { OrderPayment } from "@/components/OrderPayment";
+import { downloadReceipt, type ReceiptData } from "@/lib/receipt";
 import { DELIVERY_COUNTIES, DELIVERY_FEE, DELIVERY_NOTICE, isValidKenyanPhone } from "@/data/deliveryAreas";
 
 const DETAILS_KEY = "campusmart_delivery_details";
@@ -61,6 +62,7 @@ const CheckoutPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [orderNumber, setOrderNumber] = useState("");
   const [orderId, setOrderId] = useState("");
+  const [receipt, setReceipt] = useState<ReceiptData | null>(null);
   const [whatsappLink, setWhatsappLink] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -103,8 +105,25 @@ const CheckoutPage = () => {
           </p>
           {!paidWithWallet && orderId && (
             <div className="mt-4">
-              <OrderPayment orderId={orderId} autoStart />
+              <OrderPayment
+                orderId={orderId}
+                autoStart
+                onPaid={() => setReceipt((r) => {
+                  if (!r) return r;
+                  const paidReceipt = { ...r, paid: true };
+                  downloadReceipt(paidReceipt).catch(() => {});
+                  return paidReceipt;
+                })}
+              />
             </div>
+          )}
+          {receipt && (
+            <button
+              onClick={() => downloadReceipt(receipt).catch(() => toast.error("Could not create the receipt"))}
+              className="mt-4 inline-flex items-center gap-2 rounded-full border-2 border-primary px-6 py-2.5 text-sm font-bold text-primary hover:bg-primary/5"
+            >
+              <Download className="h-4 w-4" /> Download receipt (PDF)
+            </button>
           )}
           {whatsappLink && (
             <a
@@ -211,6 +230,22 @@ const CheckoutPage = () => {
       }
 
       const result = await response.json();
+      if (result.order_number) setOrderNumber(result.order_number);
+
+      // The receipt: built from the order as the server priced it, and downloaded straight away.
+      const receiptData: ReceiptData = {
+        orderNumber: result.order_number || newOrderNumber,
+        date: new Date(),
+        customerName: recipientName.trim() || user.name,
+        phone: phone.trim(),
+        address: [address.trim(), town.trim(), county].filter(Boolean).join(", "),
+        items: cart.map(({ product, qty }) => ({ title: product.title, qty, price: product.price })),
+        deliveryFee: result.delivery_fee ?? deliveryFee,
+        paymentMethod: payMethod === "wallet" ? "Wallet" : "M-Pesa",
+        paid: false,
+      };
+      setReceipt(receiptData);
+      downloadReceipt(receiptData).catch((err) => console.error("Receipt failed:", err));
 
       // The server messages the admin's WhatsApp itself. If that isn't set
       // up (or the send failed), fall back to opening WhatsApp with the
@@ -247,6 +282,7 @@ const CheckoutPage = () => {
 
         await refreshUser();
         toast.success("Paid from wallet!");
+        setReceipt((r) => { if (!r) return r; const paidReceipt = { ...r, paid: true }; downloadReceipt(paidReceipt).catch(() => {}); return paidReceipt; });
         setPaidWithWallet(true);
         await clearCart();
         setDone(true);

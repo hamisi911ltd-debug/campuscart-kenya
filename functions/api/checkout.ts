@@ -113,6 +113,25 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       body.notes && !body.notes.startsWith("Customer:") ? body.notes : "",
     ].filter(Boolean).join(" | ");
 
+    // Prices come from OUR catalogue, never from the browser - otherwise anyone could
+    // order a phone for KES 1 by editing the request.
+    if (body.items.length > 50) {
+      return new Response(JSON.stringify({ error: "Too many items in one order" }), { status: 400, headers: { "Content-Type": "application/json" } });
+    }
+    for (const item of body.items) {
+      const qty = Number(item.quantity);
+      const row = await context.env.DB.prepare("SELECT price, is_available FROM products WHERE id = ?")
+        .bind(item.product_id).first<{ price: number; is_available: number | null }>();
+      if (!row || row.is_available === 0) {
+        return new Response(JSON.stringify({ error: "One of the items in your cart is no longer available. Please remove it and try again." }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+      if (!Number.isInteger(qty) || qty < 1 || qty > 50) {
+        return new Response(JSON.stringify({ error: "Invalid quantity" }), { status: 400, headers: { "Content-Type": "application/json" } });
+      }
+      item.quantity = qty;
+      item.price = Number(row.price);
+    }
+
     // Flat delivery fee
     const subtotal = body.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const delivery_fee = DELIVERY_FEE;
@@ -159,7 +178,8 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     // Create the order
     const orderId = crypto.randomUUID();
-    const orderNumber = body.order_number || `CM${Date.now().toString().slice(-8)}`;
+    // same format the Orders page derives from the id, so the number on the receipt matches everywhere
+    const orderNumber = `CM${orderId.slice(-8)}`;
 
     await context.env.DB.prepare(`
       INSERT INTO orders (id, buyer_id, seller_id, total_amount, delivery_fee, delivery_address, delivery_latitude, delivery_longitude, buyer_phone, notes, status, payment_status)

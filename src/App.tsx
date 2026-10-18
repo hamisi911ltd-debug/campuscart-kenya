@@ -1,4 +1,5 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { CookieBanner } from "@/components/CookieBanner";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
@@ -69,6 +70,7 @@ function lazyPage<T extends ComponentType<any>>(load: () => Promise<{ default: T
   });
 }
 const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
+const CookiePolicyPage = lazyPage(() => import("./pages/CookiePolicyPage"));
 
 
 const queryClient = new QueryClient();
@@ -119,6 +121,7 @@ const App = () => {
     <TooltipProvider>
       <div className="mobile-container no-horizontal-scroll">
         <Toaster />
+        <CookieBanner />
         <Sonner />
         <InstallPrompt />
         <BrowserRouter future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
@@ -141,6 +144,7 @@ const App = () => {
               <Route path="/auth/google-callback" element={<GoogleCallback />} />
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/cookies" element={<CookiePolicyPage />} />
 
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />
