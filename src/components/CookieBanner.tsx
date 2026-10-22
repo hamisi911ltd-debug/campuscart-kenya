@@ -18,7 +18,7 @@ export const CookieBanner = () => {
   return (
     <div role="dialog" aria-label="Cookie notice" className="fixed inset-x-3 bottom-20 z-[60] mx-auto max-w-xl rounded-2xl bg-foreground p-4 text-background shadow-elevated md:bottom-4">
       <p className="text-sm">
-        CampusMart uses only the cookies and storage it needs: your cart, sign-in and checkout details. No ads, no tracking.{" "}
+        CampusMart uses cookies and storage for your cart, sign-in and checkout, and Google may use cookies to show ads.{" "}
         <Link to="/cookies" className="font-bold underline">Read our Cookie Policy</Link>
       </p>
       <button onClick={accept} className="mt-3 w-full rounded-full bg-background px-5 py-2 text-sm font-bold text-foreground hover:opacity-90">

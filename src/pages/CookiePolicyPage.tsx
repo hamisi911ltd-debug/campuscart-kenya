@@ -15,8 +15,8 @@ const CookiePolicyPage = () => (
       <p className="text-xs text-muted-foreground">Last updated: 18 October 2026</p>
       <p>
         This policy explains how <strong>CampusMart Kenya</strong> (campusmart.co.ke) uses cookies and similar browser
-        storage. We keep it to what the shop needs to work. <strong>We do not use advertising or tracking cookies, and we
-        do not sell your data.</strong>
+        storage. We keep our own storage to what the shop needs to work. <strong>We do not sell your data.</strong> CampusMart
+        shows ads through Google AdSense, which may set its own cookies (see Third-party services).
       </p>
 
       <section>
@@ -46,6 +46,7 @@ const CookiePolicyPage = () => (
       <section>
         <h2 className="mb-2 text-base font-extrabold">Third-party services</h2>
         <ul className="list-disc space-y-1 pl-5">
+          <li><strong>Google AdSense</strong>: we show ads served by Google. Google and its partners may use cookies to show and measure ads and, depending on your settings, to personalise them. You can manage ad personalisation at google.com/settings/ads.</li>
           <li><strong>Google Sign-In</strong>: if you choose to sign in with Google, Google may set its own cookies under the Google privacy policy.</li>
           <li><strong>Google Maps</strong>: used when you pick your delivery location. Google may set cookies when the map loads.</li>
           <li><strong>PayHero / M-Pesa</strong>: payments are made through an M-Pesa prompt on your phone. We never see your M-Pesa PIN.</li>
@@ -57,7 +58,7 @@ const CookiePolicyPage = () => (
         <h2 className="mb-2 text-base font-extrabold">Why we use them</h2>
         <p>
           Every item above is strictly necessary to run the shop (cart, sign-in, checkout, security, speed) or to remember a
-          choice you made. Because we do not run analytics or advertising, there is nothing optional to switch on or off.
+          choice you made. Cookies set by Google for advertising are separate from these and are described under Third-party services.
         </p>
       </section>
 
@@ -73,8 +74,8 @@ const CookiePolicyPage = () => (
       <section>
         <h2 className="mb-2 text-base font-extrabold">Contact us</h2>
         <p>
-          Questions about this policy? Message us on WhatsApp at +254 143 531 813. If we ever add analytics or advertising,
-          we will update this page and ask for your permission first.
+          Questions about this policy? Message us on WhatsApp at +254 143 531 813. If we change how we use cookies, we
+          will update this page.
         </p>
       </section>
     </article>
