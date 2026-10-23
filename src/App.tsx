@@ -71,6 +71,11 @@ function lazyPage<T extends ComponentType<any>>(load: () => Promise<{ default: T
 }
 const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
 const CookiePolicyPage = lazyPage(() => import("./pages/CookiePolicyPage"));
+const AboutPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.AboutPage })));
+const ContactPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.ContactPage })));
+const ShippingReturnsPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.ShippingReturnsPage })));
+const PrivacyPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.PrivacyPage })));
+const TermsPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.TermsPage })));
 
 
 const queryClient = new QueryClient();
@@ -144,6 +149,11 @@ const App = () => {
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/cookies" element={<CookiePolicyPage />} />
+              <Route path="/about" element={<AboutPage />} />
+              <Route path="/contact" element={<ContactPage />} />
+              <Route path="/shipping-returns" element={<ShippingReturnsPage />} />
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
 
               {/* Admin Routes */}
               <Route path="/admin/login" element={<AdminLogin />} />

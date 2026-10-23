@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ProductCard } from "@/components/ProductCard";
 import { FlashCountdown } from "@/components/FlashCountdown";
 import { HotSaleBanner } from "@/components/HotSaleBanner";
@@ -315,6 +316,7 @@ const Index = () => {
         </section>
       </main>
 
+      <SiteFooter />
       <BottomNav />
     </div>
   );

@@ -242,7 +242,26 @@
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Plain-HTML content for crawlers and slow connections; replaced as soon as the app loads. -->
+      <header style="font-family:system-ui,sans-serif;padding:16px;max-width:960px;margin:0 auto">
+        <h1>CampusMart Kenya - online shopping in Nairobi and Mombasa</h1>
+        <p>Shop phones and electronics, home and kitchen, fashion, beauty, gaming and more at fair prices. Pay with M-Pesa and get delivery within Nairobi and Mombasa.</p>
+        <nav aria-label="Shop categories">
+          <a href="/categories">All categories</a> |
+          <a href="/category/phones">Phones</a> |
+          <a href="/category/electronics">Electronics</a> |
+          <a href="/category/home">Home &amp; kitchen</a> |
+          <a href="/category/fashion">Fashion</a> |
+          <a href="/category/beauty">Beauty</a> |
+          <a href="/category/gaming">Gaming</a>
+        </nav>
+        <nav aria-label="Information">
+          <a href="/about">About us</a> | <a href="/contact">Contact us</a> | <a href="/shipping-returns">Delivery &amp; returns</a> |
+          <a href="/privacy">Privacy policy</a> | <a href="/terms">Terms of service</a> | <a href="/cookies">Cookie policy</a>
+        </nav>
+      </header>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

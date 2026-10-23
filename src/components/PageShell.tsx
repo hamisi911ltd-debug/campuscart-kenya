@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { TopBar } from "@/components/TopBar";
 import { BottomNav } from "@/components/BottomNav";
+import { SiteFooter } from "@/components/SiteFooter";
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useSEO } from "@/hooks/useSEO";
@@ -32,6 +33,7 @@ export const PageShell = ({ title, children, back = true, seoTitle, noIndex = fa
         </div>
         {children}
       </main>
+      <SiteFooter />
       <BottomNav />
     </div>
   );
