@@ -71,6 +71,8 @@ function lazyPage<T extends ComponentType<any>>(load: () => Promise<{ default: T
 }
 const SettingsPage = lazyPage(() => import("./pages/SettingsPage"));
 const CookiePolicyPage = lazyPage(() => import("./pages/CookiePolicyPage"));
+const GuidesIndexPage = lazyPage(() => import("./pages/GuidesPages").then((m) => ({ default: m.GuidesIndexPage })));
+const GuidePage = lazyPage(() => import("./pages/GuidesPages").then((m) => ({ default: m.GuidePage })));
 const AboutPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.AboutPage })));
 const ContactPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.ContactPage })));
 const ShippingReturnsPage = lazyPage(() => import("./pages/InfoPages").then((m) => ({ default: m.ShippingReturnsPage })));
@@ -149,6 +151,8 @@ const App = () => {
               <Route path="/notifications" element={<NotificationsPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/cookies" element={<CookiePolicyPage />} />
+              <Route path="/guides" element={<GuidesIndexPage />} />
+              <Route path="/guides/:slug" element={<GuidePage />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
               <Route path="/shipping-returns" element={<ShippingReturnsPage />} />

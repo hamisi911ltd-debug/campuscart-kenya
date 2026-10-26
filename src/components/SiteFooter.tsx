@@ -5,6 +5,7 @@ export const CONTACT_WHATSAPP = "254143531813";
 
 const links = [
   { to: "/about", label: "About us" },
+  { to: "/guides", label: "Shopping guides" },
   { to: "/contact", label: "Contact us" },
   { to: "/shipping-returns", label: "Delivery & returns" },
   { to: "/privacy", label: "Privacy policy" },
