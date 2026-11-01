@@ -221,3 +221,26 @@ describe("share message bullets", () => {
     expect(descriptionBullets("")).toEqual([]);
   });
 });
+
+import { splitDescription, cleanIntro, onRequestPost as rewriteDescription } from "./admin/rewrite-description";
+
+describe("original descriptions", () => {
+  it("separates the free-text intro from the specification sections", () => {
+    const { intro, rest } = splitDescription("Supplier blurb.\n\nSpecifications\n• RAM: 4GB\n\nIn the box\n• Charger");
+    expect(intro).toBe("Supplier blurb.");
+    expect(rest.startsWith("Specifications")).toBe(true);
+    expect(rest).toContain("In the box");
+    expect(splitDescription("Only text").rest).toBe("");
+  });
+  it("rejects text that is too short, links to other shops, or markdown-heavy", () => {
+    const good = "A reliable everyday phone that handles WhatsApp, M-Pesa and video calls with ease. ".repeat(2);
+    expect(cleanIntro(good)).not.toBeNull();
+    expect(cleanIntro("Too short.")).toBeNull();
+    expect(cleanIntro(good + " Buy at kilimall.co.ke")).toBeNull();
+    expect(cleanIntro("**Bold** " + good)).not.toContain("*");
+  });
+  it("is admin-only", async () => {
+    const res = await rewriteDescription({ env, request: new Request("https://admin.campusmart.co.ke/api/admin/rewrite-description", { method: "POST", body: JSON.stringify({ productId: "p1" }), headers: { "Content-Type": "application/json" } }) } as any);
+    expect(res.status).toBe(401);
+  });
+});

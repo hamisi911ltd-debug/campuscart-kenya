@@ -6,7 +6,9 @@ export interface Guide {
   sections: Array<{ heading: string; paragraphs?: string[]; bullets?: string[] }>;
 }
 
-export const guides: Guide[] = [
+import { moreGuides } from "./guides2";
+
+const coreGuides: Guide[] = [
   {
     slug: "how-to-choose-a-smartphone-in-kenya",
     title: "How to choose a smartphone in Kenya: a practical checklist",
@@ -165,5 +167,7 @@ export const guides: Guide[] = [
     ],
   },
 ];
+
+export const guides: Guide[] = [...coreGuides, ...moreGuides];
 
 export const findGuide = (slug: string) => guides.find((g) => g.slug === slug);

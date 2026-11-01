@@ -6,6 +6,7 @@
 import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
 import { fetchKilimallHtml, parseProductPage } from "../_lib/kilimall";
+import { splitDescription } from "./rewrite-description";
 import { ensureSourceTables, getSourceForProduct } from "../_lib/productSources";
 
 interface Env {
@@ -39,12 +40,23 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     const fresh = (listing.description || "").trim();
     if (fresh.length < 20) return json({ skipped: true, reason: "The listing has no extra details" });
 
+    // keep our own written introduction if this product already has one
+    let finalText = fresh;
+    try {
+      const flag = await env.DB.prepare("SELECT desc_original FROM products WHERE id = ?").bind(productId).first<{ desc_original: number | null }>();
+      if (flag?.desc_original === 1) {
+        const ownIntro = splitDescription(product.description || "").intro;
+        const freshRest = splitDescription(fresh).rest;
+        if (ownIntro && freshRest) finalText = ownIntro + "\n\n" + freshRest;
+      }
+    } catch { /* column not created yet - nothing was rewritten */ }
+
     const before = (product.description || "").length;
     await env.DB.prepare("UPDATE products SET description = ?, updated_at = ? WHERE id = ?")
-      .bind(fresh, new Date().toISOString(), productId)
+      .bind(finalText, new Date().toISOString(), productId)
       .run();
 
-    return json({ success: true, charsBefore: before, charsAfter: fresh.length });
+    return json({ success: true, charsBefore: before, charsAfter: finalText.length });
   } catch (error) {
     console.error("Enrich details error:", error);
     return json({ error: error instanceof Error ? error.message : "Could not refresh details" }, 502);
