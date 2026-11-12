@@ -237,8 +237,20 @@
     </script>
     <!-- Google AdSense -->
     <meta name="google-adsense-account" content="ca-pub-8682968576319448">
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8682968576319448"
-     crossorigin="anonymous"></script>
+    <!-- The AdSense script (about 260 KB with what it pulls in) is loaded only after the shop has
+         finished loading, so it never competes with products and photos on a slow connection. The
+         meta tag above and /ads.txt identify the site to AdSense. -->
+    <script>
+      window.addEventListener("load", function () {
+        setTimeout(function () {
+          var s = document.createElement("script");
+          s.async = true;
+          s.crossOrigin = "anonymous";
+          s.src = "https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8682968576319448";
+          document.head.appendChild(s);
+        }, 2500);
+      });
+    </script>
   </head>
 
   <body>
