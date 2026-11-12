@@ -5,6 +5,10 @@
 export interface PayHeroEnv {
   PAYHERO_AUTH_TOKEN: string;
   PAYHERO_CHANNEL_ID: string;
+  /** Optional. Only if PayHero tells you your channel needs a different provider value (default "m-pesa"). */
+  PAYHERO_PROVIDER?: string;
+  /** Optional. Sent as network_code when set, e.g. for a PayHero wallet channel. */
+  PAYHERO_NETWORK_CODE?: string;
 }
 
 export type JsonRecord = Record<string, unknown>;
@@ -78,7 +82,8 @@ export async function initiateStkPush(env: PayHeroEnv, params: StkPushParams): P
     amount: Math.round(params.amount),
     phone_number: normalizePhone(params.phoneNumber),
     channel_id: Number(env.PAYHERO_CHANNEL_ID),
-    provider: "m-pesa",
+    provider: env.PAYHERO_PROVIDER || "m-pesa",
+    ...(env.PAYHERO_NETWORK_CODE ? { network_code: env.PAYHERO_NETWORK_CODE } : {}),
     external_reference: params.externalReference,
     callback_url: params.callbackUrl,
   });
