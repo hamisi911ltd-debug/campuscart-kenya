@@ -17,6 +17,10 @@ import { Pagination } from "@/components/Pagination";
 import { categories, getProductsPage, getProductsSync, transformDatabaseProduct, DEFAULT_PAGE_SIZE, type ProductWithCategory } from "@/data/products";
 import { sizedImage, cdnImgProps } from "@/lib/imageUrl";
 
+declare global {
+  interface Window { __early?: { mixed?: Promise<any>; trending?: Promise<any> } }
+}
+
 const Index = () => {
   const { user } = useShop();
   const [products, setProducts] = useState<ProductWithCategory[]>(getProductsSync() || []);
@@ -31,15 +35,23 @@ const Index = () => {
   // it starts downloading before this code has even loaded - keep them identical.
   const [homeMixed, setHomeMixed] = useState<ProductWithCategory[]>([]);
 
+  const [homeLoaded, setHomeLoaded] = useState(false);
+
   const loadHome = useCallback(async () => {
     try {
-      const res = await fetch('/api/products?sort=mixed&limit=100');
-      if (res.ok) {
-        const data = await res.json();
-        setHomeMixed(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
+      // use the request index.html already started (once), else ask now
+      const early = window.__early?.mixed;
+      if (window.__early) window.__early.mixed = undefined;
+      let data = early ? await early : null;
+      if (!data) {
+        const res = await fetch('/api/products?sort=mixed&limit=100');
+        data = res.ok ? await res.json() : null;
       }
+      if (data) setHomeMixed(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
     } catch (e) {
       console.error('Error fetching products:', e);
+    } finally {
+      setHomeLoaded(true);
     }
   }, []);
 
@@ -55,11 +67,14 @@ const Index = () => {
   useEffect(() => {
     const fetchFlash = async () => {
       try {
-        const res = await fetch('/api/products?sort=trending&limit=200');
-        if (res.ok) {
-          const data = await res.json();
-          setFlashDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
+        const early = window.__early?.trending;
+        if (window.__early) window.__early.trending = undefined;
+        let data = early ? await early : null;
+        if (!data) {
+          const res = await fetch('/api/products?sort=trending&limit=200');
+          data = res.ok ? await res.json() : null;
         }
+        if (data) setFlashDeals(Array.isArray(data) ? data.map(transformDatabaseProduct) : []);
       } catch (e) {
         console.error('Error fetching flash deals:', e);
       }
@@ -220,14 +235,18 @@ const Index = () => {
                 <Link key={c.slug} to={`/category/${c.slug}`} className="group flex w-16 shrink-0 flex-col items-center gap-1.5 md:w-auto">
                   <div className="rounded-full bg-gradient-to-br from-accent/60 to-primary/40 p-[2px] shadow-sm transition-transform group-active:scale-95">
                     <div className="h-14 w-14 overflow-hidden rounded-full border-2 border-background bg-muted md:h-16 md:w-16">
-                      <img
-                        src={categoryImages[c.slug] || c.img}
-                        alt={c.name}
-                        width={64}
-                        height={64}
-                        {...cdnImgProps}
-                        className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
-                      />
+                      {/* wait for the product photos before choosing a picture, so the stock fallback
+                          images (about 300 KB) are not downloaded first and then replaced */}
+                      {homeLoaded && (
+                        <img
+                          src={categoryImages[c.slug] || c.img}
+                          alt={c.name}
+                          width={64}
+                          height={64}
+                          {...cdnImgProps}
+                          className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-110"
+                        />
+                      )}
                     </div>
                   </div>
                   <span className="text-center text-[11px] font-medium text-foreground leading-tight">{c.name}</span>
