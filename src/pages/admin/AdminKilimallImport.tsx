@@ -372,7 +372,7 @@ const AdminKilimallImport = () => {
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Markup on Kilimall's price
               <input
-                value="+KES 100 above KES 500, else +13%"
+                value="+KES 120 under KES 1,000, else +13%"
                 readOnly
                 className="mt-1 w-full cursor-not-allowed rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-normal"
               />

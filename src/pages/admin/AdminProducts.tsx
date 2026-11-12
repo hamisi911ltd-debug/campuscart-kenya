@@ -129,7 +129,7 @@ const AdminProducts = () => {
   const handleApplyMarkup = async () => {
     const queue = products.filter((p) => p.src_listing_id);
     if (queue.length === 0) { toast.info('No supplier products to price'); return; }
-    if (!window.confirm(`Set the price of ${queue.length} supplier product(s) to their current supplier price plus the standard profit (KES 100 above KES 500, otherwise 13%)?`)) return;
+    if (!window.confirm(`Set the price of ${queue.length} supplier product(s) to their current supplier price plus the standard profit (KES 120 under KES 1,000, otherwise 13%)?`)) return;
     setRepricing({ done: 0, total: queue.length });
     let ok = 0;
     let failed = 0;
@@ -500,7 +500,7 @@ const AdminProducts = () => {
               onClick={handleApplyMarkup}
               disabled={!!repricing}
               className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition disabled:opacity-60"
-              title="Set every supplier product to its supplier price + KES 100 (above KES 500) or + 13% (KES 500 and below)"
+              title="Set every supplier product to its supplier price + KES 120 (under KES 1,000) or + 13% (KES 1,000 and over)"
             >
               <CheckCircle className="h-4 w-4" />
               <span>{repricing ? `Pricing ${repricing.done}/${repricing.total}…` : 'Apply standard pricing'}</span>
