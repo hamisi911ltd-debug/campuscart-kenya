@@ -244,3 +244,19 @@ describe("original descriptions", () => {
     expect(res.status).toBe(401);
   });
 });
+
+import { sellPriceFor, effectiveMarkupPercent } from "./_lib/pricing";
+import { sellPriceFor as clientSellPriceFor } from "../../src/data/pricing";
+
+describe("pricing rule", () => {
+  it("adds 13% up to KES 500 and a flat KES 100 above it", () => {
+    expect(sellPriceFor(200)).toBe(226);
+    expect(sellPriceFor(500)).toBe(565);
+    expect(sellPriceFor(501)).toBe(601);
+    expect(sellPriceFor(3000)).toBe(3100);
+    expect(effectiveMarkupPercent(3000)).toBe(3.3);
+  });
+  it("the shop and the server agree", () => {
+    for (const cost of [99, 500, 501, 1234, 25000]) expect(clientSellPriceFor(cost)).toBe(sellPriceFor(cost));
+  });
+});

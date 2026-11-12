@@ -14,7 +14,7 @@ import { ensureSourceTables, kilimallListingUrl } from "../_lib/productSources";
 import { findImportedListingIds } from "../_lib/kilimallDiscover";
 import { pickCategory } from "../_lib/categorize";
 import { shortProductTitle } from "../_lib/productTitle";
-import { MARKUP_PERCENT, sellPriceFor } from "../_lib/pricing";
+import { effectiveMarkupPercent, sellPriceFor } from "../_lib/pricing";
 import { MIN_COVER_WIDTH, copyPhotoToStorage } from "../_lib/imageStore";
 
 interface Env {
@@ -48,7 +48,6 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
     };
     const listingId = String(body.listingId || "").trim();
     const hint = body.category || "";
-    const markup = MARKUP_PERCENT; // fixed for every product, whatever the page sends
 
     if (!/^\d{3,15}$/.test(listingId)) return json({ error: "Invalid Kilimall listing id" }, 400);
     // "auto" (or nothing) is fine; anything else must at least be a real category,
@@ -128,7 +127,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
       kilimallListingUrl(listingId),
       sourcePrice,
       product.listPrice,
-      markup,
+      effectiveMarkupPercent(sourcePrice),
       product.stock,
       product.inStock === null ? null : product.inStock ? 1 : 0,
       now,

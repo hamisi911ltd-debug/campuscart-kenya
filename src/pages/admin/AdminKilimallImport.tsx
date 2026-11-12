@@ -4,7 +4,7 @@ import { ArrowLeft, Search, Loader2, CheckCircle2, XCircle, Download, Star, Shuf
 import AdminLayout from "@/components/admin/AdminLayout";
 import { adminPost } from "@/utils/adminApi";
 import { toast } from "sonner";
-import { MARKUP_PERCENT } from "@/data/pricing";
+import { sellPriceFor } from "@/data/pricing";
 
 // Kept in sync with src/data/products.ts's `categories` array.
 const CATEGORIES = [
@@ -41,7 +41,6 @@ const AdminKilimallImport = () => {
   const [query, setQuery] = useState("");
   const [url, setUrl] = useState("");
   const [category, setCategory] = useState("auto");
-  const markup = MARKUP_PERCENT; // fixed for every product
   const [items, setItems] = useState<KilimallItem[]>([]);
   const [page, setPage] = useState(1);
   const [searching, setSearching] = useState(false);
@@ -240,7 +239,7 @@ const AdminKilimallImport = () => {
     }
   };
 
-  const previewSell = (price: number) => formatKsh(Math.round(price * (1 + markup / 100)));
+  const previewSell = (price: number) => formatKsh(sellPriceFor(price));
 
   return (
     <AdminLayout>
@@ -373,7 +372,7 @@ const AdminKilimallImport = () => {
             <label className="text-sm font-semibold text-gray-700 dark:text-gray-300">
               Markup on Kilimall's price
               <input
-                value={`${markup}% on every product`}
+                value="+KES 100 above KES 500, else +13%"
                 readOnly
                 className="mt-1 w-full cursor-not-allowed rounded-xl border border-border bg-muted px-4 py-2.5 text-sm font-normal"
               />

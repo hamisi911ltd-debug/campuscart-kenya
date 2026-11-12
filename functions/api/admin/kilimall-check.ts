@@ -6,7 +6,7 @@ import { enforceAdminDomain } from "../_lib/adminDomain";
 import { hasPermission } from "../_lib/teamAuth";
 import { fetchKilimallHtml, parseProductPage } from "../_lib/kilimall";
 import { ensureSourceTables, getSourceForProduct } from "../_lib/productSources";
-import { MARKUP_PERCENT, sellPriceFor } from "../_lib/pricing";
+import { effectiveMarkupPercent, sellPriceFor } from "../_lib/pricing";
 
 interface Env {
   DB: D1Database;
@@ -42,7 +42,7 @@ export async function onRequestPost(context: { env: Env; request: Request }) {
 
     const live = parseProductPage(await fetchKilimallHtml(`/listing/${source.listing_id}`), source.listing_id);
     const now = new Date().toISOString();
-    const markup = MARKUP_PERCENT;
+    const markup = effectiveMarkupPercent(live.price || 0);
     const suggestedPrice = live.price ? sellPriceFor(live.price) : null;
 
     // Always record what Kilimall says right now; make sure legacy products

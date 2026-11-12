@@ -122,7 +122,7 @@ export const ProductSourcePanel = ({ product, onPriceApplied }: {
               disabled={applying}
               className="mt-1 flex w-full items-center justify-center gap-1 rounded bg-amber-600 px-2 py-1 font-bold text-white hover:bg-amber-700 disabled:opacity-60"
             >
-              {applying && <Loader2 className="h-3 w-3 animate-spin" />} Set to 10% markup: {ksh(live.suggestedPrice)}
+              {applying && <Loader2 className="h-3 w-3 animate-spin" />} Set to standard price: {ksh(live.suggestedPrice)}
             </button>
           )}
         </div>
