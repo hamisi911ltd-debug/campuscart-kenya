@@ -104,6 +104,28 @@ const AdminProducts = () => {
     fetchProducts();
   };
 
+  // Every product with its own page and the original Kilimall listing, as a spreadsheet file.
+  const handleExportLinks = () => {
+    const quote = (v: unknown) => '"' + String(v ?? '').replace(/"/g, '""') + '"';
+    const rows = products.map((p) => [
+      p.title,
+      p.category,
+      p.price,
+      p.src_price ?? '',
+      `${window.location.origin.replace('admin.', '')}/product/${p.id}`,
+      p.src_url || '',
+    ]);
+    const csv = '\uFEFF' + [['Product', 'Category', 'Our price (KES)', 'Supplier cost (KES)', 'Our page', 'Original Kilimall link'], ...rows]
+      .map((r) => r.map(quote).join(',')).join('\r\n');
+    const url = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'campusmart-product-links.csv';
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+    toast.success(`Exported ${rows.length} products (${rows.filter((r) => r[5]).length} with a Kilimall link)`);
+  };
+
   const handleApplyMarkup = async () => {
     const queue = products.filter((p) => p.src_listing_id);
     if (queue.length === 0) { toast.info('No supplier products to price'); return; }
@@ -456,6 +478,14 @@ const AdminProducts = () => {
             >
               <Copy className="h-4 w-4" />
               <span className="hidden sm:inline">{dedupeChecking ? 'Checking…' : 'Remove Duplicates'}</span>
+            </button>
+            <button
+              onClick={handleExportLinks}
+              className="flex items-center gap-1.5 md:gap-2 px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl bg-secondary text-foreground text-xs md:text-sm font-bold hover:bg-secondary/80 transition"
+              title="Download every product with its original Kilimall link"
+            >
+              <Download className="h-4 w-4" />
+              <span>Export links (CSV)</span>
             </button>
             <button
               onClick={handleEnrichDetails}

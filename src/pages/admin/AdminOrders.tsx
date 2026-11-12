@@ -363,6 +363,16 @@ const AdminOrders = () => {
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-sm text-foreground">{order.item_count} items</span>
+                        {(orderItems[order.id] || []).map((line, i) => (
+                          <div key={i} className="mt-1 max-w-[260px] text-xs">
+                            <span className="text-muted-foreground">{line.quantity}× {line.product_title || line.product_id}</span>
+                            {line.source_url && (
+                              <a href={line.source_url} target="_blank" rel="noopener noreferrer" className="ml-1 font-bold text-accent hover:underline">
+                                Buy on Kilimall ↗
+                              </a>
+                            )}
+                          </div>
+                        ))}
                         {!!order.has_dropship_items && (
                           <div className="mt-1 flex items-center gap-1 text-[11px] font-bold text-accent">
                             <Truck className="h-3 w-3" /> Includes supplier-sourced item
