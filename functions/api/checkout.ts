@@ -2,6 +2,7 @@
 import { OWNER_ID, ensureOwnerUser } from "./_lib/owner";
 import { normalizeKenyanPhone } from "./_lib/phone";
 import { sendWhatsAppMessage } from "./_lib/sendWhatsApp";
+import { checkLiveAvailability } from "./_lib/availability";
 import { ensureSourceTables, kilimallListingUrl, listingIdFromImages } from "./_lib/productSources";
 
 interface Env {
@@ -136,6 +137,21 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       item.price = Number(row.price);
     }
 
+    // Check the ORIGINAL listing right now. If the supplier has run out, tell the customer
+    // before they pay instead of taking money for something we cannot get. (A listing we cannot
+    // read at the moment counts as "unknown" and never blocks the order.)
+    const live = await checkLiveAvailability(context.env, body.items.map((item) => item.product_id));
+    const soldOut = live.filter((r) => r.status === "unavailable");
+    if (soldOut.length > 0) {
+      const names = soldOut.map((r) => r.title.length > 50 ? r.title.slice(0, 47) + "..." : r.title).join(", ");
+      return new Response(JSON.stringify({
+        error: soldOut.length === 1
+          ? `Sorry, "${names}" is out of stock right now. Please remove it from your cart to continue.`
+          : `Sorry, these items are out of stock right now: ${names}. Please remove them from your cart to continue.`,
+        unavailable: soldOut.map((r) => r.product_id),
+      }), { status: 409, headers: { "Content-Type": "application/json" } });
+    }
+
     // Flat delivery fee
     const subtotal = body.items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
     const delivery_fee = DELIVERY_FEE;
@@ -192,7 +208,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     await context.env.DB.prepare(`
       INSERT INTO orders (id, buyer_id, seller_id, total_amount, delivery_fee, delivery_address, delivery_latitude, delivery_longitude, buyer_phone, notes, status, payment_status)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending_confirmation', 'unpaid')
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmed', 'unpaid')
     `).bind(
       orderId,
       buyerRowId,
@@ -226,7 +242,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
 
     await context.env.DB.prepare(`
       INSERT INTO order_status_history (id, order_id, status, note)
-      VALUES (?, ?, 'pending_confirmation', 'Order placed, awaiting seller/admin confirmation of stock availability')
+      VALUES (?, ?, 'confirmed', 'Order placed - item availability verified live with the supplier. Awaiting payment.')
     `).bind(crypto.randomUUID(), orderId).run();
 
     // ---- WhatsApp message with full product + client details ----

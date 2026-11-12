@@ -401,15 +401,6 @@ const AdminOrders = () => {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex flex-col gap-1">
-                          {(order.status === 'pending' || order.status === 'pending_confirmation') && (
-                            <button
-                              onClick={() => handleConfirmAndRequestPayment(order.id)}
-                              disabled={actionLoading === order.id}
-                              className="flex items-center justify-center gap-1 px-2 py-1 text-xs font-semibold rounded bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                            >
-                              <ShieldCheck className="h-3 w-3" /> Confirm & Request Payment
-                            </button>
-                          )}
                           {order.payment_status === 'requested' && (
                             <button
                               onClick={() => handleRecheckPayment(order.id)}
@@ -533,15 +524,6 @@ const AdminOrders = () => {
                 </div>
 
                 <div className="space-y-2">
-                  {(order.status === 'pending' || order.status === 'pending_confirmation') && (
-                    <button
-                      onClick={() => handleConfirmAndRequestPayment(order.id)}
-                      disabled={actionLoading === order.id}
-                      className="w-full flex items-center justify-center gap-1 px-3 py-2 text-sm font-semibold rounded-lg bg-green-600 text-white hover:bg-green-700 disabled:opacity-50"
-                    >
-                      <ShieldCheck className="h-4 w-4" /> Confirm & Request Payment
-                    </button>
-                  )}
                   {order.payment_status === 'requested' && (
                     <button
                       onClick={() => handleRecheckPayment(order.id)}

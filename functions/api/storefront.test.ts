@@ -1,4 +1,14 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+
+// What the "original Kilimall listing" says in these tests (set per test).
+const live = vi.hoisted(() => ({ inStock: null as boolean | null, throws: false }));
+vi.mock("./_lib/kilimall", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("./_lib/kilimall")>()),
+  fetchKilimallHtml: async () => { if (live.throws) throw new Error("Kilimall unreachable"); return "<html></html>"; },
+  parseProductPage: () => ({ inStock: live.inStock, stock: live.inStock ? 5 : 0 }),
+}));
+import { resetAvailabilityCache } from "./_lib/availability";
+import { onRequestPost as availability } from "./availability";
 import { DatabaseSync } from "node:sqlite";
 import { onRequestGet as listReviews, onRequestPost as postReview, resetReviewColumnsCache } from "./reviews/[product_id]";
 import { onRequestPost as uploadReviewPhoto } from "./reviews/upload";
@@ -45,6 +55,9 @@ const json = (path: string, method: string, body?: unknown, headers: Record<stri
 beforeEach(() => {
   resetAuthTablesCache();
   resetReviewColumnsCache();
+  resetAvailabilityCache();
+  live.inStock = null;
+  live.throws = false;
   DB = makeDb();
   env = { DB, PAYHERO_AUTH_TOKEN: "t", PAYHERO_CHANNEL_ID: "1", STORAGE: { put: vi.fn(async () => {}) } };
   DB.raw.exec("INSERT INTO products (id,title) VALUES ('p1','Phone')");
@@ -141,6 +154,44 @@ describe("checkout", () => {
     expect(data.subtotal).toBe(1000);
     expect(data.total_amount).toBe(1129);
     expect(data.order_number).toBe("CM" + data.order_id.slice(-8));
+  });
+
+  const linkProduct = () => {
+    DB.raw.exec("CREATE TABLE IF NOT EXISTS product_sources (product_id TEXT PRIMARY KEY, source TEXT, listing_id TEXT, source_url TEXT, source_price REAL, source_list_price REAL, markup_percent REAL, source_stock INT, in_stock INT, checked_at TEXT, image_width INT)");
+    DB.raw.exec("INSERT OR REPLACE INTO product_sources (product_id, source, listing_id, source_url) VALUES ('p1','kilimall','12345','https://www.kilimall.co.ke/listing/12345')");
+  };
+
+  it("refuses the order, with the item named, when the original listing is out of stock", async () => {
+    linkProduct();
+    live.inStock = false;
+    const res = await place();
+    expect(res.status).toBe(409);
+    const data = (await res.json()) as any;
+    expect(data.error).toMatch(/out of stock/);
+    expect(data.unavailable).toEqual(["p1"]);
+    expect(DB.raw.prepare("SELECT COUNT(*) AS n FROM orders").get().n).toBe(0);
+  });
+
+  it("places an automatically confirmed order when the listing is in stock", async () => {
+    linkProduct();
+    live.inStock = true;
+    const res = await place();
+    expect(res.status).toBe(200);
+    expect(DB.raw.prepare("SELECT status FROM orders").get().status).toBe("confirmed");
+  });
+
+  it("does not block the order when the supplier page cannot be read", async () => {
+    linkProduct();
+    live.throws = true;
+    expect((await place()).status).toBe(200);
+  });
+
+  it("tells the checkout page which items are out of stock", async () => {
+    linkProduct();
+    live.inStock = false;
+    const res = await availability({ env, request: json("/api/availability", "POST", { product_ids: ["p1"] }) } as any);
+    expect(((await res.json()) as any).items[0]).toMatchObject({ product_id: "p1", status: "unavailable" });
+    expect((await availability({ env, request: json("/api/availability", "POST", { product_ids: [] }) } as any)).status).toBe(400);
   });
 
   it("still places the order when the account id is not in the database", async () => {

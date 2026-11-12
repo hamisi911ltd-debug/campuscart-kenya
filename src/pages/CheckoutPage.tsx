@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
-import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone, Download } from "lucide-react";
+import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone, Download, AlertTriangle } from "lucide-react";
 import { LocationPicker } from "@/components/LocationPicker";
 import { OrderPayment } from "@/components/OrderPayment";
 import { downloadReceipt, type ReceiptData } from "@/lib/receipt";
@@ -41,7 +41,7 @@ interface Order {
 }
 
 const CheckoutPage = () => {
-  const { cart, cartTotal, clearCart, user, refreshUser } = useShop();
+  const { cart, cartTotal, clearCart, removeFromCart, user, refreshUser } = useShop();
   const navigate = useNavigate();
   // Delivery details, collected the way Kilimall's checkout does: who is
   // receiving it, how to reach them, and exactly where it's going.
@@ -63,6 +63,29 @@ const CheckoutPage = () => {
   const [orderNumber, setOrderNumber] = useState("");
   const [orderId, setOrderId] = useState("");
   const [receipt, setReceipt] = useState<ReceiptData | null>(null);
+  // Live check of every cart item against the original listing, so the customer knows before paying.
+  const [stockCheck, setStockCheck] = useState<{ state: "checking" | "done"; soldOut: Array<{ id: string; title: string }> }>({ state: "checking", soldOut: [] });
+  const cartKey = cart.map((c) => c.product.id).join(",");
+  useEffect(() => {
+    if (!cartKey) return;
+    let cancelled = false;
+    setStockCheck({ state: "checking", soldOut: [] });
+    fetch("/api/availability", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ product_ids: cartKey.split(",") }),
+    })
+      .then((r) => (r.ok ? r.json() : { items: [] }))
+      .then((data) => {
+        if (cancelled) return;
+        const soldOut = (data.items || [])
+          .filter((i: { status: string }) => i.status === "unavailable")
+          .map((i: { product_id: string; title: string }) => ({ id: i.product_id, title: i.title }));
+        setStockCheck({ state: "done", soldOut });
+      })
+      .catch(() => { if (!cancelled) setStockCheck({ state: "done", soldOut: [] }); });
+    return () => { cancelled = true; };
+  }, [cartKey]);
   const [whatsappLink, setWhatsappLink] = useState("");
   const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
   const [locationLoading, setLocationLoading] = useState(false);
@@ -158,6 +181,11 @@ const CheckoutPage = () => {
     e.preventDefault();
 
     if (submitting) return;
+
+    if (stockCheck.soldOut.length > 0) {
+      toast.error("Some items in your cart are out of stock. Please remove them to continue.");
+      return;
+    }
 
     if (!user) {
       toast.error("Please sign in to continue");
@@ -311,6 +339,28 @@ const CheckoutPage = () => {
       <div className="min-h-screen pb-4">
         <form onSubmit={submit} className="grid gap-3 lg:gap-6 lg:grid-cols-[1fr_320px] max-w-7xl mx-auto">
           <div className="space-y-3 lg:space-y-4 overflow-hidden">
+            {/* Live availability on the original listing */}
+            {stockCheck.state === "checking" ? (
+              <div className="flex items-center gap-2 rounded-lg bg-muted px-3 py-2 text-xs font-semibold text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Checking that your items are in stock...
+              </div>
+            ) : stockCheck.soldOut.length > 0 ? (
+              <div className="rounded-lg bg-red-50 p-3 text-sm text-red-700 dark:bg-red-950 dark:text-red-300">
+                <p className="flex items-center gap-2 font-bold"><AlertTriangle className="h-4 w-4" /> Out of stock right now</p>
+                <ul className="mt-1 list-disc pl-5 text-xs">
+                  {stockCheck.soldOut.map((i) => (
+                    <li key={i.id} className="mt-1">
+                      {i.title}{" "}
+                      <button type="button" onClick={() => removeFromCart(i.id)} className="font-bold underline">Remove from cart</button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 rounded-lg bg-green-50 px-3 py-2 text-xs font-semibold text-green-700 dark:bg-green-950 dark:text-green-300">
+                <CheckCircle2 className="h-4 w-4" /> All items are in stock
+              </div>
+            )}
             {/* Delivery details */}
             <div className="rounded-lg lg:rounded-xl bg-card p-3 lg:p-4 shadow-card">
               <h2 className="text-sm lg:text-base font-bold mb-1">Delivery Details</h2>
