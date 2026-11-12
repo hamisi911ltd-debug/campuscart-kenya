@@ -7,6 +7,11 @@ const CACHE_VERSION = 'v3.1-mobile-lucky-codes';
 
 // Register Service Worker for PWA with cache busting
 if ('serviceWorker' in navigator) {
+  // Was this page already controlled by a service worker when it opened? A visitor's FIRST visit is
+  // not: the worker installs and takes control a moment later, and reloading the page for that
+  // (as this used to) made every new visitor download the whole shop twice.
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloading = false;
   window.addEventListener('load', () => {
     navigator.serviceWorker
       .register('/sw.js?' + CACHE_VERSION)
@@ -39,6 +44,8 @@ if ('serviceWorker' in navigator) {
       
     // Listen for service worker updates
     navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (!hadController || reloading) return; // first install: the page is already current
+      reloading = true;
       console.log('🔄 Service Worker updated, reloading page...');
       window.location.reload();
     });
