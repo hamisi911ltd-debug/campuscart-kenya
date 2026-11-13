@@ -3,6 +3,7 @@
 // plus the original Kilimall listing and its last known cost, so the admin
 // can open the listing and buy it once the customer's order is confirmed.
 import { hasPermission } from "../_lib/teamAuth";
+import { ensureOrderColumns } from "../_lib/orderSchema";
 import { ensureSourceTables, kilimallListingUrl, listingIdFromImages } from "../_lib/productSources";
 
 interface Env {
@@ -20,6 +21,7 @@ export async function onRequestGet(context: { env: Env; request: Request }) {
   }
 
   try {
+    await ensureOrderColumns(env);
     await ensureSourceTables(env);
     const { results } = await env.DB.prepare(
       `SELECT

@@ -8,6 +8,7 @@ vi.mock("./_lib/kilimall", async (importOriginal) => ({
   parseProductPage: () => ({ inStock: live.inStock, stock: live.inStock ? 5 : 0 }),
 }));
 import { resetAvailabilityCache } from "./_lib/availability";
+import { resetOrderSchemaCache } from "./_lib/orderSchema";
 import { onRequestPost as availability } from "./availability";
 import { DatabaseSync } from "node:sqlite";
 import { onRequestGet as listReviews, onRequestPost as postReview, resetReviewColumnsCache } from "./reviews/[product_id]";
@@ -56,6 +57,7 @@ beforeEach(() => {
   resetAuthTablesCache();
   resetReviewColumnsCache();
   resetAvailabilityCache();
+  resetOrderSchemaCache();
   live.inStock = null;
   live.throws = false;
   DB = makeDb();
@@ -178,6 +180,16 @@ describe("checkout", () => {
     const res = await place();
     expect(res.status).toBe(200);
     expect(DB.raw.prepare("SELECT status FROM orders").get().status).toBe("confirmed");
+  });
+
+  it("places the order even when the live database predates the product_title column (the D1_ERROR customers hit)", async () => {
+    DB.raw.exec("DROP TABLE order_items");
+    DB.raw.exec("CREATE TABLE order_items (id TEXT, order_id TEXT, product_id TEXT, quantity INT, price_at_purchase REAL)");
+    const res = await place();
+    expect(res.status).toBe(200);
+    const cols = DB.raw.prepare("PRAGMA table_info(order_items)").all().map((r: any) => r.name);
+    expect(cols).toContain("product_title");
+    expect(DB.raw.prepare("SELECT product_title FROM order_items").get().product_title).toBeTruthy();
   });
 
   it("does not block the order when the supplier page cannot be read", async () => {

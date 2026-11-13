@@ -432,7 +432,7 @@ const CheckoutPage = () => {
                   </div>
                   <div className="flex-1">
                     <div className="text-sm font-bold">M-Pesa</div>
-                    <div className="text-xs text-muted-foreground">Pay when the seller confirms your order</div>
+                    <div className="text-xs text-muted-foreground">You get an M-Pesa prompt on your phone right after you place the order</div>
                   </div>
                   <span className={`h-4 w-4 rounded-full border-2 ${payMethod === "mpesa" ? "border-accent bg-accent" : "border-muted-foreground"}`} />
                 </button>

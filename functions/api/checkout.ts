@@ -3,6 +3,7 @@ import { OWNER_ID, ensureOwnerUser } from "./_lib/owner";
 import { normalizeKenyanPhone } from "./_lib/phone";
 import { sendWhatsAppMessage } from "./_lib/sendWhatsApp";
 import { checkLiveAvailability } from "./_lib/availability";
+import { ensureOrderColumns } from "./_lib/orderSchema";
 import { ensureSourceTables, kilimallListingUrl, listingIdFromImages } from "./_lib/productSources";
 
 interface Env {
@@ -194,6 +195,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       })
     );
 
+    await ensureOrderColumns(context.env);
     await ensureOwnerUser(context.env);
     if (buyerRowId === 'guest') {
       await context.env.DB.prepare(
