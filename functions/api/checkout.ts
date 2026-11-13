@@ -1,7 +1,6 @@
 // Cloudflare Pages Function - Checkout API
 import { OWNER_ID, ensureOwnerUser } from "./_lib/owner";
 import { normalizeKenyanPhone } from "./_lib/phone";
-import { sendWhatsAppMessage } from "./_lib/sendWhatsApp";
 import { checkLiveAvailability } from "./_lib/availability";
 import { ensureOrderColumns } from "./_lib/orderSchema";
 import { ensureSourceTables, kilimallListingUrl, listingIdFromImages } from "./_lib/productSources";
@@ -21,9 +20,6 @@ const DELIVERY_FEE = 129;
 // in src/data/deliveryAreas.ts.
 const DELIVERY_COUNTIES = ["Nairobi", "Mombasa"];
 
-const ADMIN_PHONE_E164 = "+254143531813";
-const ADMIN_PHONE_WA = "254143531813";
-const SITE_URL = "https://campusmart.co.ke";
 
 export const onRequestPost: PagesFunction<Env> = async (context) => {
   try {
@@ -247,70 +243,9 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       VALUES (?, ?, 'confirmed', 'Order placed - item availability verified live with the supplier. Awaiting payment.')
     `).bind(crypto.randomUUID(), orderId).run();
 
-    // ---- WhatsApp message with full product + client details ----
-    const money = (n: number) => `KES ${n.toLocaleString("en-KE")}`;
-    const payLabel = body.payment_method === "wallet" ? "CampusMart Wallet" : "M-Pesa";
-
-    const itemsFor = (internal: boolean) => productDetails.map((item, i) => {
-      const lines = [
-        `${i + 1}. *${item.title}*`,
-        `   Qty: ${item.quantity} × ${money(item.price)} = ${money(item.price * item.quantity)}`,
-        `   Category: ${item.category}`,
-        `   Product ID: ${item.product_id}`,
-        `   Page: ${SITE_URL}/product/${item.product_id}`,
-      ];
-      if (internal && item.sourceUrl) {
-        lines.push(`   🔗 Buy from: ${item.sourceUrl}`);
-        if (item.sourcePrice) {
-          const profit = (item.price - item.sourcePrice) * item.quantity;
-          lines.push(`   Cost: ${money(item.sourcePrice)} each · Profit: ${money(profit)}`);
-        }
-      }
-      return lines.join("\n");
-    }).join("\n\n");
-
-    const mapsLink = (body.delivery_latitude && body.delivery_longitude)
-      ? `📍 *Live Location:*\nhttps://www.google.com/maps?q=${body.delivery_latitude},${body.delivery_longitude}\n\n`
-      : '';
-
-    const buildMessage = (internal: boolean) =>
-      `🛒 *New Order - #${orderNumber}*\n\n` +
-      `👤 *Client Details:*\n` +
-      `Account: ${buyerInfo.name}\n` +
-      `Deliver to: ${recipientName}\n` +
-      `Phone: ${buyerInfo.phone}\n` +
-      `${altPhone ? `Alt phone: ${altPhone}\n` : ""}` +
-      `Address: ${fullAddress}\n` +
-      `${body.delivery_note ? `Rider note: ${body.delivery_note.trim()}\n` : ""}\n` +
-      `${mapsLink}` +
-      `📦 *Products:*\n\n` +
-      `${itemsFor(internal)}\n\n` +
-      `💰 *Payment:*\n` +
-      `Subtotal: ${money(subtotal)}\n` +
-      `Delivery: ${money(delivery_fee)}\n` +
-      `*Total: ${money(total_amount)}*\n` +
-      `Method: ${payLabel} (unpaid until confirmed)\n\n` +
-      `Order ID: ${orderId}\n` +
-      `Order Time: ${new Date().toLocaleString("en-KE", { timeZone: "Africa/Nairobi" })}` +
-      (internal
-        ? `\n\n⚠️ Check the item(s) are in stock (open the 🔗 link), then open Admin → Orders ` +
-          `and tap "Confirm & Request Payment" to send the customer their M-Pesa prompt.`
-        : "");
-
-    const adminMessage = buildMessage(true);
-    // Customer-safe copy: same details, no supplier link or cost price.
-    const customerMessage = buildMessage(false);
-
-    // Message the admin's WhatsApp directly (Twilio). Best-effort - if
-    // WhatsApp isn't configured or the send fails, the order is still saved
-    // and the client falls back to opening WhatsApp with the message.
-    let adminNotified = false;
-    try {
-      await sendWhatsAppMessage(context.env, ADMIN_PHONE_E164, adminMessage);
-      adminNotified = true;
-    } catch (err) {
-      console.error("Admin WhatsApp notification failed:", err);
-    }
+    // No WhatsApp message goes out here. The customer is sent their M-Pesa prompt next, and both the
+    // shop owner and the customer are messaged only once PayHero has confirmed the payment
+    // (see settleOrderPayment).
 
     return new Response(JSON.stringify({
       success: true,
@@ -319,9 +254,6 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
       subtotal,
       delivery_fee,
       total_amount,
-      admin_notified: adminNotified,
-      whatsapp_message: customerMessage,
-      admin_phone: ADMIN_PHONE_WA,
     }), {
       headers: { "Content-Type": "application/json" },
     });

@@ -86,7 +86,6 @@ const CheckoutPage = () => {
       .catch(() => { if (!cancelled) setStockCheck({ state: "done", soldOut: [] }); });
     return () => { cancelled = true; };
   }, [cartKey]);
-  const [whatsappLink, setWhatsappLink] = useState("");
 
   const ADMIN_WHATSAPP = "254143531813";
 
@@ -120,7 +119,7 @@ const CheckoutPage = () => {
           <p className="mt-2 text-sm text-muted-foreground">
             {paidWithWallet
               ? "Paid from your wallet balance. We're preparing your order now."
-              : "Pay now to confirm it - we've sent an M-Pesa prompt to your phone."}
+              : "Enter your M-Pesa PIN on the prompt we sent to your phone. Your order is confirmed once the payment goes through."}
           </p>
           {!paidWithWallet && orderId && (
             <div className="mt-4">
@@ -149,14 +148,16 @@ const CheckoutPage = () => {
               <Download className="h-4 w-4" /> Download receipt (PDF)
             </button>
           )}
-          {whatsappLink && (
+          {receipt?.paid && (
             <a
-              href={whatsappLink}
+              href={`https://wa.me/${ADMIN_WHATSAPP}?text=${encodeURIComponent(
+                `Hello CampusMart, I have paid for order #${receipt.orderNumber} (KES ${(receipt.items.reduce((t, i) => t + i.price * i.qty, 0) + receipt.deliveryFee).toLocaleString("en-KE")}). Please confirm my order.`
+              )}`}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 inline-block rounded-full bg-green-600 px-6 py-2.5 text-sm font-bold text-white hover:bg-green-700"
             >
-              Send order details on WhatsApp
+              Confirm my paid order on WhatsApp
             </a>
           )}
           <div className="mt-5 flex gap-3 justify-center">
@@ -274,17 +275,6 @@ const CheckoutPage = () => {
       };
       setReceipt(receiptData);
       downloadReceipt(receiptData).catch((err) => console.error("Receipt failed:", err));
-
-      // The server messages the admin's WhatsApp itself. If that isn't set
-      // up (or the send failed), fall back to opening WhatsApp with the
-      // order details ready to send, so the admin always gets them.
-      if (result.whatsapp_message) {
-        const link = `https://wa.me/${result.admin_phone || ADMIN_WHATSAPP}?text=${encodeURIComponent(result.whatsapp_message)}`;
-        if (!result.admin_notified) {
-          setWhatsappLink(link);
-          window.open(link, '_blank');
-        }
-      }
 
       try {
         localStorage.setItem(DETAILS_KEY, JSON.stringify({

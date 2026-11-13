@@ -174,6 +174,19 @@ describe("checkout", () => {
     expect(DB.raw.prepare("SELECT COUNT(*) AS n FROM orders").get().n).toBe(0);
   });
 
+  it("sends no WhatsApp at all when the order is placed - only after payment is confirmed", async () => {
+    env.TWILIO_ACCOUNT_SID = "ACtest";
+    env.TWILIO_AUTH_TOKEN = "token";
+    env.TWILIO_WHATSAPP_FROM = "+14155238886";
+    const fetchMock = vi.fn(async () => new Response("{}", { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+    const res = await place();
+    expect(res.status).toBe(200);
+    const data = (await res.json()) as any;
+    expect(data.whatsapp_message).toBeUndefined();
+    expect(fetchMock.mock.calls.some((c) => String(c[0]).includes("twilio"))).toBe(false);
+  });
+
   it("places an automatically confirmed order when the listing is in stock", async () => {
     linkProduct();
     live.inStock = true;
@@ -330,8 +343,12 @@ describe("WhatsApp receipt after payment", () => {
     env.TWILIO_AUTH_TOKEN = "token";
     env.TWILIO_WHATSAPP_FROM = "+14155238886";
     DB.raw.exec("ALTER TABLE order_items ADD COLUMN product_title TEXT; ALTER TABLE order_items ADD COLUMN quantity INT; ALTER TABLE order_items ADD COLUMN price_at_purchase REAL");
-    DB.raw.prepare("INSERT INTO orders (id,buyer_id,total_amount,delivery_fee,buyer_phone,payment_status,status,payhero_reference) VALUES (?,?,?,?,?,?,?,?)")
-      .run(ORDER, "u1", 1129, 129, "0712345678", "requested", "confirmed", "REF-1");
+    DB.raw.exec("ALTER TABLE products ADD COLUMN images TEXT; ALTER TABLE products ADD COLUMN category TEXT");
+    DB.raw.exec("ALTER TABLE orders ADD COLUMN notes TEXT; ALTER TABLE orders ADD COLUMN delivery_address TEXT; ALTER TABLE orders ADD COLUMN created_at TEXT");
+    DB.raw.exec("CREATE TABLE product_sources (product_id TEXT, listing_id TEXT, source_price REAL)");
+    DB.raw.exec("INSERT INTO product_sources VALUES ('p1','98765',300)");
+    DB.raw.prepare("INSERT INTO orders (id,buyer_id,total_amount,delivery_fee,buyer_phone,payment_status,status,payhero_reference,notes,delivery_address) VALUES (?,?,?,?,?,?,?,?,?,?)")
+      .run(ORDER, "u1", 1129, 129, "0712345678", "requested", "confirmed", "REF-1", "Recipient: Jane W | Rider note: call me", "Kimathi House, Nairobi CBD");
     DB.raw.prepare("INSERT INTO order_items (id,order_id,product_id,product_title,quantity,price_at_purchase) VALUES ('i1',?,'p1','Phone X 128GB',2,500)").run(ORDER);
 
     const fetchMock = vi.fn(async (url: string) =>
@@ -343,7 +360,17 @@ describe("WhatsApp receipt after payment", () => {
     const res = await orderStatus(ctx(json(`/api/payhero/order-status?order_id=${ORDER}`, "GET")));
     expect(((await res.json()) as any).payment_status).toBe("paid");
 
-    const twilio = fetchMock.mock.calls.find((c) => String(c[0]).includes("api.twilio.com"));
+    const bodies = fetchMock.mock.calls
+      .filter((c) => String(c[0]).includes("api.twilio.com"))
+      .map((c) => new URLSearchParams(String((c[1] as any).body)));
+    // the shop owner is messaged too, with client details and the original Kilimall link
+    const adminMsg = bodies.find((b) => b.get("To") === "whatsapp:+254143531813");
+    expect(adminMsg).toBeTruthy();
+    expect(adminMsg!.get("Body")).toContain("PAID ORDER");
+    expect(adminMsg!.get("Body")).toContain("Kimathi House, Nairobi CBD");
+    expect(adminMsg!.get("Body")).toContain("kilimall.co.ke/listing/98765");
+    expect(adminMsg!.get("Body")).toContain("RCP99");
+    const twilio = fetchMock.mock.calls.find((c) => String(c[0]).includes("api.twilio.com") && String(new URLSearchParams(String((c[1] as any).body)).get("To")) === "whatsapp:+254712345678");
     expect(twilio).toBeTruthy();
     const sent = new URLSearchParams(String((twilio![1] as any).body));
     expect(sent.get("To")).toBe("whatsapp:+254712345678");

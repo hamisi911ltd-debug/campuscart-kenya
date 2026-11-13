@@ -10,6 +10,8 @@ export const OWNER_ID = "store-owner";
 const OWNER_NAME = "CampusMart";
 const OWNER_EMAIL = "store-owner@campusmart.local";
 const OWNER_PHONE = "254143531813";
+/** Where order alerts go (E.164), once an order is paid. */
+export const ADMIN_PHONE_E164 = "+" + OWNER_PHONE;
 
 export async function ensureOwnerUser(env: Env): Promise<void> {
   await env.DB.prepare(

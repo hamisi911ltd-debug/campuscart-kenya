@@ -8,6 +8,8 @@ import type { ParsedCallback } from "./payhero";
 import { normalizeKenyanPhone } from "./phone";
 import { sendWhatsAppMessage } from "./sendWhatsApp";
 import { shortProductTitle } from "./productTitle";
+import { buildAdminOrderMessage } from "./orderMessages";
+import { ADMIN_PHONE_E164 } from "./owner";
 
 interface Env {
   DB: D1Database;
@@ -95,6 +97,14 @@ export async function settleOrderPayment(env: Env, order: OrderRow, parsed: Pars
           console.error(`Failed to send payment-confirmation WhatsApp for order ${order.id}:`, err);
         }
       }
+    }
+
+    // The shop owner hears about the order only now that the money is confirmed: full client
+    // details, the products and the original Kilimall link for each one.
+    try {
+      await sendWhatsAppMessage(env, ADMIN_PHONE_E164, await buildAdminOrderMessage(env, order, parsed.receiptNumber));
+    } catch (err) {
+      console.error(`Failed to send the paid-order WhatsApp to the admin for order ${order.id}:`, err);
     }
 
     return true;
