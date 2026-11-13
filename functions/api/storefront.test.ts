@@ -311,3 +311,34 @@ describe("pricing rule", () => {
     for (const cost of [99, 500, 999, 1000, 1234, 25000]) expect(clientSellPriceFor(cost)).toBe(sellPriceFor(cost));
   });
 });
+
+describe("WhatsApp receipt after payment", () => {
+  it("sends the customer a full receipt once PayHero confirms the payment", async () => {
+    env.TWILIO_ACCOUNT_SID = "ACtest";
+    env.TWILIO_AUTH_TOKEN = "token";
+    env.TWILIO_WHATSAPP_FROM = "+14155238886";
+    DB.raw.exec("ALTER TABLE order_items ADD COLUMN product_title TEXT; ALTER TABLE order_items ADD COLUMN quantity INT; ALTER TABLE order_items ADD COLUMN price_at_purchase REAL");
+    DB.raw.prepare("INSERT INTO orders (id,buyer_id,total_amount,delivery_fee,buyer_phone,payment_status,status,payhero_reference) VALUES (?,?,?,?,?,?,?,?)")
+      .run(ORDER, "u1", 1129, 129, "0712345678", "requested", "confirmed", "REF-1");
+    DB.raw.prepare("INSERT INTO order_items (id,order_id,product_id,product_title,quantity,price_at_purchase) VALUES ('i1',?,'p1','Phone X 128GB',2,500)").run(ORDER);
+
+    const fetchMock = vi.fn(async (url: string) =>
+      new Response(JSON.stringify(String(url).includes("transaction-status")
+        ? { status: "SUCCESS", amount: 1129, external_reference: ORDER, mpesa_receipt_number: "RCP99" }
+        : {}), { status: 200 }));
+    vi.stubGlobal("fetch", fetchMock);
+
+    const res = await orderStatus(ctx(json(`/api/payhero/order-status?order_id=${ORDER}`, "GET")));
+    expect(((await res.json()) as any).payment_status).toBe("paid");
+
+    const twilio = fetchMock.mock.calls.find((c) => String(c[0]).includes("api.twilio.com"));
+    expect(twilio).toBeTruthy();
+    const sent = new URLSearchParams(String((twilio![1] as any).body));
+    expect(sent.get("To")).toBe("whatsapp:+254712345678");
+    const text = sent.get("Body") || "";
+    expect(text).toContain("CM" + ORDER.slice(-8));
+    expect(text).toContain("RCP99");
+    expect(text).toContain("Phone X 128GB");
+    expect(text).toContain("Total paid: KES 1,129");
+  });
+});

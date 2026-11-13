@@ -16,7 +16,7 @@ interface Env {
 // src/data/deliveryAreas.ts (the frontend can't import from functions/).
 const DELIVERY_FEE = 129;
 
-// Delivery is within Nairobi and Mombasa only. Keep in sync with DELIVERY_COUNTIES
+// Delivery is within the Nairobi CBD and Mombasa CBD only. Keep in sync with DELIVERY_COUNTIES
 // in src/data/deliveryAreas.ts.
 const DELIVERY_COUNTIES = ["Nairobi", "Mombasa"];
 
@@ -58,7 +58,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     };
 
     if (!body.county || !DELIVERY_COUNTIES.includes(body.county)) {
-      return new Response(JSON.stringify({ error: "We deliver within Nairobi and Mombasa only." }), {
+      return new Response(JSON.stringify({ error: "We deliver within Nairobi CBD and Mombasa CBD only." }), {
         status: 400,
         headers: { "Content-Type": "application/json" },
       });
@@ -107,7 +107,7 @@ export const onRequestPost: PagesFunction<Env> = async (context) => {
     // The orders table has a single address column, so the full Kilimall-style
     // address (street, town, county) is written into it as one line, and the
     // recipient / alternative phone / rider note go into notes.
-    const fullAddress = [body.delivery_address, body.town, body.county ? `${body.county} County` : ""]
+    const fullAddress = [body.delivery_address, body.county ? `${body.county} CBD` : ""]
       .map((part) => (part || "").trim())
       .filter(Boolean)
       .join(", ");

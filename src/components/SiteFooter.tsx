@@ -21,7 +21,7 @@ export const SiteFooter = () => (
         <p className="text-base font-extrabold text-foreground">CampusMart Kenya</p>
         <p className="mt-2 leading-relaxed">
           An online store for everyday products at fair prices - phones and electronics, home and kitchen, fashion,
-          beauty, gaming and more. We deliver within Nairobi and Mombasa and you pay securely with M-Pesa.
+          beauty, gaming and more. We deliver within Nairobi CBD and Mombasa CBD and you pay securely with M-Pesa.
         </p>
       </div>
       <nav aria-label="Footer">
@@ -36,7 +36,7 @@ export const SiteFooter = () => (
         <p className="font-bold text-foreground">Contact</p>
         <ul className="mt-2 space-y-1.5">
           <li>WhatsApp / phone: <a href={`https://wa.me/${CONTACT_WHATSAPP}`} className="font-semibold text-foreground hover:underline">{CONTACT_PHONE_DISPLAY}</a></li>
-          <li>Delivery: Nairobi and Mombasa</li>
+          <li>Delivery: Nairobi CBD and Mombasa CBD</li>
           <li>Payments: M-Pesa</li>
         </ul>
       </div>

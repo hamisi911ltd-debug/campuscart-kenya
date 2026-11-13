@@ -44,7 +44,7 @@ export const AboutPage = () => (
       </section>
       <section>
         <h2>Where we deliver</h2>
-        <p>We currently deliver within <strong>Nairobi and Mombasa</strong>. See <Link to="/shipping-returns" className="font-semibold text-accent underline">Delivery &amp; returns</Link> for details.</p>
+        <p>We currently deliver within <strong>Nairobi CBD and Mombasa CBD</strong>. See <Link to="/shipping-returns" className="font-semibold text-accent underline">Delivery &amp; returns</Link> for details.</p>
       </section>
       <section>
         <h2>Get in touch</h2>
@@ -64,7 +64,7 @@ export const ContactPage = () => (
       </section>
       <section>
         <h2>Delivery areas</h2>
-        <p>Nairobi and Mombasa.</p>
+        <p>Nairobi CBD and Mombasa CBD.</p>
       </section>
       <section>
         <h2>Track your order</h2>
@@ -86,7 +86,7 @@ export const ShippingReturnsPage = () => (
     <Article>
       <section>
         <h2>Where we deliver</h2>
-        <p>We deliver to addresses within <strong>Nairobi and Mombasa</strong>. At checkout you pick your county and share your delivery location so the rider can find you.</p>
+        <p>We deliver to addresses within the <strong>Nairobi CBD and Mombasa CBD</strong>. At checkout you choose the city and enter the building, street or landmark where we should deliver.</p>
       </section>
       <section>
         <h2>Delivery fee</h2>
@@ -198,7 +198,7 @@ export const TermsPage = () => (
         <h2>Using the shop</h2>
         <ul>
           <li>You must be 18 or older, or have a parent or guardian's permission, to place an order.</li>
-          <li>Give accurate details at checkout, including a working M-Pesa phone number and a delivery location in Nairobi or Mombasa.</li>
+          <li>Give accurate details at checkout, including a working M-Pesa phone number and a delivery address in the Nairobi CBD or Mombasa CBD.</li>
           <li>Do not misuse the site, attempt to disrupt it, or post reviews that are false, abusive or unlawful.</li>
         </ul>
       </section>

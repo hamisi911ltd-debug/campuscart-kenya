@@ -4,10 +4,9 @@ import { toast } from "sonner";
 import { PageShell } from "@/components/PageShell";
 import { useShop } from "@/store/shop";
 import { CheckCircle2, MapPin, Loader2, Wallet, Smartphone, Download, AlertTriangle } from "lucide-react";
-import { LocationPicker } from "@/components/LocationPicker";
 import { OrderPayment } from "@/components/OrderPayment";
 import { downloadReceipt, type ReceiptData } from "@/lib/receipt";
-import { DELIVERY_COUNTIES, DELIVERY_FEE, DELIVERY_NOTICE, isValidKenyanPhone } from "@/data/deliveryAreas";
+import { DELIVERY_AREAS, DELIVERY_COUNTIES, DELIVERY_FEE, DELIVERY_NOTICE, isValidKenyanPhone } from "@/data/deliveryAreas";
 
 const DETAILS_KEY = "campusmart_delivery_details";
 const fieldClass = "w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/40";
@@ -53,7 +52,8 @@ const CheckoutPage = () => {
   const [altPhone, setAltPhone] = useState<string>(saved.altPhone || "");
   // A county saved from an earlier order that we no longer deliver to is dropped.
   const [county, setCounty] = useState<string>((DELIVERY_COUNTIES as readonly string[]).includes(saved.county) ? saved.county : "");
-  const [town, setTown] = useState<string>(saved.town || "");
+  // Delivery is to the CBD of the chosen city, so there is no separate town to type.
+  const town = "CBD";
   const [address, setAddress] = useState<string>(saved.address || "");
   const [deliveryNote, setDeliveryNote] = useState("");
   const [done, setDone] = useState(false);
@@ -87,10 +87,6 @@ const CheckoutPage = () => {
     return () => { cancelled = true; };
   }, [cartKey]);
   const [whatsappLink, setWhatsappLink] = useState("");
-  const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
-  const [locationLoading, setLocationLoading] = useState(false);
-  const [showMap, setShowMap] = useState(false);
-  const [locationError, setLocationError] = useState<string>("");
 
   const ADMIN_WHATSAPP = "254143531813";
 
@@ -139,6 +135,11 @@ const CheckoutPage = () => {
                 })}
               />
             </div>
+          )}
+          {receipt && (
+            <p className="mt-3 text-xs text-muted-foreground">
+              We will also send your receipt to your WhatsApp as soon as the payment is confirmed.
+            </p>
           )}
           {receipt && (
             <button
@@ -206,8 +207,8 @@ const CheckoutPage = () => {
       return;
     }
 
-    if (!location) {
-      toast.error("Please share your location to continue");
+    if (address.trim().length < 5) {
+      toast.error("Please enter the building, street or landmark in the CBD where we should deliver");
       return;
     }
 
@@ -237,10 +238,8 @@ const CheckoutPage = () => {
       recipient_name: recipientName.trim(),
       alt_phone: altPhone.trim() || undefined,
       county,
-      town: town.trim(),
+      town,
       delivery_note: deliveryNote.trim() || undefined,
-      delivery_latitude: location.lat,
-      delivery_longitude: location.lng,
       buyer_phone: phone.trim(),
       notes: `Customer: ${user.name}`,
     };
@@ -267,7 +266,7 @@ const CheckoutPage = () => {
         date: new Date(),
         customerName: recipientName.trim() || user.name,
         phone: phone.trim(),
-        address: [address.trim(), town.trim(), county].filter(Boolean).join(", "),
+        address: [address.trim(), `${county} CBD`].filter(Boolean).join(", "),
         items: cart.map(({ product, qty }) => ({ title: product.title, qty, price: product.price })),
         deliveryFee: result.delivery_fee ?? deliveryFee,
         paymentMethod: payMethod === "wallet" ? "Wallet" : "M-Pesa",
@@ -290,7 +289,7 @@ const CheckoutPage = () => {
       try {
         localStorage.setItem(DETAILS_KEY, JSON.stringify({
           recipientName: recipientName.trim(), phone: phone.trim(), altPhone: altPhone.trim(),
-          county, town: town.trim(), address: address.trim(),
+          county, address: address.trim(),
         }));
       } catch { /* storage unavailable - not essential */ }
 
@@ -381,22 +380,17 @@ const CheckoutPage = () => {
                   <input value={altPhone} onChange={(e) => setAltPhone(e.target.value)} type="tel"
                     inputMode="tel" placeholder="07XX XXX XXX" className={`mt-1 ${fieldClass}`} />
                 </label>
-                <label className="text-xs font-semibold text-muted-foreground">
-                  County
+                <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
+                  Delivery area
                   <select value={county} onChange={(e) => setCounty(e.target.value)} required className={`mt-1 ${fieldClass}`}>
-                    <option value="">Select county</option>
-                    {DELIVERY_COUNTIES.map((c) => <option key={c} value={c}>{c}</option>)}
+                    <option value="">Select where to deliver</option>
+                    {DELIVERY_AREAS.map((a) => <option key={a.county} value={a.county}>{a.label}</option>)}
                   </select>
                 </label>
-                <label className="text-xs font-semibold text-muted-foreground">
-                  Town / area
-                  <input value={town} onChange={(e) => setTown(e.target.value)} required
-                    placeholder="e.g. Westlands, Nyali, Milimani" className={`mt-1 ${fieldClass}`} />
-                </label>
                 <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
-                  Street / estate / building / house no. / nearest landmark
+                  Building / street / landmark in the CBD
                   <input value={address} onChange={(e) => setAddress(e.target.value)} required
-                    placeholder="Estate / street / building / house no. / nearest landmark" className={`mt-1 ${fieldClass}`} />
+                    placeholder="e.g. Kimathi House, Kimathi Street, near Archives" className={`mt-1 ${fieldClass}`} />
                 </label>
                 <label className="text-xs font-semibold text-muted-foreground sm:col-span-2">
                   Delivery note for the rider (optional)
@@ -404,17 +398,6 @@ const CheckoutPage = () => {
                     placeholder="e.g. Call when you arrive, gate is blue" className={`mt-1 ${fieldClass}`} />
                 </label>
               </div>
-            </div>
-
-            {/* Location Section */}
-            <div className="overflow-hidden">
-              <LocationPicker 
-                onLocationCapture={(loc) => {
-                  setLocation(loc);
-                  setShowMap(true);
-                }} 
-                initialLocation={location}
-              />
             </div>
 
             {/* Payment Method */}
@@ -479,15 +462,11 @@ const CheckoutPage = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Area:</span>
-                  <span className="font-semibold truncate ml-2 max-w-[200px]">{[town, county].filter(Boolean).join(', ') || '—'}</span>
+                  <span className="font-semibold truncate ml-2 max-w-[200px]">{county ? `${county} CBD` : '—'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Items:</span>
                   <span className="font-semibold">{cart.length} item{cart.length > 1 ? 's' : ''}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Location:</span>
-                  <span className="font-semibold">{location ? '✓ Shared' : '✗ Not shared'}</span>
                 </div>
               </div>
             </div>
@@ -528,22 +507,15 @@ const CheckoutPage = () => {
             
             <button
               type="submit"
-              disabled={!location || submitting}
+              disabled={submitting}
               className="mt-3 lg:mt-4 flex w-full items-center justify-center gap-2 rounded-full gradient-accent py-2 lg:py-2.5 text-xs lg:text-sm font-bold text-accent-foreground shadow-accent hover:scale-[1.02] transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {submitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {!location
-                ? 'Share Location to Continue'
-                : payMethod === 'wallet'
-                  ? `Pay KES ${orderTotal.toLocaleString()} from Wallet`
-                  : 'Place Order'}
+              {payMethod === 'wallet'
+                ? `Pay KES ${orderTotal.toLocaleString()} from Wallet`
+                : 'Place Order'}
             </button>
             
-            {!location && (
-              <p className="mt-2 text-xs text-center text-muted-foreground">
-                Location required for delivery
-              </p>
-            )}
           </aside>
         </form>
       </div>

@@ -7,6 +7,7 @@
 import type { ParsedCallback } from "./payhero";
 import { normalizeKenyanPhone } from "./phone";
 import { sendWhatsAppMessage } from "./sendWhatsApp";
+import { shortProductTitle } from "./productTitle";
 
 interface Env {
   DB: D1Database;
@@ -21,6 +22,42 @@ export interface OrderRow {
   total_amount: number;
   delivery_fee: number | null;
   buyer_phone?: string | null;
+}
+
+/** The receipt the customer gets on WhatsApp the moment their payment is confirmed. */
+export async function buildReceiptMessage(env: Env, order: OrderRow, mpesaReceipt?: string): Promise<string> {
+  let lines: string[] = [];
+  let subtotal = 0;
+  try {
+    const { results } = await env.DB.prepare(
+      "SELECT product_title, quantity, price_at_purchase FROM order_items WHERE order_id = ?"
+    ).bind(order.id).all<{ product_title: string | null; quantity: number; price_at_purchase: number }>();
+    for (const item of results || []) {
+      const qty = Number(item.quantity) || 1;
+      const price = Number(item.price_at_purchase) || 0;
+      subtotal += qty * price;
+      const name = shortProductTitle(item.product_title || "Item");
+      lines.push(`• ${qty} x ${name} - KES ${(qty * price).toLocaleString("en-KE")}`);
+    }
+  } catch { /* the receipt still goes out without the item list */ }
+  const total = Number(order.total_amount) || 0;
+  const delivery = Number(order.delivery_fee) || Math.max(total - subtotal, 0);
+  const number = "CM" + order.id.slice(-8);
+  return [
+    "*CampusMart Kenya - Payment Receipt*",
+    "",
+    `Order: *${number}*`,
+    `Status: *PAID* ${mpesaReceipt ? "(M-Pesa " + mpesaReceipt + ")" : ""}`.trim(),
+    "",
+    ...(lines.length ? [...lines, ""] : []),
+    ...(subtotal > 0 ? [`Subtotal: KES ${subtotal.toLocaleString("en-KE")}`] : []),
+    `Delivery (CBD): KES ${delivery.toLocaleString("en-KE")}`,
+    `*Total paid: KES ${total.toLocaleString("en-KE")}*`,
+    "",
+    "Your order is confirmed and being prepared for delivery.",
+    "Track it anytime: campusmart.co.ke/orders",
+    "Asante for shopping with CampusMart!",
+  ].join("\n");
 }
 
 export async function settleOrderPayment(env: Env, order: OrderRow, parsed: ParsedCallback): Promise<boolean> {
@@ -51,8 +88,7 @@ export async function settleOrderPayment(env: Env, order: OrderRow, parsed: Pars
     if (order.buyer_phone) {
       const phone = normalizeKenyanPhone(order.buyer_phone);
       if (phone) {
-        const waybill = order.id.replace(/-/g, "").toUpperCase().slice(0, 12);
-        const message = `✅ Payment received!\n\nYour CampusMart order is confirmed and being prepared for delivery.\n\nOrder: WB${waybill.slice(0, 4)}-${waybill.slice(4, 8)}-${waybill.slice(8, 12)}\nTotal: KES ${order.total_amount.toLocaleString()}\n\nTrack it anytime at campusmart.co.ke/orders. Asante for shopping with us!`;
+        const message = await buildReceiptMessage(env, order, parsed.receiptNumber);
         try {
           await sendWhatsAppMessage(env, phone, message);
         } catch (err) {

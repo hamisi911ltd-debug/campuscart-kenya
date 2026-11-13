@@ -1,10 +1,16 @@
-// Where CampusMart delivers. Delivery is within Nairobi and Mombasa only.
+// Where CampusMart delivers. Delivery is within the Nairobi CBD and the Mombasa CBD only.
 // Checkout offers just these, and the server rejects any other county
 // (functions/api/checkout.ts keeps its own copy of this list - keep them in sync).
 export const DELIVERY_COUNTIES = ["Nairobi", "Mombasa"] as const;
 
 /** Shown wherever a shopper might wonder if we reach them. */
-export const DELIVERY_NOTICE = "We deliver within Nairobi and Mombasa only.";
+export const DELIVERY_NOTICE = "We deliver within Nairobi CBD and Mombasa CBD only.";
+
+/** What the shopper picks at checkout; each area belongs to one county. */
+export const DELIVERY_AREAS = [
+  { label: "Nairobi CBD", county: "Nairobi" },
+  { label: "Mombasa CBD", county: "Mombasa" },
+] as const;
 
 // Flat delivery fee (KES) charged on every order. Keep in sync with
 // DELIVERY_FEE in functions/api/checkout.ts.

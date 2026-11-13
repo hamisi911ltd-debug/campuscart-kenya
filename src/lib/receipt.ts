@@ -166,7 +166,7 @@ export async function downloadReceipt(data: ReceiptData): Promise<void> {
   doc.text("Asante for shopping with CampusMart!", W / 2, 287, { align: "center" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
-  doc.text("Track your order anytime at campusmart.co.ke/orders  |  We deliver within Nairobi and Mombasa", W / 2, 292, { align: "center" });
+  doc.text("Track your order anytime at campusmart.co.ke/orders  |  We deliver within Nairobi CBD and Mombasa CBD", W / 2, 292, { align: "center" });
 
   doc.save(`CampusMart-Receipt-${data.orderNumber}.pdf`);
 }
